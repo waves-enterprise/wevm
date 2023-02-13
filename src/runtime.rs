@@ -1,40 +1,48 @@
 use wasmi::{Func, Memory, Store};
 
+pub trait Runtime {
+    fn new() -> Self;
+    fn memory(&self) -> Option<Memory>;
+    fn set_memory(&mut self, memory: Memory);
+}
+
+pub trait Environment<T> {
+    fn module(&self) -> String;
+    fn name(&self) -> String;
+    fn func(&self, store: &mut Store<T>) -> Func;
+}
+
 #[derive(Clone, Copy)]
-pub struct Runtime {
+pub struct HostRuntime {
     memory: Option<Memory>,
 }
 
-impl Runtime {
-    pub fn new() -> Self {
-        Runtime { memory: None }
+impl Runtime for HostRuntime {
+    fn new() -> Self {
+        HostRuntime { memory: None }
     }
 
-    pub fn memory(&self) -> Option<Memory> {
+    fn memory(&self) -> Option<Memory> {
         self.memory
     }
 
-    pub fn set_memory(&mut self, memory: Memory) {
+    fn set_memory(&mut self, memory: Memory) {
         self.memory = Some(memory);
     }
+}
 
+impl HostRuntime {
     pub fn get_storage(&self) {
         panic!("Not implimented!");
     }
 }
 
-pub trait Environment {
-    fn module(&self) -> String;
-    fn name(&self) -> String;
-    fn func(&self, store: &mut Store<Runtime>) -> Func;
-}
-
 #[macro_export]
 macro_rules! env_runtime {
-    ( pub fn $name:ident ( $($args:tt)* ) $(-> $return_values:ty)? { $func:expr } ) => {
+    ( pub fn $name:ident <$runtime:ty> ( $($args:tt)* ) $(-> $return_values:ty)? { $func:expr } ) => {
         pub struct $name;
 
-        impl Environment for $name {
+        impl Environment<$runtime> for $name {
             fn module(&self) -> String {
                 String::from("env")
             }
@@ -44,10 +52,10 @@ macro_rules! env_runtime {
                 name.from_case(Case::Pascal).to_case(Case::Snake)
             }
 
-            fn func(&self, store: &mut Store<Runtime>) -> Func {
+            fn func(&self, store: &mut Store<$runtime>) -> Func {
                 Func::wrap(
                     store,
-                    |caller: Caller<Runtime>, $($args)*| $(-> $return_values)? {
+                    |caller: Caller<$runtime>, $($args)*| $(-> $return_values)? {
                         $func(caller)
                     }
                 )

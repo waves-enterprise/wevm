@@ -36,19 +36,19 @@ impl fmt::Display for LoadableFunction {
     }
 }
 
-pub struct Executable {
+pub struct Executable<T> {
     module: Module,
-    runtime: Runtime,
+    runtime: T,
     /// Initial memory size of a contract's sandbox.
     initial: u32,
     /// The maximum memory size of a contract's sandbox.
     maximum: u32,
 }
 
-impl Executable {
+impl<T: Runtime + Copy> Executable<T> {
     pub fn new(bytecode: Vec<u8>, initial: u32, maximum: u32) -> Result<Self> {
         let module = Self::load_wasm_module(&bytecode)?;
-        let runtime = Runtime::new();
+        let runtime = T::new();
 
         Ok(Executable {
             module,
@@ -62,7 +62,7 @@ impl Executable {
         &self,
         func_name: &LoadableFunction,
         func_args: &[String],
-        envs: &[&impl Environment],
+        envs: &[&impl Environment<T>],
     ) -> Result<Vec<Value>> {
         let (func, mut store) = Self::load_wasm_func(
             &self.module,
@@ -108,11 +108,11 @@ impl Executable {
     /// - If the Wasm module does not have an exported function `func_name`.
     fn load_wasm_func(
         module: &Module,
-        runtime: Runtime,
+        runtime: T,
         func_name: &str,
         memory: (u32, u32),
-        envs: &[&impl Environment],
-    ) -> Result<(Func, Store<Runtime>)> {
+        envs: &[&impl Environment<T>],
+    ) -> Result<(Func, Store<T>)> {
         let engine = module.engine();
         let mut linker = <wasmi::Linker<()>>::new();
         let mut store = wasmi::Store::new(engine, runtime);
@@ -211,13 +211,13 @@ mod tests {
     use wasmi::Caller;
 
     use crate::env_runtime;
-    use crate::tests::wat2wasm;
+    use crate::tests::{wat2wasm, MockRuntime};
 
     const MEMORY: (u32, u32) = (1, 1);
 
     env_runtime! {
-        pub fn Test() {
-            |mut _caller: Caller<Runtime>| {
+        pub fn Test<MockRuntime>() {
+            |mut _caller: Caller<MockRuntime>| {
                 assert_eq!(2 + 2, 4);
             }
         }
@@ -252,8 +252,8 @@ mod tests {
     }
 
     env_runtime! {
-        pub fn TestSetValue(value: u32) {
-            |mut _caller: Caller<Runtime>| {
+        pub fn TestSetValue<MockRuntime>(value: u32) {
+            |mut _caller: Caller<MockRuntime>| {
                 assert_eq!(13, value);
             }
         }
@@ -285,8 +285,8 @@ mod tests {
     }
 
     env_runtime! {
-        pub fn TestGetValue() -> u32 {
-            |mut _caller: Caller<Runtime>| {
+        pub fn TestGetValue<MockRuntime>() -> u32 {
+            |mut _caller: Caller<MockRuntime>| {
                 13
             }
         }
@@ -320,8 +320,8 @@ mod tests {
     }
 
     env_runtime! {
-        pub fn TestMemory(offset: u32, length: u32) {
-            |mut caller: Caller<Runtime>| {
+        pub fn TestMemory<MockRuntime>(offset: u32, length: u32) {
+            |mut caller: Caller<MockRuntime>| {
                 let (memory, _ctx) = caller
                     .data()
                     .memory()
