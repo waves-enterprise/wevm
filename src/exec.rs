@@ -60,7 +60,7 @@ impl Executable {
 
     pub fn call(
         &self,
-        func_name: LoadableFunction,
+        func_name: &LoadableFunction,
         func_args: &[String],
         envs: &[&impl Environment],
     ) -> Result<Vec<Value>> {
@@ -244,7 +244,7 @@ mod tests {
         let env = Test;
 
         let results = exec
-            .call(func_name, &func_args, &[&env])
+            .call(&func_name, &func_args, &[&env])
             .expect("Error execution");
 
         assert_eq!(results.len(), 1);
@@ -278,7 +278,7 @@ mod tests {
         let env = TestSetValue;
 
         let results = exec
-            .call(func_name, &func_args, &[&env])
+            .call(&func_name, &func_args, &[&env])
             .expect("Error execution");
 
         assert_eq!(results.len(), 0);
@@ -312,7 +312,7 @@ mod tests {
         let env = TestGetValue;
 
         let results = exec
-            .call(func_name, &func_args, &[&env])
+            .call(&func_name, &func_args, &[&env])
             .expect("Error execution");
 
         assert_eq!(results.len(), 1);
@@ -358,7 +358,7 @@ mod tests {
         let env = TestMemory;
 
         let results = exec
-            .call(func_name, &func_args, &[&env])
+            .call(&func_name, &func_args, &[&env])
             .expect("Error execution");
 
         assert_eq!(results.len(), 0);
