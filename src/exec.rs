@@ -243,12 +243,12 @@ mod tests {
 
         let env = Test;
 
-        let results = exec
+        let result = exec
             .call(&func_name, &func_args, &[&env])
             .expect("Error execution");
 
-        assert_eq!(results.len(), 1);
-        assert_eq!(results[0], Value::I32(43));
+        assert_eq!(result.len(), 1);
+        assert_eq!(result[0], Value::I32(43));
     }
 
     env_runtime! {
@@ -277,11 +277,11 @@ mod tests {
 
         let env = TestSetValue;
 
-        let results = exec
+        let result = exec
             .call(&func_name, &func_args, &[&env])
             .expect("Error execution");
 
-        assert_eq!(results.len(), 0);
+        assert_eq!(result.len(), 0);
     }
 
     env_runtime! {
@@ -311,12 +311,12 @@ mod tests {
 
         let env = TestGetValue;
 
-        let results = exec
+        let result = exec
             .call(&func_name, &func_args, &[&env])
             .expect("Error execution");
 
-        assert_eq!(results.len(), 1);
-        assert_eq!(results[0], Value::I32(14));
+        assert_eq!(result.len(), 1);
+        assert_eq!(result[0], Value::I32(14));
     }
 
     env_runtime! {
@@ -357,10 +357,10 @@ mod tests {
 
         let env = TestMemory;
 
-        let results = exec
+        let result = exec
             .call(&func_name, &func_args, &[&env])
             .expect("Error execution");
 
-        assert_eq!(results.len(), 0);
+        assert_eq!(result.len(), 0);
     }
 }
