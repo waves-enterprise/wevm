@@ -4,6 +4,7 @@ pub trait Runtime {
     fn new() -> Self;
     fn memory(&self) -> Option<Memory>;
     fn set_memory(&mut self, memory: Memory);
+    fn get_contract(&self) -> Vec<u8>;
 }
 
 pub trait Environment<T> {
@@ -29,10 +30,8 @@ impl Runtime for HostRuntime {
     fn set_memory(&mut self, memory: Memory) {
         self.memory = Some(memory);
     }
-}
 
-impl HostRuntime {
-    pub fn get_storage(&self) {
+    fn get_contract(&self) -> Vec<u8> {
         panic!("Not implimented!");
     }
 }

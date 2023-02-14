@@ -25,4 +25,22 @@ impl Runtime for MockRuntime {
     fn set_memory(&mut self, memory: Memory) {
         self.memory = Some(memory);
     }
+
+    fn get_contract(&self) -> Vec<u8> {
+        get_bytecode()
+    }
+}
+
+fn get_bytecode() -> Vec<u8> {
+    let wat = r#"
+        (module
+            (func (export "calc") (result i32)
+                i32.const 2
+                i32.const 2
+                i32.add))
+    "#;
+
+    let bytecode = wat2wasm(wat).expect("Error parse wat");
+
+    bytecode
 }
