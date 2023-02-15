@@ -62,7 +62,7 @@ impl<T: Runtime + Copy> Executable<T> {
         &self,
         func_name: &LoadableFunction,
         func_args: &[String],
-        envs: &[&impl Environment<T>],
+        envs: Vec<&impl Environment<T>>,
     ) -> Result<Vec<Value>> {
         let (func, mut store) = Self::load_wasm_func(
             &self.module,
@@ -111,7 +111,7 @@ impl<T: Runtime + Copy> Executable<T> {
         runtime: T,
         func_name: &str,
         memory: (u32, u32),
-        envs: &[&impl Environment<T>],
+        envs: Vec<&impl Environment<T>>,
     ) -> Result<(Func, Store<T>)> {
         let engine = module.engine();
         let mut linker = <wasmi::Linker<()>>::new();
@@ -244,7 +244,7 @@ mod tests {
         let env = Test;
 
         let result = exec
-            .call(&func_name, &func_args, &[&env])
+            .call(&func_name, &func_args, vec![&env])
             .expect("Error execution");
 
         assert_eq!(result.len(), 1);
@@ -278,7 +278,7 @@ mod tests {
         let env = TestSetValue;
 
         let result = exec
-            .call(&func_name, &func_args, &[&env])
+            .call(&func_name, &func_args, vec![&env])
             .expect("Error execution");
 
         assert_eq!(result.len(), 0);
@@ -312,7 +312,7 @@ mod tests {
         let env = TestGetValue;
 
         let result = exec
-            .call(&func_name, &func_args, &[&env])
+            .call(&func_name, &func_args, vec![&env])
             .expect("Error execution");
 
         assert_eq!(result.len(), 1);
@@ -358,7 +358,7 @@ mod tests {
         let env = TestMemory;
 
         let result = exec
-            .call(&func_name, &func_args, &[&env])
+            .call(&func_name, &func_args, vec![&env])
             .expect("Error execution");
 
         assert_eq!(result.len(), 0);
