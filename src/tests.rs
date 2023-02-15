@@ -8,7 +8,6 @@ pub fn wat2wasm(wat: &str) -> Result<Vec<u8>, wat::Error> {
 }
 
 /// Runtime implementation for testing.
-#[derive(Clone, Copy)]
 pub struct MockRuntime {
     memory: Option<Memory>,
 }

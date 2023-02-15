@@ -13,7 +13,6 @@ pub trait Environment<T> {
     fn func(&self, store: &mut Store<T>) -> Func;
 }
 
-#[derive(Clone, Copy)]
 pub struct HostRuntime {
     memory: Option<Memory>,
 }

@@ -36,37 +36,36 @@ impl fmt::Display for LoadableFunction {
     }
 }
 
-pub struct Executable<T> {
+pub struct Executable {
     module: Module,
-    runtime: T,
     /// Initial memory size of a contract's sandbox.
     initial: u32,
     /// The maximum memory size of a contract's sandbox.
     maximum: u32,
 }
 
-impl<T: Runtime + Copy> Executable<T> {
+impl Executable {
     pub fn new(bytecode: Vec<u8>, initial: u32, maximum: u32) -> Result<Self> {
         let module = Self::load_wasm_module(&bytecode)?;
-        let runtime = T::new();
 
         Ok(Executable {
             module,
-            runtime,
             initial,
             maximum,
         })
     }
 
-    pub fn call(
+    pub fn execute<T: Runtime>(
         &self,
         func_name: &LoadableFunction,
         func_args: &[String],
         envs: Vec<&impl Environment<T>>,
     ) -> Result<Vec<Value>> {
+        let runtime = T::new();
+
         let (func, mut store) = Self::load_wasm_func(
             &self.module,
-            self.runtime,
+            runtime,
             &func_name.to_string(),
             (self.initial, self.maximum),
             envs,
@@ -106,7 +105,7 @@ impl<T: Runtime + Copy> Executable<T> {
     /// - If the function name argument `func_name` is missing.
     /// - If the Wasm module fails to instantiate or start.
     /// - If the Wasm module does not have an exported function `func_name`.
-    fn load_wasm_func(
+    fn load_wasm_func<T: Runtime>(
         module: &Module,
         runtime: T,
         func_name: &str,
@@ -244,7 +243,7 @@ mod tests {
         let env = Test;
 
         let result = exec
-            .call(&func_name, &func_args, vec![&env])
+            .execute(&func_name, &func_args, vec![&env])
             .expect("Error execution");
 
         assert_eq!(result.len(), 1);
@@ -278,7 +277,7 @@ mod tests {
         let env = TestSetValue;
 
         let result = exec
-            .call(&func_name, &func_args, vec![&env])
+            .execute(&func_name, &func_args, vec![&env])
             .expect("Error execution");
 
         assert_eq!(result.len(), 0);
@@ -312,7 +311,7 @@ mod tests {
         let env = TestGetValue;
 
         let result = exec
-            .call(&func_name, &func_args, vec![&env])
+            .execute(&func_name, &func_args, vec![&env])
             .expect("Error execution");
 
         assert_eq!(result.len(), 1);
@@ -358,7 +357,7 @@ mod tests {
         let env = TestMemory;
 
         let result = exec
-            .call(&func_name, &func_args, vec![&env])
+            .execute(&func_name, &func_args, vec![&env])
             .expect("Error execution");
 
         assert_eq!(result.len(), 0);
