@@ -1,5 +1,6 @@
 mod exec;
 mod runtime;
+mod stack;
 
 #[cfg(test)]
 mod tests;
@@ -14,6 +15,8 @@ pub enum Error {
     MemoryLimits,
     /// An error that may occur upon operating with Linker instances
     LinkerError,
+    /// Could not find stack
+    StackNotFound,
     /// Failed to instantiate and start the Wasm bytecode
     InstantiateFailed,
     /// Failed parse function name

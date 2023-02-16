@@ -1,46 +1,39 @@
 use wasmi::{Func, Memory, Store};
 
-pub trait Runtime {
-    fn new() -> Self;
-    fn memory(&self) -> Option<Memory>;
-    fn set_memory(&mut self, memory: Memory);
-    fn get_contract(&self) -> Vec<u8>;
-}
-
-pub trait Environment<T> {
+pub trait Environment {
     fn module(&self) -> String;
     fn name(&self) -> String;
-    fn func(&self, store: &mut Store<T>) -> Func;
+    fn func(&self, store: &mut Store<Runtime>) -> Func;
 }
 
-pub struct HostRuntime {
+pub struct Runtime {
     memory: Option<Memory>,
 }
 
-impl Runtime for HostRuntime {
-    fn new() -> Self {
-        HostRuntime { memory: None }
+impl Runtime {
+    pub fn new() -> Self {
+        Runtime { memory: None }
     }
 
-    fn memory(&self) -> Option<Memory> {
+    pub fn memory(&self) -> Option<Memory> {
         self.memory
     }
 
-    fn set_memory(&mut self, memory: Memory) {
+    pub fn set_memory(&mut self, memory: Memory) {
         self.memory = Some(memory);
     }
 
-    fn get_contract(&self) -> Vec<u8> {
+    pub fn get_contract(&self) -> Vec<u8> {
         panic!("Not implimented!");
     }
 }
 
 #[macro_export]
 macro_rules! env_runtime {
-    ( pub fn $name:ident <$runtime:ty> ( $($args:tt)* ) $(-> $return_values:ty)? { $func:expr } ) => {
+    ( pub fn $name:ident ( $($args:tt)* ) $(-> $return_values:ty)? { $func:expr } ) => {
         pub struct $name;
 
-        impl Environment<$runtime> for $name {
+        impl Environment for $name {
             fn module(&self) -> String {
                 String::from("env")
             }
@@ -50,10 +43,10 @@ macro_rules! env_runtime {
                 name.from_case(Case::Pascal).to_case(Case::Snake)
             }
 
-            fn func(&self, store: &mut Store<$runtime>) -> Func {
+            fn func(&self, store: &mut Store<Runtime>) -> Func {
                 Func::wrap(
                     store,
-                    |caller: Caller<$runtime>, $($args)*| $(-> $return_values)? {
+                    |caller: Caller<Runtime>, $($args)*| $(-> $return_values)? {
                         $func(caller)
                     }
                 )

@@ -8,6 +8,7 @@ use wasmi::{
 
 use crate::{
     runtime::{Environment, Runtime},
+    stack::Stack,
     Error, Result,
 };
 
@@ -55,13 +56,14 @@ impl Executable {
         })
     }
 
-    pub fn execute<T: Runtime>(
+    pub fn execute(
         &self,
         func_name: &LoadableFunction,
         func_args: &[String],
-        envs: Vec<&impl Environment<T>>,
+        envs: Vec<&impl Environment>,
+        stack: Option<&mut Stack>,
     ) -> Result<Vec<Value>> {
-        let runtime = T::new();
+        let runtime = Runtime::new();
 
         let (func, mut store) = Self::load_wasm_func(
             &self.module,
@@ -69,6 +71,7 @@ impl Executable {
             &func_name.to_string(),
             (self.initial, self.maximum),
             envs,
+            stack,
         )?;
         let func_type = func.ty(&store);
         let func_args = Self::type_check_arguments(&func_type, func_args)?;
@@ -105,13 +108,14 @@ impl Executable {
     /// - If the function name argument `func_name` is missing.
     /// - If the Wasm module fails to instantiate or start.
     /// - If the Wasm module does not have an exported function `func_name`.
-    fn load_wasm_func<T: Runtime>(
+    fn load_wasm_func(
         module: &Module,
-        runtime: T,
+        runtime: Runtime,
         func_name: &str,
         memory: (u32, u32),
-        envs: Vec<&impl Environment<T>>,
-    ) -> Result<(Func, Store<T>)> {
+        envs: Vec<&impl Environment>,
+        stack: Option<&mut Stack>,
+    ) -> Result<(Func, Store<Runtime>)> {
         let engine = module.engine();
         let mut linker = <wasmi::Linker<()>>::new();
         let mut store = wasmi::Store::new(engine, runtime);
@@ -119,6 +123,18 @@ impl Executable {
         for env in envs {
             linker
                 .define(&env.module(), &env.name(), env.func(&mut store))
+                .map_err(|_| Error::LinkerError)?;
+        }
+
+        if stack.is_some() {
+            let temp = stack.ok_or(Error::StackNotFound)?;
+
+            linker
+                .define(
+                    &<Stack as Environment>::module(temp),
+                    &<Stack as Environment>::name(temp),
+                    temp.func(&mut store),
+                )
                 .map_err(|_| Error::LinkerError)?;
         }
 
@@ -210,13 +226,13 @@ mod tests {
     use wasmi::Caller;
 
     use crate::env_runtime;
-    use crate::tests::{wat2wasm, MockRuntime};
+    use crate::tests::wat2wasm;
 
     const MEMORY: (u32, u32) = (1, 1);
 
     env_runtime! {
-        pub fn Test<MockRuntime>() {
-            |mut _caller: Caller<MockRuntime>| {
+        pub fn Test() {
+            |mut _caller: Caller<Runtime>| {
                 assert_eq!(2 + 2, 4);
             }
         }
@@ -243,7 +259,7 @@ mod tests {
         let env = Test;
 
         let result = exec
-            .execute(&func_name, &func_args, vec![&env])
+            .execute(&func_name, &func_args, vec![&env], None)
             .expect("Error execution");
 
         assert_eq!(result.len(), 1);
@@ -251,8 +267,8 @@ mod tests {
     }
 
     env_runtime! {
-        pub fn TestSetValue<MockRuntime>(value: u32) {
-            |mut _caller: Caller<MockRuntime>| {
+        pub fn TestSetValue(value: u32) {
+            |mut _caller: Caller<Runtime>| {
                 assert_eq!(13, value);
             }
         }
@@ -277,15 +293,15 @@ mod tests {
         let env = TestSetValue;
 
         let result = exec
-            .execute(&func_name, &func_args, vec![&env])
+            .execute(&func_name, &func_args, vec![&env], None)
             .expect("Error execution");
 
         assert_eq!(result.len(), 0);
     }
 
     env_runtime! {
-        pub fn TestGetValue<MockRuntime>() -> u32 {
-            |mut _caller: Caller<MockRuntime>| {
+        pub fn TestGetValue() -> u32 {
+            |mut _caller: Caller<Runtime>| {
                 13
             }
         }
@@ -311,7 +327,7 @@ mod tests {
         let env = TestGetValue;
 
         let result = exec
-            .execute(&func_name, &func_args, vec![&env])
+            .execute(&func_name, &func_args, vec![&env], None)
             .expect("Error execution");
 
         assert_eq!(result.len(), 1);
@@ -319,8 +335,8 @@ mod tests {
     }
 
     env_runtime! {
-        pub fn TestMemory<MockRuntime>(offset: u32, length: u32) {
-            |mut caller: Caller<MockRuntime>| {
+        pub fn TestMemory(offset: u32, length: u32) {
+            |mut caller: Caller<Runtime>| {
                 let (memory, _ctx) = caller
                     .data()
                     .memory()
@@ -357,7 +373,7 @@ mod tests {
         let env = TestMemory;
 
         let result = exec
-            .execute(&func_name, &func_args, vec![&env])
+            .execute(&func_name, &func_args, vec![&env], None)
             .expect("Error execution");
 
         assert_eq!(result.len(), 0);
