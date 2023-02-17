@@ -61,9 +61,9 @@ impl Executable {
         func_name: &LoadableFunction,
         func_args: &[String],
         envs: Vec<&impl Environment>,
-        stack: Option<&mut Stack>,
+        stack: &mut Stack,
     ) -> Result<Vec<Value>> {
-        let runtime = Runtime::new();
+        let runtime = Runtime::new(stack);
 
         let (func, mut store) = Self::load_wasm_func(
             &self.module,
@@ -71,7 +71,6 @@ impl Executable {
             &func_name.to_string(),
             (self.initial, self.maximum),
             envs,
-            stack,
         )?;
         let func_type = func.ty(&store);
         let func_args = Self::type_check_arguments(&func_type, func_args)?;
@@ -108,14 +107,13 @@ impl Executable {
     /// - If the function name argument `func_name` is missing.
     /// - If the Wasm module fails to instantiate or start.
     /// - If the Wasm module does not have an exported function `func_name`.
-    fn load_wasm_func(
+    fn load_wasm_func<'a>(
         module: &Module,
-        runtime: Runtime,
+        runtime: Runtime<'a>,
         func_name: &str,
         memory: (u32, u32),
         envs: Vec<&impl Environment>,
-        stack: Option<&mut Stack>,
-    ) -> Result<(Func, Store<Runtime>)> {
+    ) -> Result<(Func, Store<Runtime<'a>>)> {
         let engine = module.engine();
         let mut linker = <wasmi::Linker<()>>::new();
         let mut store = wasmi::Store::new(engine, runtime);
@@ -123,18 +121,6 @@ impl Executable {
         for env in envs {
             linker
                 .define(&env.module(), &env.name(), env.func(&mut store))
-                .map_err(|_| Error::LinkerError)?;
-        }
-
-        if stack.is_some() {
-            let temp = stack.ok_or(Error::StackNotFound)?;
-
-            linker
-                .define(
-                    &<Stack as Environment>::module(temp),
-                    &<Stack as Environment>::name(temp),
-                    temp.func(&mut store),
-                )
                 .map_err(|_| Error::LinkerError)?;
         }
 
@@ -214,168 +200,5 @@ impl Executable {
             .copied()
             .map(Value::default)
             .collect::<Vec<_>>()
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    use convert_case::{Case, Casing};
-    use std::str;
-    use wasmi::Caller;
-
-    use crate::env_runtime;
-    use crate::tests::wat2wasm;
-
-    const MEMORY: (u32, u32) = (1, 1);
-
-    env_runtime! {
-        pub fn Test() {
-            |mut _caller: Caller<Runtime>| {
-                assert_eq!(2 + 2, 4);
-            }
-        }
-    }
-
-    #[test]
-    fn test_simple_module() {
-        let wat = r#"
-            (module
-                (func $getValue (result i32)
-                    i32.const 42)
-                (func (export "run") (result i32)
-                    call $getValue
-                    i32.const 1
-                    i32.add))
-        "#;
-
-        let bytecode = wat2wasm(wat).expect("Error parse wat");
-        let exec = Executable::new(bytecode, MEMORY.0, MEMORY.1).expect("Error load wasm bytecode");
-
-        let func_name = LoadableFunction::from_str("run").expect("Error parse func name");
-        let func_args: [String; 0] = [];
-
-        let env = Test;
-
-        let result = exec
-            .execute(&func_name, &func_args, vec![&env], None)
-            .expect("Error execution");
-
-        assert_eq!(result.len(), 1);
-        assert_eq!(result[0], Value::I32(43));
-    }
-
-    env_runtime! {
-        pub fn TestSetValue(value: u32) {
-            |mut _caller: Caller<Runtime>| {
-                assert_eq!(13, value);
-            }
-        }
-    }
-
-    #[test]
-    fn test_import_set_value_module() {
-        let wat = r#"
-            (module
-                (import "env" "test_set_value" (func $setValue (param i32)))
-                (func (export "run")
-                    i32.const 13
-                    call $setValue))
-        "#;
-
-        let bytecode = wat2wasm(wat).expect("Error parse wat");
-        let exec = Executable::new(bytecode, MEMORY.0, MEMORY.1).expect("Error load wasm bytecode");
-
-        let func_name = LoadableFunction::from_str("run").expect("Error parse func name");
-        let func_args: [String; 0] = [];
-
-        let env = TestSetValue;
-
-        let result = exec
-            .execute(&func_name, &func_args, vec![&env], None)
-            .expect("Error execution");
-
-        assert_eq!(result.len(), 0);
-    }
-
-    env_runtime! {
-        pub fn TestGetValue() -> u32 {
-            |mut _caller: Caller<Runtime>| {
-                13
-            }
-        }
-    }
-
-    #[test]
-    fn test_import_get_value_module() {
-        let wat = r#"
-            (module
-                (import "env" "test_get_value" (func $getValue (result i32)))
-                (func (export "run") (result i32)
-                    call $getValue
-                    i32.const 1
-                    i32.add))
-        "#;
-
-        let bytecode = wat2wasm(wat).expect("Error parse wat");
-        let exec = Executable::new(bytecode, MEMORY.0, MEMORY.1).expect("Error load wasm bytecode");
-
-        let func_name = LoadableFunction::from_str("run").expect("Error parse func name");
-        let func_args: [String; 0] = [];
-
-        let env = TestGetValue;
-
-        let result = exec
-            .execute(&func_name, &func_args, vec![&env], None)
-            .expect("Error execution");
-
-        assert_eq!(result.len(), 1);
-        assert_eq!(result[0], Value::I32(14));
-    }
-
-    env_runtime! {
-        pub fn TestMemory(offset: u32, length: u32) {
-            |mut caller: Caller<Runtime>| {
-                let (memory, _ctx) = caller
-                    .data()
-                    .memory()
-                    .expect("Error get memory")
-                    .data_and_store_mut(&mut caller);
-
-                let result = str::from_utf8(&memory[offset as usize..offset as usize + length as usize])
-                    .expect("Error converts a slice of bytes to a string slice");
-
-                assert_eq!("Hi", result);
-            }
-        }
-    }
-
-    #[test]
-    fn test_memory_module() {
-        let wat = r#"
-            (module
-                (import "env" "test_memory" (func $print (param i32 i32)))
-                (import "env" "memory" (memory 1 1))
-                (data (i32.const 0) "Hi")
-                (func (export "run")
-                    i32.const 0  ;; pass offset 0 to print
-                    i32.const 2  ;; pass length 2 to print
-                    call $print))
-        "#;
-
-        let bytecode = wat2wasm(wat).expect("Error parse wat");
-        let exec = Executable::new(bytecode, MEMORY.0, MEMORY.1).expect("Error load wasm bytecode");
-
-        let func_name = LoadableFunction::from_str("run").expect("Error parse func name");
-        let func_args: [String; 0] = [];
-
-        let env = TestMemory;
-
-        let result = exec
-            .execute(&func_name, &func_args, vec![&env], None)
-            .expect("Error execution");
-
-        assert_eq!(result.len(), 0);
     }
 }

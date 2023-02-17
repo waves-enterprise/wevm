@@ -1,18 +1,24 @@
 use wasmi::{Func, Memory, Store};
 
+use crate::stack::Stack;
+
 pub trait Environment {
     fn module(&self) -> String;
     fn name(&self) -> String;
     fn func(&self, store: &mut Store<Runtime>) -> Func;
 }
 
-pub struct Runtime {
+pub struct Runtime<'a> {
     memory: Option<Memory>,
+    stack: &'a mut Stack,
 }
 
-impl Runtime {
-    pub fn new() -> Self {
-        Runtime { memory: None }
+impl<'a> Runtime<'a> {
+    pub fn new(stack: &'a mut Stack) -> Self {
+        Runtime {
+            memory: None,
+            stack,
+        }
     }
 
     pub fn memory(&self) -> Option<Memory> {
@@ -21,10 +27,6 @@ impl Runtime {
 
     pub fn set_memory(&mut self, memory: Memory) {
         self.memory = Some(memory);
-    }
-
-    pub fn get_contract(&self) -> Vec<u8> {
-        panic!("Not implimented!");
     }
 }
 
