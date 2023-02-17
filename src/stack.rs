@@ -15,16 +15,22 @@ pub struct Stack {
     frames: Vec<Frame>,
     first_frame: Frame,
     memory: (u32, u32),
+    envs: Vec<Box<dyn Environment>>,
 }
 
 impl Stack {
-    pub fn new(bytecode: Vec<u8>, memory: (u32, u32)) -> Result<Self> {
+    pub fn new(
+        bytecode: Vec<u8>,
+        memory: (u32, u32),
+        envs: Vec<Box<dyn Environment>>,
+    ) -> Result<Self> {
         let first_frame = Frame { bytecode };
 
         Ok(Stack {
             frames: Default::default(),
             first_frame,
             memory,
+            envs,
         })
     }
 
@@ -33,28 +39,22 @@ impl Stack {
         bytecode: Vec<u8>,
         func_name: &str,
         func_args: &[String],
-        envs: Vec<&impl Environment>,
     ) -> Result<Vec<Value>> {
         let frame = Frame { bytecode };
 
         self.push_frame(frame);
 
-        self.run(func_name, func_args, envs)
+        self.run(func_name, func_args)
     }
 
-    pub fn run(
-        &mut self,
-        func_name: &str,
-        func_args: &[String],
-        envs: Vec<&impl Environment>,
-    ) -> Result<Vec<Value>> {
+    pub fn run(&mut self, func_name: &str, func_args: &[String]) -> Result<Vec<Value>> {
         let frame = self.top_frame();
 
         let func_name = LoadableFunction::from_str(func_name)?;
 
         let exec = Executable::new(frame.bytecode.clone(), self.memory.0, self.memory.1)?;
 
-        exec.execute(&func_name, func_args, envs, self)
+        exec.execute(&func_name, func_args, self.envs.clone(), self)
     }
 
     fn push_frame(&mut self, frame: Frame) {
@@ -75,6 +75,7 @@ mod tests {
     use wasmi::Caller;
 
     use crate::env_runtime;
+    use crate::runtime::CallContract;
     use crate::tests::wat2wasm;
 
     const MEMORY: (u32, u32) = (1, 1);
@@ -100,10 +101,11 @@ mod tests {
         "#;
 
         let bytecode = wat2wasm(wat).expect("Error parse wat");
-        let env = Test;
+        let test = Test;
 
-        let mut stack = Stack::new(bytecode, MEMORY).expect("Error create stack");
-        let result = stack.run("run", &[], vec![&env]).expect("Error execution");
+        let mut stack =
+            Stack::new(bytecode, MEMORY, vec![Box::new(test)]).expect("Error create stack");
+        let result = stack.run("run", &[]).expect("Error execution");
 
         assert_eq!(result.len(), 1);
         assert_eq!(result[0], Value::I32(43));
@@ -128,10 +130,11 @@ mod tests {
         "#;
 
         let bytecode = wat2wasm(wat).expect("Error parse wat");
-        let env = TestSetValue;
+        let test_set_value = TestSetValue;
 
-        let mut stack = Stack::new(bytecode, MEMORY).expect("Error create stack");
-        let result = stack.run("run", &[], vec![&env]).expect("Error execution");
+        let mut stack = Stack::new(bytecode, MEMORY, vec![Box::new(test_set_value)])
+            .expect("Error create stack");
+        let result = stack.run("run", &[]).expect("Error execution");
 
         assert_eq!(result.len(), 0);
     }
@@ -156,10 +159,11 @@ mod tests {
         "#;
 
         let bytecode = wat2wasm(wat).expect("Error parse wat");
-        let env = TestGetValue;
+        let test_get_value = TestGetValue;
 
-        let mut stack = Stack::new(bytecode, MEMORY).expect("Error create stack");
-        let result = stack.run("run", &[], vec![&env]).expect("Error execution");
+        let mut stack = Stack::new(bytecode, MEMORY, vec![Box::new(test_get_value)])
+            .expect("Error create stack");
+        let result = stack.run("run", &[]).expect("Error execution");
 
         assert_eq!(result.len(), 1);
         assert_eq!(result[0], Value::I32(14));
@@ -196,27 +200,20 @@ mod tests {
         "#;
 
         let bytecode = wat2wasm(wat).expect("Error parse wat");
-        let env = TestMemory;
+        let test_memory = TestMemory;
 
-        let mut stack = Stack::new(bytecode, MEMORY).expect("Error create stack");
-        let result = stack.run("run", &[], vec![&env]).expect("Error execution");
+        let mut stack =
+            Stack::new(bytecode, MEMORY, vec![Box::new(test_memory)]).expect("Error create stack");
+        let result = stack.run("run", &[]).expect("Error execution");
 
         assert_eq!(result.len(), 0);
-    }
-
-    env_runtime! {
-        pub fn Call() -> i32 {
-            |mut caller: Caller<Runtime>| {
-                caller.data_mut().call_contract()
-            }
-        }
     }
 
     #[test]
     fn test_call_contract() {
         let wat = r#"
             (module
-                (import "env" "call" (func $call (result i32)))
+                (import "env" "call_contract" (func $call (result i32)))
                 (func (export "run") (result i32)
                     call $call
                     i32.const 1
@@ -224,10 +221,11 @@ mod tests {
         "#;
 
         let bytecode = wat2wasm(wat).expect("Error parse wat");
-        let env = Call;
+        let call_contract = CallContract;
 
-        let mut stack = Stack::new(bytecode, MEMORY).expect("Error create stack");
-        let result = stack.run("run", &[], vec![&env]).expect("Error execution");
+        let mut stack = Stack::new(bytecode, MEMORY, vec![Box::new(call_contract)])
+            .expect("Error create stack");
+        let result = stack.run("run", &[]).expect("Error execution");
 
         assert_eq!(result.len(), 1);
         assert_eq!(result[0], Value::I32(5));

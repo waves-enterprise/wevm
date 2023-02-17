@@ -1,12 +1,16 @@
-use wasmi::{Func, Memory, Store};
+use convert_case::{Case, Casing};
+use dyn_clone::DynClone;
+use wasmi::{Caller, Func, Memory, Store};
 
 use crate::stack::Stack;
 
-pub trait Environment {
+pub trait Environment: DynClone {
     fn module(&self) -> String;
     fn name(&self) -> String;
     fn func(&self, store: &mut Store<Runtime>) -> Func;
 }
+
+dyn_clone::clone_trait_object!(Environment);
 
 pub struct Runtime<'a> {
     memory: Option<Memory>,
@@ -33,6 +37,7 @@ impl<'a> Runtime<'a> {
 #[macro_export]
 macro_rules! env_runtime {
     ( pub fn $name:ident ( $($args:tt)* ) $(-> $return_values:ty)? { $func:expr } ) => {
+        #[derive(Clone)]
         pub struct $name;
 
         impl Environment for $name {

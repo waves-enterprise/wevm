@@ -60,7 +60,7 @@ impl Executable {
         &self,
         func_name: &LoadableFunction,
         func_args: &[String],
-        envs: Vec<&impl Environment>,
+        envs: Vec<Box<dyn Environment>>,
         stack: &mut Stack,
     ) -> Result<Vec<Value>> {
         let runtime = Runtime::new(stack);
@@ -112,7 +112,7 @@ impl Executable {
         runtime: Runtime<'a>,
         func_name: &str,
         memory: (u32, u32),
-        envs: Vec<&impl Environment>,
+        envs: Vec<Box<dyn Environment>>,
     ) -> Result<(Func, Store<Runtime<'a>>)> {
         let engine = module.engine();
         let mut linker = <wasmi::Linker<()>>::new();
