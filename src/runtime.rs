@@ -73,6 +73,7 @@ env_runtime! {
 
             let contract_name = str::from_utf8(&memory[offset_contract as usize..offset_contract as usize + length_contract as usize])
                 .expect("Error converts a slice of bytes to a string slice");
+            let bytecode = ctx.get_bytecode(contract_name);
 
             let func_name = str::from_utf8(&memory[offset_func_name as usize..offset_func_name as usize + length_func_name as usize])
                 .expect("Error converts a slice of bytes to a string slice");
@@ -80,9 +81,16 @@ env_runtime! {
             // TODO: Parse args
             let func_args: [String; 0] = [];
 
-            let bytecode = ctx.get_bytecode(contract_name);
-
             ctx.call_contract(bytecode, func_name, &func_args)
         }
     }
+}
+
+pub fn get_envs() -> Vec<Box<dyn Environment>> {
+    let mut envs: Vec<Box<dyn Environment>> = vec![];
+
+    let call_contract = CallContract;
+    envs.push(Box::new(call_contract));
+
+    envs
 }

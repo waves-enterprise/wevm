@@ -5,6 +5,14 @@ mod stack;
 #[cfg(test)]
 mod tests;
 
+use crate::stack::Stack;
+use jni::{
+    objects::{JByteArray, JClass, JObjectArray, JString},
+    sys::jint,
+    JNIEnv,
+};
+use wasmi::core::Value;
+
 #[derive(Debug)]
 pub enum Error {
     /// Failed to parse and validate Wasm bytecode
@@ -30,3 +38,44 @@ pub enum Error {
 }
 
 pub type Result<T, E = Error> = core::result::Result<T, E>;
+
+// This `#[no_mangle]` keeps rust from "mangling" the name and making it unique
+// for this crate. The name follow a strict naming convention so that the
+// JNI implementation will be able to automatically find the implementation
+// of a native method based on its name.
+//
+// The `'local` lifetime here represents the local frame within which any local
+// (temporary) references to Java objects will remain valid.
+//
+// It's usually not necessary to explicitly name the `'local` input lifetimes but
+// in this case we want to return a reference and show the compiler what
+// local frame lifetime it is associated with.
+#[no_mangle]
+pub extern "system" fn Java_VM_runContract<'local>(
+    mut env: JNIEnv<'local>,
+    _class: JClass<'local>,
+    bytecode: JByteArray<'local>,
+    func_name: JString<'local>,
+    func_args: JObjectArray<'local>,
+) -> jint {
+    let bytecode = env
+        .convert_byte_array(&bytecode)
+        .expect("Failed get byte[] out of java");
+
+    let memory: (u32, u32) = (1, 1);
+    let envs = runtime::get_envs();
+
+    let func_name: String = env
+        .get_string(&func_name)
+        .expect("Couldn't get java string!")
+        .into();
+
+    let mut stack = Stack::new(bytecode, memory, envs).expect("Error create stack");
+    // TODO: Parse args
+    let result = stack.run(&func_name, &[]).expect("Error execution");
+
+    match result[0] {
+        Value::I32(value) => value as jint,
+        _ => 0 as jint,
+    }
+}

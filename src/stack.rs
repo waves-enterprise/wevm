@@ -42,7 +42,6 @@ impl Stack {
         let frame = Frame { bytecode };
 
         self.push_frame(frame);
-
         self.run(func_name, func_args)
     }
 
@@ -52,7 +51,6 @@ impl Stack {
         let func_name = LoadableFunction::from_str(func_name)?;
 
         let exec = Executable::new(frame.bytecode.clone(), self.memory.0, self.memory.1)?;
-
         exec.execute(&func_name, func_args, self.envs.clone(), self)
     }
 
@@ -69,13 +67,10 @@ impl Stack {
 mod tests {
     use super::*;
 
+    use crate::{env_runtime, runtime::get_envs, tests::wat2wasm};
     use convert_case::{Case, Casing};
     use std::str;
     use wasmi::Caller;
-
-    use crate::env_runtime;
-    use crate::runtime::CallContract;
-    use crate::tests::wat2wasm;
 
     const MEMORY: (u32, u32) = (1, 1);
 
@@ -236,10 +231,9 @@ mod tests {
         "#;
 
         let bytecode = wat2wasm(wat).expect("Error parse wat");
-        let call_contract = CallContract;
+        let envs = get_envs();
 
-        let mut stack = Stack::new(bytecode, MEMORY, vec![Box::new(call_contract)])
-            .expect("Error create stack");
+        let mut stack = Stack::new(bytecode, MEMORY, envs).expect("Error create stack");
         let result = stack.run("run", &[]).expect("Error execution");
 
         assert_eq!(result.len(), 1);
