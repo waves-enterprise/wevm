@@ -56,7 +56,7 @@ pub extern "system" fn Java_VM_runContract<'local>(
     _class: JClass<'local>,
     bytecode: JByteArray<'local>,
     func_name: JString<'local>,
-    func_args: JObjectArray<'local>,
+    _func_args: JObjectArray<'local>,
 ) -> jint {
     let bytecode = env
         .convert_byte_array(&bytecode)
@@ -78,4 +78,27 @@ pub extern "system" fn Java_VM_runContract<'local>(
         Value::I32(value) => value as jint,
         _ => 0 as jint,
     }
+}
+
+// TODO: We can call Scala functions only inside Java_VM_runContract,
+// because we are already running inside the JVM.
+// We can call external functions with env.call_method()
+#[cfg(not(test))]
+pub fn get_storage() -> Vec<u8> {
+    vec![]
+}
+
+#[cfg(test)]
+pub fn get_storage() -> Vec<u8> {
+    use crate::tests::wat2wasm;
+
+    let wat = r#"
+        (module
+            (func (export "run") (result i32)
+                i32.const 2
+                i32.const 2
+                i32.add))
+        "#;
+
+    wat2wasm(wat).expect("Error parse wat")
 }

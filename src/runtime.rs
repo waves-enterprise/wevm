@@ -1,4 +1,4 @@
-use crate::stack::Stack;
+use crate::{get_storage, stack::Stack};
 use convert_case::{Case, Casing};
 use dyn_clone::DynClone;
 use std::str;
@@ -32,6 +32,26 @@ impl<'a> Runtime<'a> {
     pub fn set_memory(&mut self, memory: Memory) {
         self.memory = Some(memory);
     }
+
+    // TODO: Here should be a call to a Scala function, which will provide a Bytecode contract by address or name
+    pub fn get_bytecode(&self, _name: &str) -> Vec<u8> {
+        get_storage()
+    }
+
+    // TODO: Perhaps the functions should not return a bool, but a real value
+    pub fn call_contract(
+        &mut self,
+        bytecode: Vec<u8>,
+        func_name: &str,
+        func_args: &[String],
+    ) -> i32 {
+        let result = self.stack.call(bytecode, func_name, &func_args);
+
+        match result {
+            Ok(_) => 1,
+            Err(_) => 0,
+        }
+    }
 }
 
 #[macro_export]
@@ -41,6 +61,7 @@ macro_rules! env_runtime {
         pub struct $name;
 
         impl Environment for $name {
+            // TODO: We may have to use versioning for future updates
             fn module(&self) -> String {
                 String::from("env")
             }

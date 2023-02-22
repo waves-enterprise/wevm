@@ -1,15 +1,16 @@
 use crate::{
     exec::{Executable, LoadableFunction},
-    runtime::{Environment, Runtime},
+    runtime::Environment,
     Result,
 };
 use std::str::FromStr;
-use wasmi::{core::Value, Caller, Func, Store};
+use wasmi::core::Value;
 
 pub struct Frame {
     bytecode: Vec<u8>,
 }
 
+// TODO: It is necessary to limit the number of possible frames
 pub struct Stack {
     frames: Vec<Frame>,
     first_frame: Frame,
@@ -67,10 +68,14 @@ impl Stack {
 mod tests {
     use super::*;
 
-    use crate::{env_runtime, runtime::get_envs, tests::wat2wasm};
+    use crate::{
+        env_runtime,
+        runtime::{get_envs, Runtime},
+        tests::wat2wasm,
+    };
     use convert_case::{Case, Casing};
     use std::str;
-    use wasmi::Caller;
+    use wasmi::{Caller, Func, Store};
 
     const MEMORY: (u32, u32) = (1, 1);
 
