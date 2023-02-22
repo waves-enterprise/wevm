@@ -1,11 +1,10 @@
-use std::str::FromStr;
-use wasmi::{core::Value, Caller, Func, Store};
-
 use crate::{
     exec::{Executable, LoadableFunction},
     runtime::{Environment, Runtime},
     Result,
 };
+use std::str::FromStr;
+use wasmi::{core::Value, Caller, Func, Store};
 
 pub struct Frame {
     bytecode: Vec<u8>,
@@ -194,8 +193,8 @@ mod tests {
                 (import "env" "memory" (memory 1 1))
                 (data (i32.const 0) "Hi")
                 (func (export "run")
-                    i32.const 0  ;; pass offset 0 to print
-                    i32.const 2  ;; pass length 2 to print
+                    i32.const 0  ;; Pass offset 0 to test
+                    i32.const 2  ;; Pass length 2 to test
                     call $print))
         "#;
 
@@ -213,11 +212,27 @@ mod tests {
     fn test_call_contract() {
         let wat = r#"
             (module
-                (import "env" "call_contract" (func $call (result i32)))
+                (import "env" "call_contract" (func $call (param i32 i32 i32 i32 i32 i32) (result i32)))
+                (import "env" "memory" (memory 1 1))
                 (func (export "run") (result i32)
-                    call $call
-                    i32.const 1
-                    i32.add))
+                    (call $call
+                        (i32.const 0) ;; Offset address of the called contract
+                        (i32.const 3) ;; Length of the called contract
+                        (i32.const 3) ;; Offset address of the function name
+                        (i32.const 3) ;; Length of the function name
+                        (i32.const 6) ;; Offset address of the function args
+                        (i32.const 4) ;; Length of the function args
+                    ))
+
+                ;; Called contract
+                (data (i32.const 0) "two")
+
+                ;; Function name
+                (data (i32.const 3) "run")
+
+                ;; Function args
+                (data (i32.const 6) "\01\02\03\04")
+            )
         "#;
 
         let bytecode = wat2wasm(wat).expect("Error parse wat");
@@ -228,6 +243,6 @@ mod tests {
         let result = stack.run("run", &[]).expect("Error execution");
 
         assert_eq!(result.len(), 1);
-        assert_eq!(result[0], Value::I32(5));
+        assert_eq!(result[0], Value::I32(1));
     }
 }

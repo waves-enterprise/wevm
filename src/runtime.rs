@@ -1,8 +1,8 @@
+use crate::stack::Stack;
 use convert_case::{Case, Casing};
 use dyn_clone::DynClone;
+use std::str;
 use wasmi::{Caller, Func, Memory, Store};
-
-use crate::stack::Stack;
 
 pub trait Environment: DynClone {
     fn module(&self) -> String;
@@ -58,6 +58,31 @@ macro_rules! env_runtime {
                     }
                 )
             }
+        }
+    }
+}
+
+env_runtime! {
+    pub fn CallContract(offset_contract: u32, length_contract: u32, offset_func_name: u32, length_func_name: u32, offset_func_args: u32, length_func_args: u32) -> i32 {
+        |mut caller: Caller<Runtime>| {
+            let (memory, ctx) = caller
+                    .data()
+                    .memory()
+                    .expect("Error get memory")
+                    .data_and_store_mut(&mut caller);
+
+            let contract_name = str::from_utf8(&memory[offset_contract as usize..offset_contract as usize + length_contract as usize])
+                .expect("Error converts a slice of bytes to a string slice");
+
+            let func_name = str::from_utf8(&memory[offset_func_name as usize..offset_func_name as usize + length_func_name as usize])
+                .expect("Error converts a slice of bytes to a string slice");
+
+            // TODO: Parse args
+            let func_args: [String; 0] = [];
+
+            let bytecode = ctx.get_bytecode(contract_name);
+
+            ctx.call_contract(bytecode, func_name, &func_args)
         }
     }
 }

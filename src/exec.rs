@@ -1,15 +1,12 @@
-use std::fmt;
-use std::str::FromStr;
-
-use wasmi::{
-    core::{Value, ValueType, F32, F64},
-    Config, Engine, Func, FuncType, Memory, MemoryType, Module, Store,
-};
-
 use crate::{
     runtime::{Environment, Runtime},
     stack::Stack,
     Error, Result,
+};
+use std::{fmt, str::FromStr};
+use wasmi::{
+    core::{Value, ValueType, F32, F64},
+    Config, Engine, Func, FuncType, Memory, MemoryType, Module, Store,
 };
 
 pub enum LoadableFunction {
