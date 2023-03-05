@@ -3,6 +3,10 @@ use crate::{
     runtime::Environment,
     Result,
 };
+use jni::{
+    objects::{GlobalRef, JByteArray, JObject, JValue},
+    JavaVM,
+};
 use std::str::FromStr;
 use wasmi::core::Value;
 
@@ -16,6 +20,8 @@ pub struct Stack {
     first_frame: Frame,
     memory: (u32, u32),
     envs: Vec<Box<dyn Environment>>,
+    jvm: JavaVM,
+    jvm_callback: GlobalRef,
 }
 
 impl Stack {
@@ -23,6 +29,8 @@ impl Stack {
         bytecode: Vec<u8>,
         memory: (u32, u32),
         envs: Vec<Box<dyn Environment>>,
+        jvm: JavaVM,
+        jvm_callback: GlobalRef,
     ) -> Result<Self> {
         let first_frame = Frame { bytecode };
 
@@ -31,6 +39,8 @@ impl Stack {
             first_frame,
             memory,
             envs,
+            jvm,
+            jvm_callback,
         })
     }
 
@@ -62,6 +72,34 @@ impl Stack {
     fn top_frame(&self) -> &Frame {
         self.frames.last().unwrap_or(&self.first_frame)
     }
+
+    pub fn jvm_get_bytecode(&self, name: &str) -> Vec<u8> {
+        let mut env = self
+            .jvm
+            .attach_current_thread()
+            .expect("Failed attaches the current thread to the Java VM");
+
+        let name = env.new_string(name).expect("Couldn't create java string");
+
+        let result = env
+            .call_method(
+                self.jvm_callback.clone(),
+                "getBytecode",
+                "(Ljava/lang/String;)[B",
+                &[JValue::Object(&name.into())],
+            )
+            .expect("Failed JVM method call")
+            .l()
+            .expect("Failed to receive object");
+
+        let bytes = env
+            .convert_byte_array(&<JObject<'_> as Into<JByteArray>>::into(result))
+            .expect("Failed byte array conversion");
+
+        bytes.to_vec()
+    }
+
+    pub fn convert() {}
 }
 
 #[cfg(test)]

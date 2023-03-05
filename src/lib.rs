@@ -7,7 +7,7 @@ mod tests;
 
 use crate::stack::Stack;
 use jni::{
-    objects::{JByteArray, JClass, JObjectArray, JString},
+    objects::{JByteArray, JClass, JObject, JObjectArray, JString},
     sys::jint,
     JNIEnv,
 };
@@ -57,48 +57,38 @@ pub extern "system" fn Java_VM_runContract<'local>(
     bytecode: JByteArray<'local>,
     func_name: JString<'local>,
     _func_args: JObjectArray<'local>,
+    callback: JObject<'local>,
 ) -> jint {
     let bytecode = env
         .convert_byte_array(&bytecode)
         .expect("Failed get byte[] out of java");
 
+    // TODO: It may be necessary to manage the memory
     let memory: (u32, u32) = (1, 1);
     let envs = runtime::get_envs();
 
+    let jvm = env
+        .get_java_vm()
+        .expect("Failed receiving JavaVM interface");
+    let callback = env
+        .new_global_ref(callback)
+        .expect("Error callback new_global_ref");
+
+    let mut stack =
+        Stack::new(bytecode, memory, envs, jvm, callback).expect("Call stack initiation failed");
+
     let func_name: String = env
         .get_string(&func_name)
-        .expect("Couldn't get java string!")
+        .expect("Couldn't get java string")
         .into();
 
-    let mut stack = Stack::new(bytecode, memory, envs).expect("Error create stack");
     // TODO: Parse args
-    let result = stack.run(&func_name, &[]).expect("Error execution");
+    let result = stack
+        .run(&func_name, &[])
+        .expect("Bytecode execution failed");
 
     match result[0] {
         Value::I32(value) => value as jint,
         _ => 0 as jint,
     }
-}
-
-// TODO: We can call Scala functions only inside Java_VM_runContract,
-// because we are already running inside the JVM.
-// We can call external functions with env.call_method()
-#[cfg(not(test))]
-pub fn get_storage() -> Vec<u8> {
-    vec![]
-}
-
-#[cfg(test)]
-pub fn get_storage() -> Vec<u8> {
-    use crate::tests::wat2wasm;
-
-    let wat = r#"
-        (module
-            (func (export "run") (result i32)
-                i32.const 2
-                i32.const 2
-                i32.add))
-        "#;
-
-    wat2wasm(wat).expect("Error parse wat")
 }

@@ -1,8 +1,9 @@
-use crate::{get_storage, stack::Stack};
+use crate::stack::Stack;
 use convert_case::{Case, Casing};
 use dyn_clone::DynClone;
+use jni::sys::jint;
 use std::str;
-use wasmi::{Caller, Func, Memory, Store};
+use wasmi::{core::Value, Caller, Func, Memory, Store};
 
 pub trait Environment: DynClone {
     fn module(&self) -> String;
@@ -33,23 +34,24 @@ impl<'a> Runtime<'a> {
         self.memory = Some(memory);
     }
 
-    // TODO: Here should be a call to a Scala function, which will provide a Bytecode contract by address or name
-    pub fn get_bytecode(&self, _name: &str) -> Vec<u8> {
-        get_storage()
+    pub fn get_bytecode(&mut self, name: &str) -> Vec<u8> {
+        self.stack.jvm_get_bytecode(name)
     }
 
-    // TODO: Perhaps the functions should not return a bool, but a real value
     pub fn call_contract(
         &mut self,
         bytecode: Vec<u8>,
         func_name: &str,
         func_args: &[String],
     ) -> i32 {
-        let result = self.stack.call(bytecode, func_name, &func_args);
+        let result = self
+            .stack
+            .call(bytecode, func_name, &func_args)
+            .expect("Bytecode execution failed");
 
-        match result {
-            Ok(_) => 1,
-            Err(_) => 0,
+        match result[0] {
+            Value::I32(value) => value as jint,
+            _ => 0 as jint,
         }
     }
 }
