@@ -93,7 +93,7 @@ impl Stack {
             .expect("Failed to receive object");
 
         let bytes = env
-            .convert_byte_array(&<JObject<'_> as Into<JByteArray>>::into(result))
+            .convert_byte_array(<JObject<'_> as Into<JByteArray>>::into(result))
             .expect("Failed byte array conversion");
 
         bytes.to_vec()

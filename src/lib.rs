@@ -60,7 +60,7 @@ pub extern "system" fn Java_VM_runContract<'local>(
     callback: JObject<'local>,
 ) -> jint {
     let bytecode = env
-        .convert_byte_array(&bytecode)
+        .convert_byte_array(bytecode)
         .expect("Failed get byte[] out of java");
 
     // TODO: It may be necessary to manage the memory

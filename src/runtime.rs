@@ -46,7 +46,7 @@ impl<'a> Runtime<'a> {
     ) -> i32 {
         let result = self
             .stack
-            .call(bytecode, func_name, &func_args)
+            .call(bytecode, func_name, func_args)
             .expect("Bytecode execution failed");
 
         match result[0] {
