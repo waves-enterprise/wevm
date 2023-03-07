@@ -1,6 +1,6 @@
 use crate::{
     env_runtime,
-    jvm::JVM,
+    jvm::Jvm,
     runtime::{Environment, Runtime},
     stack::Stack,
 };
@@ -9,8 +9,8 @@ use std::str;
 use wasmi::{Caller, Func, Store};
 
 // Test implementation of JVM calls from the stack
-impl JVM for Stack {
-    fn jvm_get_bytecode(&self, name: &str) -> Vec<u8> {
+impl Jvm for Stack {
+    fn jvm_get_bytecode(&self, _name: &str) -> Vec<u8> {
         let wat = r#"
             (module
                 (func (export "run") (result i32)

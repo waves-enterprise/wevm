@@ -1,14 +1,14 @@
 use crate::stack::Stack;
 use jni::objects::{JByteArray, JObject, JValue};
 
-pub trait JVM {
+pub trait Jvm {
     fn jvm_get_bytecode(&self, name: &str) -> Vec<u8>;
 }
 
 // Implementing the JVM call
 // A special note that this implementation did not overlap with the test implementation
 #[cfg(not(test))]
-impl JVM for Stack {
+impl Jvm for Stack {
     fn jvm_get_bytecode(&self, name: &str) -> Vec<u8> {
         let mut env = self
             .jvm
