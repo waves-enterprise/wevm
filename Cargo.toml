@@ -12,6 +12,7 @@ jni = "0.21.0"
 wasmi = "0.23.0"
 
 [dev-dependencies]
+jni = { version = "0.21.0", features = ["invocation"] }
 wat = "1"
 
 [lib]

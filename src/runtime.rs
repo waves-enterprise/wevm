@@ -1,4 +1,4 @@
-use crate::stack::Stack;
+use crate::{jvm::JVM, stack::Stack};
 use convert_case::{Case, Casing};
 use dyn_clone::DynClone;
 use jni::sys::jint;

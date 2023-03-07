@@ -1,4 +1,5 @@
 mod exec;
+mod jvm;
 mod runtime;
 mod stack;
 
