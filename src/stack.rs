@@ -85,11 +85,11 @@ mod tests {
     fn test_vm() {
         let wat = r#"
         (module
-            (import "env" "test_set_value" (func $set (param i32)))
-            (import "env" "test_get_value" (func $get (result i32)))
-            (import "env" "test_memory" (func $mem (param i32 i32)))
+            (import "env0" "test_set_value" (func $set (param i32)))
+            (import "env0" "test_get_value" (func $get (result i32)))
+            (import "env0" "test_memory" (func $mem (param i32 i32)))
 
-            (import "env" "call_contract" (func $call (param i32 i32 i32 i32 i32 i32) (result i32)))
+            (import "env0" "call_contract" (func $call (param i32 i32 i32 i32 i32 i32) (result i32)))
 
             (import "env" "memory" (memory 1 1))
 
