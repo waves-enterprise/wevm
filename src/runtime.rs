@@ -58,14 +58,16 @@ impl<'a> Runtime<'a> {
 
 #[macro_export]
 macro_rules! env_runtime {
-    ( pub fn $name:ident ( $($args:tt)* ) $(-> $return_values:ty)? { $func:expr } ) => {
+    ( #[version = $version:literal]
+      pub fn $name:ident ( $($args:tt)* ) $(-> $return_values:ty)? { $func:expr }
+    ) => {
         #[derive(Clone)]
         pub struct $name;
 
         impl Environment for $name {
-            // TODO: We may have to use versioning for future updates
             fn module(&self) -> String {
-                String::from("env")
+                let version = stringify!($version);
+                String::from("env".to_owned() + version)
             }
 
             fn name(&self) -> String {
@@ -86,6 +88,7 @@ macro_rules! env_runtime {
 }
 
 env_runtime! {
+    #[version = 0]
     pub fn CallContract(offset_contract: u32, length_contract: u32, offset_func_name: u32, length_func_name: u32, offset_func_args: u32, length_func_args: u32) -> i32 {
         |mut caller: Caller<Runtime>| {
             let (memory, ctx) = caller

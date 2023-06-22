@@ -24,6 +24,7 @@ impl Jvm for Stack {
 }
 
 env_runtime! {
+    #[version = 0]
     pub fn Test() {
         |mut _caller: Caller<Runtime>| {
             assert_eq!(2 + 2, 4);
@@ -32,6 +33,7 @@ env_runtime! {
 }
 
 env_runtime! {
+    #[version = 0]
     pub fn TestSetValue(value: u32) {
         |mut _caller: Caller<Runtime>| {
             assert_eq!(42, value);
@@ -40,6 +42,7 @@ env_runtime! {
 }
 
 env_runtime! {
+    #[version = 0]
     pub fn TestGetValue() -> u32 {
         |mut _caller: Caller<Runtime>| {
             42
@@ -48,6 +51,7 @@ env_runtime! {
 }
 
 env_runtime! {
+    #[version = 0]
     pub fn TestMemory(offset: u32, length: u32) {
         |mut caller: Caller<Runtime>| {
             let (memory, _ctx) = caller
