@@ -6,6 +6,7 @@ mod stack;
 #[cfg(test)]
 mod tests;
 
+use crate::exec::Executable;
 use crate::stack::Stack;
 use jni::{
     objects::{JByteArray, JClass, JObject, JObjectArray, JString},
@@ -18,6 +19,8 @@ use wasmi::core::Value;
 pub enum Error {
     /// Failed to parse and validate Wasm bytecode
     InvalidBytecode,
+    /// Could not found constructor
+    ConstructorNotFound,
     /// An error that may occur upon operating with virtual or linear memory
     MemoryError,
     /// Limits limit the amount of memory well below u32::MAX
@@ -91,5 +94,24 @@ pub extern "system" fn Java_VM_runContract<'local>(
     match result[0] {
         Value::I32(value) => value as jint,
         _ => 0 as jint,
+    }
+}
+
+#[no_mangle]
+pub extern "system" fn Java_VM_validateBytecode<'local>(
+    env: JNIEnv<'local>,
+    _class: JClass<'local>,
+    bytecode: JByteArray<'local>,
+) -> jint {
+    let bytecode = env
+        .convert_byte_array(bytecode)
+        .expect("Failed get byte[] out of java");
+
+    // TODO: It may be necessary to manage the memory
+    let memory: (u32, u32) = (1, 1);
+
+    match Executable::new(bytecode, memory.0, memory.1) {
+        Ok(_) => 0,
+        Err(_) => -1,
     }
 }

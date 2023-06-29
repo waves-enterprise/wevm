@@ -6,7 +6,7 @@ use crate::{
 use std::{fmt, str::FromStr};
 use wasmi::{
     core::{Value, ValueType, F32, F64},
-    Config, Engine, Func, FuncType, Memory, MemoryType, Module, Store,
+    Config, Engine, ExportType, Func, FuncType, Memory, MemoryType, Module, Store,
 };
 
 pub enum LoadableFunction {
@@ -44,7 +44,26 @@ pub struct Executable {
 
 impl Executable {
     pub fn new(bytecode: Vec<u8>, initial: u32, maximum: u32) -> Result<Self> {
-        let module = Self::load_wasm_module(&bytecode)?;
+        let mut config = Config::default();
+        config
+            .wasm_multi_value(false)
+            .wasm_mutable_global(false)
+            .wasm_sign_extension(false)
+            .wasm_saturating_float_to_int(false);
+
+        let engine = Engine::new(&config);
+        let module =
+            Module::new(&engine, &mut &bytecode[..]).map_err(|_| Error::InvalidBytecode)?;
+
+        if module
+            .exports()
+            .filter(|item| item.name() == &LoadableFunction::Constructor.to_string())
+            .collect::<Vec<ExportType>>()
+            .len()
+            != 1
+        {
+            return Err(Error::ConstructorNotFound);
+        }
 
         Ok(Executable {
             module,
@@ -78,21 +97,6 @@ impl Executable {
             .map_err(|_| Error::FailedExec)?;
 
         Ok(results)
-    }
-
-    fn load_wasm_module(bytecode: &[u8]) -> Result<Module> {
-        let mut config = Config::default();
-        config
-            .wasm_multi_value(false)
-            .wasm_mutable_global(false)
-            .wasm_sign_extension(false)
-            .wasm_saturating_float_to_int(false);
-
-        let engine = Engine::new(&config);
-        let module =
-            Module::new(&engine, &mut &bytecode[..]).map_err(|_| Error::InvalidBytecode)?;
-
-        Ok(module)
     }
 
     /// Loads the Wasm [`Func`] from the given Wasm bytecode.
@@ -197,5 +201,53 @@ impl Executable {
             .copied()
             .map(Value::default)
             .collect::<Vec<_>>()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::tests::wat2wasm;
+
+    #[test]
+    fn test_executable_valid_bytecode() {
+        let wat = r#"
+        (module
+            (type $t0 (func (result i32)))
+            (func $_constructor (export "_constructor") (type $t0) (result i32)
+                (i32.add
+                    (i32.const 2)
+                    (i32.const 2)
+                )
+            )
+        )
+        "#;
+
+        let bytecode = wat2wasm(wat).expect("WAT code parsing failed");
+        let memory: (u32, u32) = (1, 1);
+
+        let exec = Executable::new(bytecode, memory.0, memory.1);
+        assert!(exec.is_ok());
+    }
+
+    #[test]
+    fn test_executable_invalid_bytecode() {
+        let wat = r#"
+        (module
+            (type $t0 (func (result i32)))
+            (func $run (export "run") (type $t0) (result i32)
+                (i32.add
+                    (i32.const 2)
+                    (i32.const 2)
+                )
+            )
+        )
+        "#;
+
+        let bytecode = wat2wasm(wat).expect("WAT code parsing failed");
+        let memory: (u32, u32) = (1, 1);
+
+        let exec = Executable::new(bytecode, memory.0, memory.1);
+        assert!(exec.is_err());
     }
 }
