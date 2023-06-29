@@ -19,6 +19,8 @@ use wasmi::core::Value;
 pub enum Error {
     /// Failed to parse and validate Wasm bytecode
     InvalidBytecode,
+    /// Could not found constructor
+    ConstructorNotFound,
     /// An error that may occur upon operating with virtual or linear memory
     MemoryError,
     /// Limits limit the amount of memory well below u32::MAX

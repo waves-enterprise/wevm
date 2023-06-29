@@ -93,6 +93,8 @@ mod tests {
 
             (import "env" "memory" (memory 1 1))
 
+            (func (export "_constructor"))
+
             (func (export "run") (result i32)
                 (call $set
                     (call $get)
