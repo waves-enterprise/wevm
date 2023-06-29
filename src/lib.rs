@@ -6,6 +6,7 @@ mod stack;
 #[cfg(test)]
 mod tests;
 
+use crate::exec::Executable;
 use crate::stack::Stack;
 use jni::{
     objects::{JByteArray, JClass, JObject, JObjectArray, JString},
@@ -13,8 +14,6 @@ use jni::{
     JNIEnv,
 };
 use wasmi::core::Value;
-use wasmi::{Module};
-use crate::exec::Executable;
 
 #[derive(Debug)]
 pub enum Error {
@@ -102,15 +101,15 @@ pub extern "system" fn Java_VM_validateBytecode<'local>(
     _class: JClass<'local>,
     bytecode: JByteArray<'local>,
 ) -> jint {
-    let engine = Executable::load_wasm_engine();
-
-    let bytes = env
+    let bytecode = env
         .convert_byte_array(bytecode)
         .expect("Failed get byte[] out of java");
 
-    return if let Err(_err) = Module::new(&engine, &mut &bytes[..]) {
-        -1
-    } else {
-        0
+    // TODO: It may be necessary to manage the memory
+    let memory: (u32, u32) = (1, 1);
+
+    match Executable::new(bytecode, memory.0, memory.1) {
+        Ok(_) => 0,
+        Err(_) => -1,
     }
 }

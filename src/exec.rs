@@ -44,7 +44,16 @@ pub struct Executable {
 
 impl Executable {
     pub fn new(bytecode: Vec<u8>, initial: u32, maximum: u32) -> Result<Self> {
-        let module = Self::load_wasm_module(&bytecode)?;
+        let mut config = Config::default();
+        config
+            .wasm_multi_value(false)
+            .wasm_mutable_global(false)
+            .wasm_sign_extension(false)
+            .wasm_saturating_float_to_int(false);
+
+        let engine = Engine::new(&config);
+        let module =
+            Module::new(&engine, &mut &bytecode[..]).map_err(|_| Error::InvalidBytecode)?;
 
         Ok(Executable {
             module,
@@ -78,26 +87,6 @@ impl Executable {
             .map_err(|_| Error::FailedExec)?;
 
         Ok(results)
-    }
-
-    pub fn load_wasm_engine() -> Engine {
-        let mut config = Config::default();
-        config
-            .wasm_multi_value(false)
-            .wasm_mutable_global(false)
-            .wasm_sign_extension(false)
-            .wasm_saturating_float_to_int(false);
-
-        return Engine::new(&config);
-    }
-
-    fn load_wasm_module(bytecode: &[u8]) -> Result<Module> {
-        let engine = Self::load_wasm_engine();
-
-        let module =
-            Module::new(&engine, &mut &bytecode[..]).map_err(|_| Error::InvalidBytecode)?;
-
-        Ok(module)
     }
 
     /// Loads the Wasm [`Func`] from the given Wasm bytecode.
