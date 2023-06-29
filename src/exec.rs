@@ -80,7 +80,7 @@ impl Executable {
         Ok(results)
     }
 
-    fn load_wasm_module(bytecode: &[u8]) -> Result<Module> {
+    pub fn load_wasm_engine() -> Engine {
         let mut config = Config::default();
         config
             .wasm_multi_value(false)
@@ -88,7 +88,12 @@ impl Executable {
             .wasm_sign_extension(false)
             .wasm_saturating_float_to_int(false);
 
-        let engine = Engine::new(&config);
+        return Engine::new(&config);
+    }
+
+    fn load_wasm_module(bytecode: &[u8]) -> Result<Module> {
+        let engine = Self::load_wasm_engine();
+
         let module =
             Module::new(&engine, &mut &bytecode[..]).map_err(|_| Error::InvalidBytecode)?;
 

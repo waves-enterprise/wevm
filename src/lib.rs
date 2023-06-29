@@ -13,7 +13,8 @@ use jni::{
     JNIEnv,
 };
 use wasmi::core::Value;
-use wasmi::Module;
+use wasmi::{Module};
+use crate::exec::Executable;
 
 #[derive(Debug)]
 pub enum Error {
@@ -95,11 +96,14 @@ pub extern "system" fn Java_VM_runContract<'local>(
     }
 }
 
+#[no_mangle]
 pub extern "system" fn Java_VM_validateBytecode<'local>(
-    mut env: JNIEnv<'local>,
+    env: JNIEnv<'local>,
     _class: JClass<'local>,
     bytecode: JByteArray<'local>,
 ) -> jint {
+    let engine = Executable::load_wasm_engine();
+
     let bytes = env
         .convert_byte_array(bytecode)
         .expect("Failed get byte[] out of java");
