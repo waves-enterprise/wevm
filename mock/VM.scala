@@ -68,7 +68,7 @@ object VM {
 
         val vm = new VM
         val isCorrect = vm.validateBytecode(bytecode) == 0
-        val isIncorrect = vm.validateBytecode(wrongBytecode) == -1
+        val isIncorrect = vm.validateBytecode(wrongBytecode) == 100 // ExecutableError::InvalidBytecode
         println(s"bytecode is correct: $isCorrect")
         println(s"wrong bytecode is incorrect: $isIncorrect")
 

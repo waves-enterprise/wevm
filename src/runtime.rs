@@ -1,7 +1,6 @@
 use crate::{jvm::Jvm, stack::Stack};
 use convert_case::{Case, Casing};
 use dyn_clone::DynClone;
-use jni::sys::jint;
 use std::str;
 use wasmi::{core::Value, Caller, Func, Memory, Store};
 
@@ -15,7 +14,7 @@ dyn_clone::clone_trait_object!(Environment);
 
 pub struct Runtime<'a> {
     memory: Option<Memory>,
-    stack: &'a mut Stack,
+    pub stack: &'a mut Stack,
 }
 
 impl<'a> Runtime<'a> {
@@ -32,27 +31,6 @@ impl<'a> Runtime<'a> {
 
     pub fn set_memory(&mut self, memory: Memory) {
         self.memory = Some(memory);
-    }
-
-    pub fn get_bytecode(&mut self, name: &str) -> Vec<u8> {
-        self.stack.jvm_get_bytecode(name)
-    }
-
-    pub fn call_contract(
-        &mut self,
-        bytecode: Vec<u8>,
-        func_name: &str,
-        func_args: &[String],
-    ) -> i32 {
-        let result = self
-            .stack
-            .call(bytecode, func_name, func_args)
-            .expect("Bytecode execution failed");
-
-        match result[0] {
-            Value::I32(value) => value as jint,
-            _ => 0 as jint,
-        }
     }
 }
 
@@ -99,7 +77,10 @@ env_runtime! {
 
             let contract_name = str::from_utf8(&memory[offset_contract as usize..offset_contract as usize + length_contract as usize])
                 .expect("Error converts a slice of bytes to a string slice");
-            let bytecode = ctx.get_bytecode(contract_name);
+            let bytecode = ctx
+                .stack
+                .jvm_get_bytecode(contract_name)
+                .expect("Failed get bytecode");
 
             let func_name = str::from_utf8(&memory[offset_func_name as usize..offset_func_name as usize + length_func_name as usize])
                 .expect("Error converts a slice of bytes to a string slice");
@@ -107,7 +88,16 @@ env_runtime! {
             // TODO: Parse args
             let func_args: [String; 0] = [];
 
-            ctx.call_contract(bytecode, func_name, &func_args)
+            let result = ctx
+                .stack
+                .call(bytecode, func_name, &func_args)
+                .expect("Bytecode execution failed");
+
+            // TODO: Parse result
+            match result[0] {
+                Value::I32(value) => value,
+                _ => 0,
+            }
         }
     }
 }
