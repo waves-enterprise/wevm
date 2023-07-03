@@ -6,8 +6,11 @@ mod stack;
 #[cfg(test)]
 mod tests;
 
-use crate::exec::Executable;
-use crate::stack::Stack;
+use crate::{
+    exec::{Executable, ExecutableError},
+    jvm::JvmError,
+    stack::Stack,
+};
 use jni::{
     objects::{JByteArray, JClass, JObject, JObjectArray, JString},
     sys::jint,
@@ -17,28 +20,17 @@ use wasmi::core::Value;
 
 #[derive(Debug)]
 pub enum Error {
-    /// Failed to parse and validate Wasm bytecode
-    InvalidBytecode,
-    /// Could not found constructor
-    ConstructorNotFound,
-    /// An error that may occur upon operating with virtual or linear memory
-    MemoryError,
-    /// Limits limit the amount of memory well below u32::MAX
-    MemoryLimits,
-    /// An error that may occur upon operating with Linker instances
-    LinkerError,
-    /// Failed to instantiate and start the Wasm bytecode
-    InstantiateFailed,
-    /// Failed parse function name
-    FailedParseFuncName,
-    /// Could not find function
-    FuncNotFound,
-    /// invalid number of arguments
-    InvalidNumArgs,
-    /// Failed to parse function argument
-    FailedParseFuncArgs,
-    /// Failed during execution
-    FailedExec,
+    Jvm(JvmError),
+    Executable(ExecutableError),
+}
+
+impl Error {
+    pub fn as_jint(&self) -> jint {
+        match self {
+            Error::Jvm(error) => *error as jint,
+            Error::Executable(error) => *error as jint,
+        }
+    }
 }
 
 pub type Result<T, E = Error> = core::result::Result<T, E>;
@@ -63,33 +55,40 @@ pub extern "system" fn Java_VM_runContract<'local>(
     _func_args: JObjectArray<'local>,
     callback: JObject<'local>,
 ) -> jint {
-    let bytecode = env
-        .convert_byte_array(bytecode)
-        .expect("Failed get byte[] out of java");
+    let bytecode = match env.convert_byte_array(bytecode) {
+        Ok(bytecode) => bytecode,
+        Err(_) => return JvmError::ByteArrayConversion as jint,
+    };
 
     // TODO: It may be necessary to manage the memory
     let memory: (u32, u32) = (1, 1);
     let envs = runtime::get_envs();
 
-    let jvm = env
-        .get_java_vm()
-        .expect("Failed receiving JavaVM interface");
-    let callback = env
-        .new_global_ref(callback)
-        .expect("Error callback new_global_ref");
+    let jvm = match env.get_java_vm() {
+        Ok(jvm) => jvm,
+        Err(_) => return JvmError::GetJavaVM as jint,
+    };
 
-    let mut stack =
-        Stack::new(bytecode, memory, envs, jvm, callback).expect("Call stack initiation failed");
+    let callback = match env.new_global_ref(callback) {
+        Ok(callback) => callback,
+        Err(_) => return JvmError::NewGlobalRef as jint,
+    };
 
-    let func_name: String = env
-        .get_string(&func_name)
-        .expect("Couldn't get java string")
-        .into();
+    let mut stack = match Stack::new(bytecode, memory, envs, jvm, callback) {
+        Ok(stack) => stack,
+        Err(error) => return error.as_jint(),
+    };
+
+    let func_name: String = match env.get_string(&func_name) {
+        Ok(name) => name.into(),
+        Err(_) => return JvmError::NewString as jint,
+    };
 
     // TODO: Parse args
-    let result = stack
-        .run(&func_name, &[])
-        .expect("Bytecode execution failed");
+    let result = match stack.run(&func_name, &[]) {
+        Ok(result) => result,
+        Err(error) => return error.as_jint(),
+    };
 
     match result[0] {
         Value::I32(value) => value as jint,
@@ -103,15 +102,16 @@ pub extern "system" fn Java_VM_validateBytecode<'local>(
     _class: JClass<'local>,
     bytecode: JByteArray<'local>,
 ) -> jint {
-    let bytecode = env
-        .convert_byte_array(bytecode)
-        .expect("Failed get byte[] out of java");
+    let bytecode = match env.convert_byte_array(bytecode) {
+        Ok(bytecode) => bytecode,
+        Err(_) => return JvmError::ByteArrayConversion as jint,
+    };
 
     // TODO: It may be necessary to manage the memory
     let memory: (u32, u32) = (1, 1);
 
     match Executable::new(bytecode, memory.0, memory.1) {
         Ok(_) => 0,
-        Err(_) => -1,
+        Err(error) => error.as_jint(),
     }
 }

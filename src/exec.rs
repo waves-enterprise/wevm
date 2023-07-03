@@ -6,8 +6,32 @@ use crate::{
 use std::{fmt, str::FromStr};
 use wasmi::{
     core::{Value, ValueType, F32, F64},
-    Config, Engine, ExportType, Func, FuncType, Memory, MemoryType, Module, Store,
+    Config, Engine, Func, FuncType, Memory, MemoryType, Module, Store,
 };
+
+#[derive(Copy, Clone, Debug)]
+pub enum ExecutableError {
+    /// Failed to parse and validate Wasm bytecode
+    InvalidBytecode = 100,
+    /// Could not found constructor
+    ConstructorNotFound = 101,
+    /// An error that may occur upon operating with virtual or linear memory
+    MemoryError = 102,
+    /// Limits limit the amount of memory well below u32::MAX
+    MemoryLimits = 103,
+    /// An error that may occur upon operating with Linker instances
+    LinkerError = 104,
+    /// Failed to instantiate and start the Wasm bytecode
+    InstantiateFailed = 105,
+    /// Could not find function
+    FuncNotFound = 106,
+    /// invalid number of arguments
+    InvalidNumArgs = 107,
+    /// Failed to parse function argument
+    FailedParseFuncArgs = 108,
+    /// Failed during execution
+    FailedExec = 109,
+}
 
 pub enum LoadableFunction {
     Constructor,
@@ -52,17 +76,16 @@ impl Executable {
             .wasm_saturating_float_to_int(false);
 
         let engine = Engine::new(&config);
-        let module =
-            Module::new(&engine, &mut &bytecode[..]).map_err(|_| Error::InvalidBytecode)?;
+        let module = Module::new(&engine, &mut &bytecode[..])
+            .map_err(|_| Error::Executable(ExecutableError::InvalidBytecode))?;
 
         if module
             .exports()
-            .filter(|item| item.name() == &LoadableFunction::Constructor.to_string())
-            .collect::<Vec<ExportType>>()
-            .len()
+            .filter(|item| item.name() == LoadableFunction::Constructor.to_string())
+            .count()
             != 1
         {
-            return Err(Error::ConstructorNotFound);
+            return Err(Error::Executable(ExecutableError::ConstructorNotFound));
         }
 
         Ok(Executable {
@@ -94,7 +117,7 @@ impl Executable {
         let mut results = Self::prepare_results_buffer(&func_type);
 
         func.call(&mut store, &func_args, &mut results)
-            .map_err(|_| Error::FailedExec)?;
+            .map_err(|_| Error::Executable(ExecutableError::FailedExec))?;
 
         Ok(results)
     }
@@ -122,30 +145,31 @@ impl Executable {
         for env in envs {
             linker
                 .define(&env.module(), &env.name(), env.func(&mut store))
-                .map_err(|_| Error::LinkerError)?;
+                .map_err(|_| Error::Executable(ExecutableError::LinkerError))?;
         }
 
         let memory = Memory::new(
             &mut store,
-            MemoryType::new(memory.0, Some(memory.1)).map_err(|_| Error::MemoryError)?,
+            MemoryType::new(memory.0, Some(memory.1))
+                .map_err(|_| Error::Executable(ExecutableError::MemoryError))?,
         )
-        .map_err(|_| Error::MemoryLimits)?;
+        .map_err(|_| Error::Executable(ExecutableError::MemoryLimits))?;
 
         linker
             .define("env", "memory", memory)
-            .map_err(|_| Error::LinkerError)?;
+            .map_err(|_| Error::Executable(ExecutableError::LinkerError))?;
 
         let instance = linker
             .instantiate(&mut store, module)
             .and_then(|pre| pre.start(&mut store))
-            .map_err(|_| Error::InstantiateFailed)?;
+            .map_err(|_| Error::Executable(ExecutableError::InstantiateFailed))?;
 
         store.data_mut().set_memory(memory);
 
         let func = instance
             .get_export(&store, func_name)
             .and_then(|ext| ext.into_func())
-            .ok_or(Error::FuncNotFound)?;
+            .ok_or(Error::Executable(ExecutableError::FuncNotFound))?;
 
         Ok((func, store))
     }
@@ -158,7 +182,7 @@ impl Executable {
     /// - If an argument cannot be properly parsed to its expected parameter type.
     fn type_check_arguments(func_type: &FuncType, func_args: &[String]) -> Result<Vec<Value>> {
         if func_type.params().len() != func_args.len() {
-            return Err(Error::InvalidNumArgs);
+            return Err(Error::Executable(ExecutableError::InvalidNumArgs));
         }
 
         let func_args = func_type
@@ -169,7 +193,7 @@ impl Executable {
             .map(|(_, (param_type, arg))| {
                 macro_rules! make_err {
                     () => {
-                        |_| Error::FailedParseFuncArgs
+                        |_| Error::Executable(ExecutableError::FailedParseFuncArgs)
                     };
                 }
 
@@ -208,6 +232,7 @@ impl Executable {
 mod tests {
     use super::*;
     use crate::tests::wat2wasm;
+    use jni::sys::jint;
 
     #[test]
     fn test_executable_valid_bytecode() {
@@ -249,5 +274,10 @@ mod tests {
 
         let exec = Executable::new(bytecode, memory.0, memory.1);
         assert!(exec.is_err());
+    }
+
+    #[test]
+    fn test_error() {
+        assert_eq!(ExecutableError::InvalidBytecode as jint, 100);
     }
 }

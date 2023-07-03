@@ -3,6 +3,7 @@ use crate::{
     jvm::Jvm,
     runtime::{Environment, Runtime},
     stack::Stack,
+    Result,
 };
 use convert_case::{Case, Casing};
 use std::str;
@@ -10,7 +11,7 @@ use wasmi::{Caller, Func, Store};
 
 // Test implementation of JVM calls from the stack
 impl Jvm for Stack {
-    fn jvm_get_bytecode(&self, _name: &str) -> Vec<u8> {
+    fn jvm_get_bytecode(&self, _name: &str) -> Result<Vec<u8>> {
         let wat = r#"
             (module
                 (func (export "_constructor"))
@@ -20,7 +21,7 @@ impl Jvm for Stack {
                     i32.add))
             "#;
 
-        wat2wasm(wat).expect("WAT code parsing failed")
+        Ok(wat2wasm(wat).expect("WAT code parsing failed"))
     }
 }
 
