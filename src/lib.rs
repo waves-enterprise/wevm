@@ -1,3 +1,4 @@
+mod data_entry;
 mod exec;
 mod jvm;
 mod runtime;
@@ -52,7 +53,7 @@ pub extern "system" fn Java_VM_runContract<'local>(
     _class: JClass<'local>,
     bytecode: JByteArray<'local>,
     func_name: JString<'local>,
-    _func_args: JObjectArray<'local>,
+    func_args: JByteArray<'local>,
     callback: JObject<'local>,
 ) -> jint {
     let bytecode = match env.convert_byte_array(bytecode) {
@@ -84,8 +85,12 @@ pub extern "system" fn Java_VM_runContract<'local>(
         Err(_) => return JvmError::NewString as jint,
     };
 
-    // TODO: Parse args
-    let result = match stack.run(&func_name, &[]) {
+    let input_data = match env.convert_byte_array(func_args) {
+        Ok(input_data) => input_data,
+        Err(_) => return JvmError::ByteArrayConversion as jint,
+    };
+
+    let result = match stack.run(&func_name, input_data) {
         Ok(result) => result,
         Err(error) => return error.as_jint(),
     };

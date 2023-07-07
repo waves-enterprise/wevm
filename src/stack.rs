@@ -45,21 +45,21 @@ impl Stack {
         &mut self,
         bytecode: Vec<u8>,
         func_name: &str,
-        func_args: &[String],
+        input_data: Vec<u8>,
     ) -> Result<Vec<Value>> {
         let frame = Frame { bytecode };
 
         self.push_frame(frame);
-        self.run(func_name, func_args)
+        self.run(func_name, input_data)
     }
 
-    pub fn run(&mut self, func_name: &str, func_args: &[String]) -> Result<Vec<Value>> {
+    pub fn run(&mut self, func_name: &str, input_data: Vec<u8>) -> Result<Vec<Value>> {
         let frame = self.top_frame();
 
         let func_name = LoadableFunction::from_str(func_name)?;
 
         let exec = Executable::new(frame.bytecode.clone(), self.memory.0, self.memory.1)?;
-        exec.execute(&func_name, func_args, self.envs.clone(), self)
+        exec.execute(&func_name, input_data, self.envs.clone(), self)
     }
 
     fn push_frame(&mut self, frame: Frame) {
@@ -95,10 +95,11 @@ mod tests {
 
             (func (export "_constructor"))
 
-            (func (export "run") (result i32)
+            (func (export "run") (param $p0 i64) (result i32)
                 (call $set
                     (call $get)
-                    (i32.const 0)
+                    (i32.wrap_i64
+                        (local.get $p0))
                     (i32.add))
 
                 (call $mem
@@ -172,7 +173,14 @@ mod tests {
             global_ref,
         )
         .expect("Call stack creation failed");
-        let result = stack.run("run", &[]).expect("Bytecode execution failed");
+
+        let input_data: Vec<u8> = vec![
+            1, 0, 8, 116, 101, 115, 116, 95, 107, 101, 121, 0, 0, 0, 0, 0, 0, 0, 0, 1,
+        ];
+
+        let result = stack
+            .run("run", input_data)
+            .expect("Bytecode execution failed");
 
         assert_eq!(result.len(), 1);
         assert_eq!(result[0], Value::I32(4));

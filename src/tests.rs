@@ -38,7 +38,7 @@ env_runtime! {
     #[version = 0]
     pub fn TestSetValue(value: u32) {
         |mut _caller: Caller<Runtime>| {
-            assert_eq!(42, value);
+            assert_eq!(43, value);
         }
     }
 }

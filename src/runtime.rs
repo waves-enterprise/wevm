@@ -67,7 +67,14 @@ macro_rules! env_runtime {
 
 env_runtime! {
     #[version = 0]
-    pub fn CallContract(offset_contract: u32, length_contract: u32, offset_func_name: u32, length_func_name: u32, offset_func_args: u32, length_func_args: u32) -> i32 {
+    pub fn CallContract(
+        offset_contract: u32,
+        length_contract: u32,
+        offset_func_name: u32,
+        length_func_name: u32,
+        offset_func_args: u32,
+        length_func_args: u32
+    ) -> i32 {
         |mut caller: Caller<Runtime>| {
             let (memory, ctx) = caller
                     .data()
@@ -86,11 +93,11 @@ env_runtime! {
                 .expect("Error converts a slice of bytes to a string slice");
 
             // TODO: Parse args
-            let func_args: [String; 0] = [];
+            let input_data: Vec<u8> = vec![];
 
             let result = ctx
                 .stack
-                .call(bytecode, func_name, &func_args)
+                .call(bytecode, func_name, input_data)
                 .expect("Bytecode execution failed");
 
             // TODO: Parse result
