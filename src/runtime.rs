@@ -4,6 +4,12 @@ use dyn_clone::DynClone;
 use std::str;
 use wasmi::{core::Value, Caller, Func, Memory, Store};
 
+#[derive(Copy, Clone, Debug)]
+pub enum RuntimeError {
+    MemoryNotFound = 300,
+    Utf8Error = 301,
+}
+
 pub trait Environment: DynClone {
     fn module(&self) -> String;
     fn name(&self) -> String;
@@ -76,34 +82,50 @@ env_runtime! {
         length_func_args: u32
     ) -> i32 {
         |mut caller: Caller<Runtime>| {
-            let (memory, ctx) = caller
-                    .data()
-                    .memory()
-                    .expect("Error get memory")
-                    .data_and_store_mut(&mut caller);
+            let (memory, ctx) = match caller.data().memory() {
+                Some(memory) => memory.data_and_store_mut(&mut caller),
+                None => return RuntimeError::MemoryNotFound as i32,
+            };
 
-            let contract_name = str::from_utf8(&memory[offset_contract as usize..offset_contract as usize + length_contract as usize])
-                .expect("Error converts a slice of bytes to a string slice");
-            let bytecode = ctx
-                .stack
-                .jvm_get_bytecode(contract_name)
-                .expect("Failed get bytecode");
+            // TODO: Depends on the JVM function signature
+            // Maybe it will be enough to transmit as bytes
+            let contract = match str::from_utf8(
+                &memory[offset_contract as usize..offset_contract as usize + length_contract as usize]
+            ) {
+                Ok(string) => string,
+                Err(_) => return RuntimeError::Utf8Error as i32,
+            };
 
-            let func_name = str::from_utf8(&memory[offset_func_name as usize..offset_func_name as usize + length_func_name as usize])
-                .expect("Error converts a slice of bytes to a string slice");
+            let bytecode = match ctx.stack.jvm_get_bytecode(contract) {
+                Ok(bytecode) => bytecode,
+                Err(error) => return error.as_i32(),
+            };
 
-            // TODO: Parse args
-            let input_data: Vec<u8> = vec![];
+            let func_name = match str::from_utf8(
+                &memory[offset_func_name as usize..offset_func_name as usize + length_func_name as usize]
+            ) {
+                Ok(string) => string,
+                Err(_) => return RuntimeError::Utf8Error as i32,
+            };
 
-            let result = ctx
-                .stack
-                .call(bytecode, func_name, input_data)
-                .expect("Bytecode execution failed");
+            let mut input_data: Vec<u8> = vec![];
+            input_data.extend_from_slice(
+                &memory[offset_func_args as usize..offset_func_args as usize + length_func_args as usize]
+            );
 
-            // TODO: Parse result
-            match result[0] {
-                Value::I32(value) => value,
-                _ => 0,
+            match ctx.stack.call(bytecode, func_name, input_data) {
+                Ok(_result) => {
+                    // TODO: To be able to use modules, the function must return the value of
+                    // But since runtime errors can occur, it is necessary to return the error code
+                    // Perhaps the result of the execution should be written to memory
+                    //
+                    // match result[0] {
+                    //     Value::I32(value) => value,
+                    //     _ => 0,
+                    // }
+                    0
+                },
+                Err(error) => error.as_i32(),
             }
         }
     }

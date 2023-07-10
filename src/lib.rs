@@ -10,6 +10,7 @@ mod tests;
 use crate::{
     exec::{Executable, ExecutableError},
     jvm::JvmError,
+    runtime::RuntimeError,
     stack::Stack,
 };
 use jni::{
@@ -23,6 +24,7 @@ use wasmi::core::Value;
 pub enum Error {
     Jvm(JvmError),
     Executable(ExecutableError),
+    Runtime(RuntimeError),
 }
 
 impl Error {
@@ -30,6 +32,15 @@ impl Error {
         match self {
             Error::Jvm(error) => *error as jint,
             Error::Executable(error) => *error as jint,
+            Error::Runtime(error) => *error as jint,
+        }
+    }
+
+    pub fn as_i32(&self) -> i32 {
+        match self {
+            Error::Jvm(error) => *error as i32,
+            Error::Executable(error) => *error as i32,
+            Error::Runtime(error) => *error as i32,
         }
     }
 }
@@ -57,7 +68,7 @@ pub extern "system" fn Java_VM_runContract<'local>(
     callback: JObject<'local>,
 ) -> jint {
     let bytecode = match env.convert_byte_array(bytecode) {
-        Ok(bytecode) => bytecode,
+        Ok(bytes) => bytes,
         Err(_) => return JvmError::ByteArrayConversion as jint,
     };
 
@@ -81,12 +92,12 @@ pub extern "system" fn Java_VM_runContract<'local>(
     };
 
     let func_name: String = match env.get_string(&func_name) {
-        Ok(name) => name.into(),
+        Ok(string) => string.into(),
         Err(_) => return JvmError::NewString as jint,
     };
 
     let input_data = match env.convert_byte_array(func_args) {
-        Ok(input_data) => input_data,
+        Ok(bytes) => bytes,
         Err(_) => return JvmError::ByteArrayConversion as jint,
     };
 
@@ -108,7 +119,7 @@ pub extern "system" fn Java_VM_validateBytecode<'local>(
     bytecode: JByteArray<'local>,
 ) -> jint {
     let bytecode = match env.convert_byte_array(bytecode) {
-        Ok(bytecode) => bytecode,
+        Ok(bytes) => bytes,
         Err(_) => return JvmError::ByteArrayConversion as jint,
     };
 

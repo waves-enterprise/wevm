@@ -1,6 +1,6 @@
 use crate::{
     data_entry,
-    runtime::{Environment, Runtime},
+    runtime::{Environment, Runtime, RuntimeError},
     stack::Stack,
     Error, Result,
 };
@@ -118,15 +118,20 @@ impl Executable {
             envs,
         )?;
 
-        let mut memory = store
-            .data()
-            .memory()
-            .expect("Error get memory")
-            .data_mut(&mut store);
-        let mut offset_memory: usize = 100;
+        let memory = match store.data().memory() {
+            Some(memory) => memory,
+            None => return Err(Error::Runtime(RuntimeError::MemoryNotFound)),
+        };
+
+        let mut offset_memory: usize = match memory.current_pages(&mut store).to_bytes() {
+            Some(offset) => offset,
+            None => return Err(Error::Executable(ExecutableError::MemoryError)),
+        };
+
+        let mut array_memory = memory.data_mut(&mut store);
 
         let func_args: Vec<String> =
-            data_entry::parse(input_data.as_slice(), &mut memory, &mut offset_memory)?;
+            data_entry::parse(input_data.as_slice(), &mut array_memory, &mut offset_memory)?;
 
         let func_type = func.ty(&store);
         let func_args = Self::type_check_arguments(&func_type, func_args.as_slice())?;

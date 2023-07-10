@@ -36,11 +36,11 @@ fn get_bytes(
     value: &mut [u8],
     offset_value: &mut usize,
 ) -> Result<()> {
-    let x = *offset_input;
-    match input.get(x..x + length) {
+    let offset_i = *offset_input;
+    match input.get(offset_i..offset_i + length) {
         Some(bytes) => {
-            let y = *offset_value;
-            value[y..y + length].copy_from_slice(&bytes[..length]);
+            let offset_v = *offset_value;
+            value[offset_v..offset_v + length].copy_from_slice(&bytes[..length]);
             *offset_input += length;
             *offset_value += length;
         }
