@@ -15,9 +15,10 @@ impl Jvm for Stack {
         let wat = r#"
             (module
                 (func (export "_constructor"))
-                (func (export "run") (result i32)
+                (func (export "sum") (param $p0 i64) (result i32)
                     i32.const 2
-                    i32.const 2
+                    (i32.wrap_i64
+                        (local.get $p0))
                     i32.add))
             "#;
 
@@ -38,7 +39,7 @@ env_runtime! {
     #[version = 0]
     pub fn TestSetValue(value: u32) {
         |mut _caller: Caller<Runtime>| {
-            assert_eq!(42, value);
+            assert_eq!(43, value);
         }
     }
 }
@@ -66,6 +67,15 @@ env_runtime! {
                 .expect("Error converts a slice of bytes to a string slice");
 
             assert_eq!("Hi", result);
+        }
+    }
+}
+
+env_runtime! {
+    #[version = 0]
+    pub fn TestCallContract(value: u32) {
+        |mut _caller: Caller<Runtime>| {
+            assert_eq!(0, value);
         }
     }
 }

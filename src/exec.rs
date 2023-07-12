@@ -1,12 +1,13 @@
 use crate::{
-    runtime::{Environment, Runtime},
+    data_entry,
+    runtime::{Environment, Runtime, RuntimeError},
     stack::Stack,
     Error, Result,
 };
 use std::{fmt, str::FromStr};
 use wasmi::{
     core::{Value, ValueType, F32, F64},
-    Config, Engine, Func, FuncType, Memory, MemoryType, Module, Store,
+    Config, Engine, Func, FuncType, Memory, MemoryType, Module, StackLimits, Store,
 };
 
 #[derive(Copy, Clone, Debug)]
@@ -29,8 +30,10 @@ pub enum ExecutableError {
     InvalidNumArgs = 107,
     /// Failed to parse function argument
     FailedParseFuncArgs = 108,
+    /// Failed to parse DataEntry arguments
+    FailedParseDataEntry = 109,
     /// Failed during execution
-    FailedExec = 109,
+    FailedExec = 110,
 }
 
 pub enum LoadableFunction {
@@ -68,8 +71,11 @@ pub struct Executable {
 
 impl Executable {
     pub fn new(bytecode: Vec<u8>, initial: u32, maximum: u32) -> Result<Self> {
+        let stack_limits = StackLimits::default();
+
         let mut config = Config::default();
         config
+            .set_stack_limits(stack_limits)
             .wasm_multi_value(false)
             .wasm_mutable_global(false)
             .wasm_sign_extension(false)
@@ -98,7 +104,7 @@ impl Executable {
     pub fn execute(
         &self,
         func_name: &LoadableFunction,
-        func_args: &[String],
+        input_data: Vec<u8>,
         envs: Vec<Box<dyn Environment>>,
         stack: &mut Stack,
     ) -> Result<Vec<Value>> {
@@ -111,8 +117,24 @@ impl Executable {
             (self.initial, self.maximum),
             envs,
         )?;
+
+        let memory = match store.data().memory() {
+            Some(memory) => memory,
+            None => return Err(Error::Runtime(RuntimeError::MemoryNotFound)),
+        };
+
+        let mut offset_memory: usize = match memory.current_pages(&mut store).to_bytes() {
+            Some(offset) => offset,
+            None => return Err(Error::Executable(ExecutableError::MemoryError)),
+        };
+
+        let mut array_memory = memory.data_mut(&mut store);
+
+        let func_args: Vec<String> =
+            data_entry::parse(input_data.as_slice(), &mut array_memory, &mut offset_memory)?;
+
         let func_type = func.ty(&store);
-        let func_args = Self::type_check_arguments(&func_type, func_args)?;
+        let func_args = Self::type_check_arguments(&func_type, func_args.as_slice())?;
 
         let mut results = Self::prepare_results_buffer(&func_type);
 

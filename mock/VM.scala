@@ -1,5 +1,5 @@
 class VM {
-    @native def runContract(bytecode: Array[Byte], func_name: String, func_args: Array[String], callback: VM): Int
+    @native def runContract(bytecode: Array[Byte], func_name: String, func_args: Array[Byte], callback: VM): Int
 
     @native def validateBytecode(bytecode: Array[Byte]): Int
 
@@ -57,14 +57,9 @@ object VM {
             101, 109, 111, 114, 121, 9, 13, 3, 0, 2, 100, 48, 1, 2, 100, 49, 2, 2, 100, 50
         )
 
-
-
         val wrongBytecode = Array[Byte](
             0, 14, 21, 1, 2
         )
-
-        val funcName = "run"
-        val funcArgs = Array[String]()
 
         val vm = new VM
         val isCorrect = vm.validateBytecode(bytecode) == 0
@@ -72,7 +67,7 @@ object VM {
         println(s"bytecode is correct: $isCorrect")
         println(s"wrong bytecode is incorrect: $isIncorrect")
 
-        val result = vm.runContract(bytecode, funcName, funcArgs, new VM)
+        val result = vm.runContract(bytecode, "run", Array[Byte](), new VM)
         println(s"run contract result: $result")
     }
 }
