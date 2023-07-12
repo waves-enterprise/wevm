@@ -129,7 +129,7 @@ mod tests {
             (data (i32.const 5) "sum")
 
             ;; Function args
-            (data (i32.const 8) "\01\00\08\74\65\73\74\5f\6b\65\79\00\00\00\00\00\00\00\00\02")
+            (data (i32.const 8) "\01\00\00\00\00\00\00\00\00\00\00\02")
         )
         "#;
 
@@ -181,7 +181,7 @@ mod tests {
         .expect("Call stack creation failed");
 
         let input_data: Vec<u8> = vec![
-            1, 0, 8, 116, 101, 115, 116, 95, 107, 101, 121, 0, 0, 0, 0, 0, 0, 0, 0, 1,
+            1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,
         ];
 
         let result = stack
