@@ -72,8 +72,7 @@ pub extern "system" fn Java_VM_runContract<'local>(
         Err(_) => return JvmError::ByteArrayConversion as jint,
     };
 
-    // TODO: It may be necessary to manage the memory
-    let memory: (u32, u32) = (1, 1);
+    let memory: (u32, u32) = (2, 16);
     let envs = runtime::get_envs();
 
     let jvm = match env.get_java_vm() {
@@ -123,8 +122,7 @@ pub extern "system" fn Java_VM_validateBytecode<'local>(
         Err(_) => return JvmError::ByteArrayConversion as jint,
     };
 
-    // TODO: It may be necessary to manage the memory
-    let memory: (u32, u32) = (1, 1);
+    let memory: (u32, u32) = (2, 16);
 
     match Executable::new(bytecode, memory.0, memory.1) {
         Ok(_) => 0,
