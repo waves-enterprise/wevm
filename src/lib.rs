@@ -14,7 +14,7 @@ use crate::{
     stack::Stack,
 };
 use jni::{
-    objects::{JByteArray, JClass, JObject, JObjectArray, JString},
+    objects::{JByteArray, JClass, JObject, JString},
     sys::jint,
     JNIEnv,
 };

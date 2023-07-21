@@ -2,7 +2,7 @@ use crate::{jvm::Jvm, stack::Stack};
 use convert_case::{Case, Casing};
 use dyn_clone::DynClone;
 use std::str;
-use wasmi::{core::Value, Caller, Func, Memory, Store};
+use wasmi::{Caller, Func, Memory, Store};
 
 #[derive(Copy, Clone, Debug)]
 pub enum RuntimeError {
