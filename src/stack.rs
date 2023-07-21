@@ -114,7 +114,7 @@ mod tests {
                         (i32.const 5)   ;; Offset address of the function name
                         (i32.const 3)   ;; Length of the function name
                         (i32.const 8)   ;; Offset address of the function args
-                        (i32.const 20))) ;; Length of the function args
+                        (i32.const 12))) ;; Length of the function args
 
                 (i32.const 0)
             )
