@@ -5,7 +5,7 @@ use crate::{
 use convert_case::{Case, Casing};
 use dyn_clone::DynClone;
 use std::str;
-use wasmi::{Caller, Func, Store};
+use wasmi::{core::Value, Caller, Func, Store};
 
 pub trait Environment: DynClone {
     fn module(&self) -> String;
@@ -95,16 +95,16 @@ env_runtime! {
             );
 
             match ctx.stack.call(bytecode, func_name, input_data) {
-                Ok(_result) => {
-                    // TODO: To be able to use modules, the function must return the value of
-                    // But since runtime errors can occur, it is necessary to return the error code
-                    // Perhaps the result of the execution should be written to memory
-                    //
-                    // match result[0] {
-                    //     Value::I32(value) => value,
-                    //     _ => 0,
-                    // }
-                    0
+                Ok(result) => {
+                    // TODO: Functions cannot return any values, they can only return an error code
+                    if result.len() != 1 {
+                        return RuntimeError::InvalidResult as i32;
+                    }
+
+                    match result[0] {
+                        Value::I32(value) => value,
+                        _ => RuntimeError::InvalidResult as i32,
+                    }
                 },
                 Err(error) => error.as_i32(),
             }
