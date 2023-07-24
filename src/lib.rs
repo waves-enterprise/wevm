@@ -1,4 +1,5 @@
 mod data_entry;
+mod env;
 mod exec;
 mod jvm;
 mod runtime;
@@ -73,7 +74,7 @@ pub extern "system" fn Java_VM_runContract<'local>(
     };
 
     let memory: (u32, u32) = (2, 16);
-    let envs = runtime::get_envs();
+    let envs = env::envs();
 
     let jvm = match env.get_java_vm() {
         Ok(jvm) => jvm,

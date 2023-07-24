@@ -1,6 +1,7 @@
 use crate::{
     data_entry,
-    runtime::{Environment, Runtime, RuntimeError},
+    env::Environment,
+    runtime::{Runtime, RuntimeError},
     stack::Stack,
     Error, Result,
 };
