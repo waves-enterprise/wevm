@@ -1,10 +1,11 @@
 use crate::{
     env::{envs, Environment},
     env_runtime,
+    exec::ExecutableError,
     jvm::Jvm,
     runtime::Runtime,
     stack::Stack,
-    Result,
+    Error, Result,
 };
 use convert_case::{Case, Casing};
 use jni::{InitArgsBuilder, JNIVersion, JavaVM};
@@ -33,7 +34,7 @@ impl Jvm for Stack {
         )
         "#;
 
-        Ok(wat2wasm(wat).expect("WAT code parsing failed"))
+        wat2wasm(wat).map_err(|_| Error::Executable(ExecutableError::InvalidBytecode))
     }
 }
 
@@ -161,28 +162,12 @@ fn test_vm() {
     {
         let wat = r#"
         (module
+            (import "env0" "test_set_value" (func $test_set_value (param i32)))
             (import "env0" "test_get_value" (func $test_get_value (result i32)))
 
             (func (export "_constructor") (result i32)
-                (call $test_get_value)
-            )
-        )
-        "#;
-
-        let result = runner.run(wat, None, vec![]);
-
-        assert_eq!(result.len(), 1);
-        assert_eq!(result[0], Value::I32(42));
-    }
-
-    {
-        let wat = r#"
-        (module
-            (import "env0" "test_set_value" (func $test_set_value (param i32)))
-
-            (func (export "_constructor") (result i32)
                 (call $test_set_value
-                    (i32.const 42))
+                    (call $test_get_value))
 
                 (i32.const 0)
             )
