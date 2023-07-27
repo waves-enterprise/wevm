@@ -1,2 +1,6 @@
 /target
-/Cargo.lock
+/core/target
+/native/target
+/native/Cargo.lock
+/project/project
+/project/target
