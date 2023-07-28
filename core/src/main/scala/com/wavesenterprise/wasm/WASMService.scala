@@ -21,13 +21,12 @@ trait WASMService {
   def getStorage(contractId: Array[Byte], key: Array[Byte]): Array[Byte]
 
   /**
-    * @param contractId ID of a contract
     * @param key Record key
     * @param dataType Record data type. Possible values: `binary` `bool` `integer` `string` and `null` (record deletion by its key)
     * @param value Record value
     * @return Execution result (true/false)
     */
-  def setStorage(contractId: Array[Byte], key: Array[Byte], dataType: String, value: Array[Byte]): Boolean
+  def setStorage(key: Array[Byte], dataType: String, value: Array[Byte]): Boolean
 
   /**
     * @param assetId ID of a token (optional field, array can be empty)
