@@ -19,7 +19,7 @@ pub fn wat2wasm(wat: &str) -> Result<Vec<u8>, wat::Error> {
 
 // Test implementation of JVM calls from the stack
 impl Jvm for Stack {
-    fn jvm_get_bytecode(&self, _name: &str) -> Result<Vec<u8>> {
+    fn get_bytecode(&self, _contract_id: &[u8]) -> Result<Vec<u8>> {
         let wat = r#"
         (module
             (func (export "_constructor"))

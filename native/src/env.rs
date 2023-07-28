@@ -68,16 +68,9 @@ env_runtime! {
                 None => return RuntimeError::MemoryNotFound as i32,
             };
 
-            // TODO: Depends on the JVM function signature
-            // Maybe it will be enough to transmit as bytes
-            let contract = match str::from_utf8(
-                &memory[offset_contract as usize..offset_contract as usize + length_contract as usize]
-            ) {
-                Ok(string) => string,
-                Err(_) => return RuntimeError::Utf8Error as i32,
-            };
+            let contract = &memory[offset_contract as usize..offset_contract as usize + length_contract as usize];
 
-            let bytecode = match ctx.stack.jvm_get_bytecode(contract) {
+            let bytecode = match ctx.stack.get_bytecode(contract) {
                 Ok(bytecode) => bytecode,
                 Err(error) => return error.as_i32(),
             };
