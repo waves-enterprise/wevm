@@ -48,15 +48,16 @@ macro_rules! env_runtime {
 
 pub fn envs() -> Vec<Box<dyn Environment>> {
     let call_contract = CallContract;
+    let get_storage_i64 = GetStorageInt;
 
-    vec![Box::new(call_contract)]
+    vec![Box::new(call_contract), Box::new(get_storage_i64)]
 }
 
 env_runtime! {
     #[version = 0]
     pub fn CallContract(
-        offset_contract: u32,
-        length_contract: u32,
+        offset_contract_id: u32,
+        length_contract_id: u32,
         offset_func_name: u32,
         length_func_name: u32,
         offset_func_args: u32,
@@ -68,9 +69,9 @@ env_runtime! {
                 None => return RuntimeError::MemoryNotFound as i32,
             };
 
-            let contract = &memory[offset_contract as usize..offset_contract as usize + length_contract as usize];
+            let contract_id = &memory[offset_contract_id as usize..offset_contract_id as usize + length_contract_id as usize];
 
-            let bytecode = match ctx.stack.get_bytecode(contract) {
+            let bytecode = match ctx.stack.get_bytecode(contract_id) {
                 Ok(bytecode) => bytecode,
                 Err(error) => return error.as_i32(),
             };
@@ -100,6 +101,39 @@ env_runtime! {
                     }
                 },
                 Err(error) => error.as_i32(),
+            }
+        }
+    }
+}
+
+env_runtime! {
+    #[version = 0]
+    pub fn GetStorageInt(
+        offset_contract_id: u32,
+        length_contract_id: u32,
+        offset_key: u32,
+        length_key: u32,
+    ) -> (i32, i64) {
+        |mut caller: Caller<Runtime>| {
+            let (memory, ctx) = match caller.data().memory() {
+                Some(memory) => memory.data_and_store_mut(&mut caller),
+                None => return (RuntimeError::MemoryNotFound as i32, 0),
+            };
+
+            let contract_id = &memory[offset_contract_id as usize..offset_contract_id as usize + length_contract_id as usize];
+            let key = &memory[offset_key as usize..offset_key as usize + length_key as usize];
+
+            match ctx.stack.get_storage(contract_id, key) {
+                Ok(result) => {
+                    if result.len() == 8 {
+                        let mut temp = [0u8; 8];
+                        temp.copy_from_slice(result.as_slice());
+                        (0, i64::from_be_bytes(temp))
+                    } else {
+                        (RuntimeError::InvalidInteger as i32, 0)
+                    }
+                },
+                Err(error) => (error.as_i32(), 0),
             }
         }
     }

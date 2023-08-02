@@ -77,7 +77,6 @@ impl Executable {
         let mut config = Config::default();
         config
             .set_stack_limits(stack_limits)
-            .wasm_multi_value(false)
             .wasm_mutable_global(false)
             .wasm_sign_extension(false)
             .wasm_saturating_float_to_int(false);

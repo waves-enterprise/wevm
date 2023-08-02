@@ -6,6 +6,7 @@ pub enum RuntimeError {
     MemoryNotFound = 300,
     Utf8Error = 301,
     InvalidResult = 302,
+    InvalidInteger = 303,
 }
 
 pub struct Runtime<'a> {
