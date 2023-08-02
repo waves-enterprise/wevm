@@ -60,8 +60,6 @@ pub trait Jvm {
 }
 
 // Implementing the JVM call
-// A special note that this implementation did not overlap with the test implementation
-#[cfg(not(test))]
 impl Jvm for Stack {
     fn get_bytecode(&self, contract_id: &[u8]) -> Result<Vec<u8>> {
         let mut env = self

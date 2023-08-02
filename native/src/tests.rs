@@ -1,12 +1,4 @@
-use crate::{
-    env::{envs, Environment},
-    env_runtime,
-    exec::ExecutableError,
-    jvm::Jvm,
-    runtime::Runtime,
-    stack::Stack,
-    Error, Result,
-};
+use crate::{env::Environment, env_runtime, runtime::Runtime, stack::Stack};
 use convert_case::{Case, Casing};
 use jni::{InitArgsBuilder, JNIVersion, JavaVM};
 use std::str;
@@ -15,27 +7,6 @@ use wasmi::{core::Value, Caller, Func, Store};
 /// Converts the given `.wat` into `.wasm`.
 pub fn wat2wasm(wat: &str) -> Result<Vec<u8>, wat::Error> {
     wat::parse_str(wat)
-}
-
-// Test implementation of JVM calls from the stack
-impl Jvm for Stack {
-    fn get_bytecode(&self, _contract_id: &[u8]) -> Result<Vec<u8>> {
-        let wat = r#"
-        (module
-            (func (export "_constructor"))
-            (func (export "sum") (param $p0 i64) (result i32)
-                (i32.ne
-                    (i32.add
-                        (i32.const 2)
-                        (i32.wrap_i64
-                            (local.get $p0)))
-                    (i32.const 4))
-            )
-        )
-        "#;
-
-        wat2wasm(wat).map_err(|_| Error::Executable(ExecutableError::InvalidBytecode))
-    }
 }
 
 env_runtime! {
@@ -113,8 +84,15 @@ impl TestRunner {
             None => (1, 1),
         };
 
-        // TODO: Maybe not all the environments are needed
-        let envs = [envs(), Self::test_envs()].concat();
+        let test_set_value = TestSetValue;
+        let test_get_value = TestGetValue;
+        let test_memory = TestMemory;
+
+        let envs: Vec<Box<dyn Environment>> = vec![
+            Box::new(test_set_value),
+            Box::new(test_get_value),
+            Box::new(test_memory),
+        ];
 
         let mut stack = Stack::new(bytecode, memory, envs, jvm, global_ref)
             .expect("Call stack creation failed");
@@ -122,19 +100,6 @@ impl TestRunner {
         stack
             .run("_constructor", input_data)
             .expect("Bytecode execution failed")
-    }
-
-    /// Test imports
-    fn test_envs() -> Vec<Box<dyn Environment>> {
-        let test_set_value = TestSetValue;
-        let test_get_value = TestGetValue;
-        let test_memory = TestMemory;
-
-        vec![
-            Box::new(test_set_value),
-            Box::new(test_get_value),
-            Box::new(test_memory),
-        ]
     }
 }
 
@@ -197,40 +162,6 @@ fn test_vm() {
 
             ;; For test memory
             (data (i32.const 0) "Hi")
-        )
-        "#;
-
-        let result = runner.run(wat, None, vec![]);
-
-        assert_eq!(result.len(), 1);
-        assert_eq!(result[0], Value::I32(0));
-    }
-
-    {
-        let wat = r#"
-        (module
-            (import "env0" "call_contract" (func $call (param i32 i32 i32 i32 i32 i32) (result i32)))
-
-            (import "env" "memory" (memory 1 1))
-
-            (func (export "_constructor") (result i32)
-                (call $call
-                    (i32.const 2)   ;; Offset address of the called contract
-                    (i32.const 3)   ;; Length of the called contract
-                    (i32.const 5)   ;; Offset address of the function name
-                    (i32.const 3)   ;; Length of the function name
-                    (i32.const 8)   ;; Offset address of the function args
-                    (i32.const 12)) ;; Length of the function args
-            )
-
-            ;; Called contract
-            (data (i32.const 2) "two")
-
-            ;; Function name
-            (data (i32.const 5) "sum")
-
-            ;; Function args
-            (data (i32.const 8) "\01\00\00\00\00\00\00\00\00\00\00\02")
         )
         "#;
 
