@@ -25,20 +25,18 @@ pub enum JvmError {
     NewString = 206,
     /// Failed to receive object
     ReceiveObject = 207,
-    /// Failed to receive boolean
-    ReceiveBoolean = 208,
     /// Failed to receive long
-    ReceiveLong = 209,
+    ReceiveLong = 208,
     /// Failed to receive int
-    ReceiveInt = 210,
+    ReceiveInt = 209,
 }
 
 pub trait Jvm {
     fn get_bytecode(&self, contract_id: &[u8]) -> Result<Vec<u8>>;
     fn get_storage(&self, contract_id: &[u8], key: &[u8]) -> Result<Vec<u8>>;
-    fn set_storage(&self, key: &[u8], data_type: &str, value: &[u8]) -> Result<bool>;
+    fn set_storage(&self, key: &[u8], data_type: &str, value: &[u8]) -> Result<()>;
     fn get_balance(&self, asset_id: &[u8], address: &[u8]) -> Result<i64>;
-    fn transfer(&self, asset_id: &[u8], recipient: &[u8], amount: i64) -> Result<bool>;
+    fn transfer(&self, asset_id: &[u8], recipient: &[u8], amount: i64) -> Result<()>;
     fn issue(
         &self,
         name: &[u8],
@@ -47,10 +45,10 @@ pub trait Jvm {
         decimals: i32,
         is_reissuable: bool,
     ) -> Result<Vec<u8>>;
-    fn burn(&self, asset_id: &[u8], amount: i64) -> Result<bool>;
-    fn reissue(&self, asset_id: &[u8], amount: i64, is_reissuable: bool) -> Result<bool>;
+    fn burn(&self, asset_id: &[u8], amount: i64) -> Result<()>;
+    fn reissue(&self, asset_id: &[u8], amount: i64, is_reissuable: bool) -> Result<()>;
     fn lease(&self, recipient: &[u8], amount: i64) -> Result<Vec<u8>>;
-    fn cancel_lease(&self, lease_id: &[u8]) -> Result<bool>;
+    fn cancel_lease(&self, lease_id: &[u8]) -> Result<()>;
     fn get_block_timestamp(&self) -> Result<i64>;
     fn get_block_height(&self) -> Result<i64>;
     fn get_tx_sender(&self) -> Result<Vec<u8>>;
@@ -124,7 +122,7 @@ impl Jvm for Stack {
         Ok(bytes.to_vec())
     }
 
-    fn set_storage(&self, key: &[u8], data_type: &str, value: &[u8]) -> Result<bool> {
+    fn set_storage(&self, key: &[u8], data_type: &str, value: &[u8]) -> Result<()> {
         let mut env = self
             .jvm
             .attach_current_thread()
@@ -142,22 +140,19 @@ impl Jvm for Stack {
             .byte_array_from_slice(value)
             .map_err(|_| Error::Jvm(JvmError::NewByteArray))?;
 
-        let result = env
-            .call_method(
-                self.jvm_callback.clone(),
-                "setStorage",
-                "([BLjava/lang/String;[B)Z",
-                &[
-                    JValue::Object(&key.into()),
-                    JValue::Object(&data_type.into()),
-                    JValue::Object(&value.into()),
-                ],
-            )
-            .map_err(|_| Error::Jvm(JvmError::MethodCall))?
-            .z()
-            .map_err(|_| Error::Jvm(JvmError::ReceiveBoolean))?;
+        env.call_method(
+            self.jvm_callback.clone(),
+            "setStorage",
+            "([BLjava/lang/String;[B)",
+            &[
+                JValue::Object(&key.into()),
+                JValue::Object(&data_type.into()),
+                JValue::Object(&value.into()),
+            ],
+        )
+        .map_err(|_| Error::Jvm(JvmError::MethodCall))?;
 
-        Ok(result)
+        Ok(())
     }
 
     fn get_balance(&self, asset_id: &[u8], address: &[u8]) -> Result<i64> {
@@ -191,7 +186,7 @@ impl Jvm for Stack {
         Ok(result)
     }
 
-    fn transfer(&self, asset_id: &[u8], recipient: &[u8], amount: i64) -> Result<bool> {
+    fn transfer(&self, asset_id: &[u8], recipient: &[u8], amount: i64) -> Result<()> {
         let mut env = self
             .jvm
             .attach_current_thread()
@@ -205,22 +200,19 @@ impl Jvm for Stack {
             .byte_array_from_slice(recipient)
             .map_err(|_| Error::Jvm(JvmError::NewByteArray))?;
 
-        let result = env
-            .call_method(
-                self.jvm_callback.clone(),
-                "transfer",
-                "([B[BJ)Z",
-                &[
-                    JValue::Object(&asset_id.into()),
-                    JValue::Object(&recipient.into()),
-                    amount.into(),
-                ],
-            )
-            .map_err(|_| Error::Jvm(JvmError::MethodCall))?
-            .z()
-            .map_err(|_| Error::Jvm(JvmError::ReceiveBoolean))?;
+        env.call_method(
+            self.jvm_callback.clone(),
+            "transfer",
+            "([B[BJ)",
+            &[
+                JValue::Object(&asset_id.into()),
+                JValue::Object(&recipient.into()),
+                amount.into(),
+            ],
+        )
+        .map_err(|_| Error::Jvm(JvmError::MethodCall))?;
 
-        Ok(result)
+        Ok(())
     }
 
     fn issue(
@@ -268,7 +260,7 @@ impl Jvm for Stack {
         Ok(bytes.to_vec())
     }
 
-    fn burn(&self, asset_id: &[u8], amount: i64) -> Result<bool> {
+    fn burn(&self, asset_id: &[u8], amount: i64) -> Result<()> {
         let mut env = self
             .jvm
             .attach_current_thread()
@@ -278,21 +270,18 @@ impl Jvm for Stack {
             .byte_array_from_slice(asset_id)
             .map_err(|_| Error::Jvm(JvmError::NewByteArray))?;
 
-        let result = env
-            .call_method(
-                self.jvm_callback.clone(),
-                "burn",
-                "([BJ)Z",
-                &[JValue::Object(&asset_id.into()), amount.into()],
-            )
-            .map_err(|_| Error::Jvm(JvmError::MethodCall))?
-            .z()
-            .map_err(|_| Error::Jvm(JvmError::ReceiveBoolean))?;
+        env.call_method(
+            self.jvm_callback.clone(),
+            "burn",
+            "([BJ)",
+            &[JValue::Object(&asset_id.into()), amount.into()],
+        )
+        .map_err(|_| Error::Jvm(JvmError::MethodCall))?;
 
-        Ok(result)
+        Ok(())
     }
 
-    fn reissue(&self, asset_id: &[u8], amount: i64, is_reissuable: bool) -> Result<bool> {
+    fn reissue(&self, asset_id: &[u8], amount: i64, is_reissuable: bool) -> Result<()> {
         let mut env = self
             .jvm
             .attach_current_thread()
@@ -302,22 +291,19 @@ impl Jvm for Stack {
             .byte_array_from_slice(asset_id)
             .map_err(|_| Error::Jvm(JvmError::NewByteArray))?;
 
-        let result = env
-            .call_method(
-                self.jvm_callback.clone(),
-                "reissue",
-                "([BJZ)Z",
-                &[
-                    JValue::Object(&asset_id.into()),
-                    amount.into(),
-                    is_reissuable.into(),
-                ],
-            )
-            .map_err(|_| Error::Jvm(JvmError::MethodCall))?
-            .z()
-            .map_err(|_| Error::Jvm(JvmError::ReceiveBoolean))?;
+        env.call_method(
+            self.jvm_callback.clone(),
+            "reissue",
+            "([BJZ)",
+            &[
+                JValue::Object(&asset_id.into()),
+                amount.into(),
+                is_reissuable.into(),
+            ],
+        )
+        .map_err(|_| Error::Jvm(JvmError::MethodCall))?;
 
-        Ok(result)
+        Ok(())
     }
 
     fn lease(&self, recipient: &[u8], amount: i64) -> Result<Vec<u8>> {
@@ -348,7 +334,7 @@ impl Jvm for Stack {
         Ok(bytes.to_vec())
     }
 
-    fn cancel_lease(&self, lease_id: &[u8]) -> Result<bool> {
+    fn cancel_lease(&self, lease_id: &[u8]) -> Result<()> {
         let mut env = self
             .jvm
             .attach_current_thread()
@@ -358,18 +344,15 @@ impl Jvm for Stack {
             .byte_array_from_slice(lease_id)
             .map_err(|_| Error::Jvm(JvmError::NewByteArray))?;
 
-        let result = env
-            .call_method(
-                self.jvm_callback.clone(),
-                "cancelLease",
-                "([B)Z",
-                &[JValue::Object(&lease_id.into())],
-            )
-            .map_err(|_| Error::Jvm(JvmError::MethodCall))?
-            .z()
-            .map_err(|_| Error::Jvm(JvmError::ReceiveBoolean))?;
+        env.call_method(
+            self.jvm_callback.clone(),
+            "cancelLease",
+            "([B)",
+            &[JValue::Object(&lease_id.into())],
+        )
+        .map_err(|_| Error::Jvm(JvmError::MethodCall))?;
 
-        Ok(result)
+        Ok(())
     }
 
     fn get_block_timestamp(&self) -> Result<i64> {

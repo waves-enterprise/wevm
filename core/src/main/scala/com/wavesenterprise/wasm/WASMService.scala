@@ -1,85 +1,73 @@
 package com.wavesenterprise.wasm
 
-/**
-  * Fields contractId, assetId, leaseId, address, recipient are serialized strings
-  * "3NkZd8Xd4KsuPiNVsuphRNCZE3SqJycqv8d" -> Array[Byte]
-  */
-
 trait WASMService {
 
   /**
-    * @param contractId ID of a contract
+    * @param contractId ID of a contract. Base58 bytes
     * @return Bytecode contract
     */
   def getBytecode(contractId: Array[Byte]): Array[Byte]
 
   /**
-    * @param contractId ID of a contract (optional field, array can be empty)
-    * @param key Record key
+    * @param contractId ID of a contract (optional field, array can be empty). Base58 bytes
+    * @param key Record key. UTF-8 bytes
     * @return Record value
     */
   def getStorage(contractId: Array[Byte], key: Array[Byte]): Array[Byte]
 
   /**
-    * @param key Record key
-    * @param dataType Record data type. Possible values: `binary` `bool` `integer` `string` and `null` (record deletion by its key)
-    * @param value Record value
-    * @return Execution result (true/false)
+    * @param data Serialized DataEntry record value
     */
-  def setStorage(key: Array[Byte], dataType: String, value: Array[Byte]): Boolean
+  def setStorage(data: Array[Byte])
 
   /**
-    * @param assetId ID of a token (optional field, array can be empty)
-    * @param address Address of the token holder
+    * @param assetId ID of a token (optional field, array can be empty). Base58 bytes
+    * @param address Address of the token holder. Base58 bytes
     * @return Amount of tokens
     */
   def getBalance(assetId: Array[Byte], address: Array[Byte]): Long
 
   /**
-    * @param assetId ID of a token to be transferred (optional field, array can be empty)
-    * @param recipient Address of recipient of tokens
+    * @param assetId ID of a token to be transferred (optional field, array can be empty). Base58 bytes
+    * @param recipient Address of recipient of tokens. Base58 bytes
     * @param amount Amount of tokens
-    * @return Execution result (true/false)
     */
-  def transfer(assetId: Array[Byte], recipient: Array[Byte], amount: Long): Boolean
+  def transfer(assetId: Array[Byte], recipient: Array[Byte], amount: Long)
 
   /**
-    * @param name An arbitrary name of asset
-    * @param description An arbitrary description of a asset
+    * @param name An arbitrary name of asset. UTF-8 bytes
+    * @param description An arbitrary description of a asset. UTF-8 bytes
     * @param quantity Number of tokens to be issued
     * @param decimals Digit capacity of a token in use
     * @param isReissuable Re-issuability of a token
-    * @return assetId
+    * @return assetId. Base58 bytes
     */
   def issue(name: Array[Byte], description: Array[Byte], quantity: Long, decimals: Int, isReissuable: Boolean): Array[Byte]
 
   /**
-    * @param assetId ID of a token to be burned
+    * @param assetId ID of a token to be burned. Base58 bytes
     * @param amount Amount of tokens
-    * @return Execution result (true/false)
     */
-  def burn(assetId: Array[Byte], amount: Long): Boolean
+  def burn(assetId: Array[Byte], amount: Long)
 
   /**
-    * @param assetId ID of a token to be reissued
+    * @param assetId ID of a token to be reissued. Base58 bytes
     * @param amount Amount of tokens
     * @param isReissuable Re-issuability of a token
-    * @return Execution result (true/false)
     */
-  def reissue(assetId: Array[Byte], amount: Long, isReissuable: Boolean): Boolean
+  def reissue(assetId: Array[Byte], amount: Long, isReissuable: Boolean)
 
   /**
-    * @param recipient Address of recipient of tokens
+    * @param recipient Address of recipient of tokens. Base58 bytes
     * @param amount Number of tokens for leasing
-    * @return leaseId of a leasing transaction
+    * @return leaseId of a leasing transaction. Base58 bytes
     */
   def lease(recipient: Array[Byte], amount: Long): Array[Byte]
 
   /**
-    * @param leaseId ID of a leasing transaction
-    * @return Execution result (true/false)
+    * @param leaseId ID of a leasing transaction. Base58 bytes
     */
-  def cancelLease(leaseId: Array[Byte]): Boolean
+  def cancelLease(leaseId: Array[Byte])
 
   def getBlockTimestamp: Long
 
@@ -97,7 +85,7 @@ trait WASMService {
 
   /**
     * @param number Attached payment number
-    * @return assetId of a token (optional field, array can be empty)
+    * @return assetId of a token (optional field, array can be empty). Base58 bytes
     */
   def getTxPaymentAssetId(number: Int): Array[Byte]
 
