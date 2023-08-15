@@ -60,7 +60,7 @@ pub type Result<T, E = Error> = core::result::Result<T, E>;
 // in this case we want to return a reference and show the compiler what
 // local frame lifetime it is associated with.
 #[no_mangle]
-pub extern "system" fn Java_com_wavesenterprise_wasm_WASMExecutor_runContract<'local>(
+pub extern "system" fn Java_com_wavesenterprise_wasm_core_WASMExecutor_runContract<'local>(
     mut env: JNIEnv<'local>,
     _class: JClass<'local>,
     bytecode: JByteArray<'local>,
@@ -113,7 +113,7 @@ pub extern "system" fn Java_com_wavesenterprise_wasm_WASMExecutor_runContract<'l
 }
 
 #[no_mangle]
-pub extern "system" fn Java_com_wavesenterprise_wasm_WASMExecutor_validateBytecode<'local>(
+pub extern "system" fn Java_com_wavesenterprise_wasm_core_WASMExecutor_validateBytecode<'local>(
     env: JNIEnv<'local>,
     _class: JClass<'local>,
     bytecode: JByteArray<'local>,

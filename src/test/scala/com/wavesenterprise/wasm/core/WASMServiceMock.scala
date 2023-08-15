@@ -1,7 +1,7 @@
-package com.wavesenterprise.wasm
+package com.wavesenterprise.wasm.core
 
 import com.wavesenterprise.utils.Base58
-import java.lang.Exception
+
 import scala.collection.mutable.Map
 
 class WASMServiceMock extends WASMService {

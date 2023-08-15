@@ -1,4 +1,4 @@
-package com.wavesenterprise.wasm
+package com.wavesenterprise.wasm.core
 
 import com.github.sbt.jni.syntax.NativeLoader
 
