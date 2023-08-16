@@ -1,4 +1,4 @@
-package com.wavesenterprise.wasm
+package com.wavesenterprise.wasm.core
 
 trait WASMService {
 

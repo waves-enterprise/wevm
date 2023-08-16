@@ -1,4 +1,4 @@
-package com.wavesenterprise.wasm
+package com.wavesenterprise.wasm.core
 
 import org.scalatest.freespec.AnyFreeSpec
 import org.scalatest.matchers.should.Matchers
