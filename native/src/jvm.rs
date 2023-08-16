@@ -6,6 +6,7 @@ use jni::objects::{JByteArray, JObject, JValue};
 /// Z - Boolean
 /// I - Integer
 /// J - Long
+/// V - Void
 
 #[derive(Copy, Clone, Debug)]
 pub enum JvmError {
@@ -143,7 +144,7 @@ impl Jvm for Stack {
         env.call_method(
             self.jvm_callback.clone(),
             "setStorage",
-            "([BLjava/lang/String;[B)",
+            "([BLjava/lang/String;[B)V",
             &[
                 JValue::Object(&key.into()),
                 JValue::Object(&data_type.into()),
@@ -203,7 +204,7 @@ impl Jvm for Stack {
         env.call_method(
             self.jvm_callback.clone(),
             "transfer",
-            "([B[BJ)",
+            "([B[BJ)V",
             &[
                 JValue::Object(&asset_id.into()),
                 JValue::Object(&recipient.into()),
@@ -273,7 +274,7 @@ impl Jvm for Stack {
         env.call_method(
             self.jvm_callback.clone(),
             "burn",
-            "([BJ)",
+            "([BJ)V",
             &[JValue::Object(&asset_id.into()), amount.into()],
         )
         .map_err(|_| Error::Jvm(JvmError::MethodCall))?;
@@ -294,7 +295,7 @@ impl Jvm for Stack {
         env.call_method(
             self.jvm_callback.clone(),
             "reissue",
-            "([BJZ)",
+            "([BJZ)V",
             &[
                 JValue::Object(&asset_id.into()),
                 amount.into(),
@@ -347,7 +348,7 @@ impl Jvm for Stack {
         env.call_method(
             self.jvm_callback.clone(),
             "cancelLease",
-            "([B)",
+            "([B)V",
             &[JValue::Object(&lease_id.into())],
         )
         .map_err(|_| Error::Jvm(JvmError::MethodCall))?;

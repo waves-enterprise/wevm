@@ -2,6 +2,7 @@ mod data_entry;
 mod env;
 mod exec;
 mod jvm;
+mod macros;
 mod runtime;
 mod stack;
 

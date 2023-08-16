@@ -25,16 +25,18 @@ pub enum ExecutableError {
     LinkerError = 104,
     /// Failed to instantiate and start the Wasm bytecode
     InstantiateFailed = 105,
+    /// Global heap base not found
+    HeapBaseNotFound = 106,
     /// Could not find function
-    FuncNotFound = 106,
+    FuncNotFound = 107,
     /// invalid number of arguments
-    InvalidNumArgs = 107,
+    InvalidNumArgs = 108,
     /// Failed to parse function argument
-    FailedParseFuncArgs = 108,
+    FailedParseFuncArgs = 109,
     /// Failed to parse DataEntry arguments
-    FailedParseDataEntry = 109,
+    FailedParseDataEntry = 110,
     /// Failed during execution
-    FailedExec = 110,
+    FailedExec = 111,
 }
 
 pub enum LoadableFunction {
@@ -122,16 +124,13 @@ impl Executable {
             Some(memory) => memory,
             None => return Err(Error::Runtime(RuntimeError::MemoryNotFound)),
         };
-
-        let mut offset_memory: usize = match memory.current_pages(&mut store).to_bytes() {
-            Some(offset) => offset,
-            None => return Err(Error::Executable(ExecutableError::MemoryError)),
-        };
-
+        let mut offset_memory = store.data().heap_base() as usize;
         let array_memory = memory.data_mut(&mut store);
 
         let func_args: Vec<String> =
             data_entry::parse(input_data.as_slice(), array_memory, &mut offset_memory)?;
+
+        store.data_mut().set_heap_base(offset_memory as i32);
 
         let func_type = func.ty(&store);
         let func_args = Self::type_check_arguments(&func_type, func_args.as_slice())?;
@@ -187,6 +186,16 @@ impl Executable {
             .map_err(|_| Error::Executable(ExecutableError::InstantiateFailed))?;
 
         store.data_mut().set_memory(memory);
+
+        let heap_base = match instance.get_global(&mut store, "__heap_base") {
+            Some(global) => match global.get(&mut store) {
+                Value::I32(value) => value,
+                _ => return Err(Error::Executable(ExecutableError::HeapBaseNotFound)),
+            },
+            None => return Err(Error::Executable(ExecutableError::HeapBaseNotFound)),
+        };
+
+        store.data_mut().set_heap_base(heap_base);
 
         let func = instance
             .get_export(&store, func_name)
