@@ -18,5 +18,14 @@ class WASMExecutorSpec extends AnyFreeSpec with Matchers {
       executor.validateBytecode(bytecode) shouldBe 0
       executor.validateBytecode(wrongBytecode) shouldBe 100
     }
+
+    "transfer" in {
+      val bytecode = getClass.getResourceAsStream("/transfer.wasm").readAllBytes()
+
+      executor.runContract(bytecode, "_constructor", Array[Byte](), service) shouldBe 0
+
+      service.balances("null")(service.contract) shouldBe 9999999958L
+      service.balances("null")("3NqEjAkFVzem9CGa3bEPhakQc1Sm2G8gAFU") shouldBe 10000000042L
+    }
   }
 }

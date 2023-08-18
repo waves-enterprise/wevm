@@ -15,6 +15,7 @@ pub enum RuntimeError {
 pub struct Runtime<'a> {
     memory: Option<Memory>,
     pub stack: &'a mut Stack,
+    heap_base: i32,
 }
 
 impl<'a> Runtime<'a> {
@@ -22,6 +23,7 @@ impl<'a> Runtime<'a> {
         Runtime {
             memory: None,
             stack,
+            heap_base: 0,
         }
     }
 
@@ -31,5 +33,13 @@ impl<'a> Runtime<'a> {
 
     pub fn set_memory(&mut self, memory: Memory) {
         self.memory = Some(memory);
+    }
+
+    pub fn heap_base(&self) -> i32 {
+        self.heap_base
+    }
+
+    pub fn set_heap_base(&mut self, value: i32) {
+        self.heap_base = value;
     }
 }

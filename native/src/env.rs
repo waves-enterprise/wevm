@@ -1,7 +1,10 @@
 use crate::{
+    env_runtime,
     jvm::Jvm,
     runtime::{Runtime, RuntimeError},
+    write_memory,
 };
+use base58::FromBase58;
 use convert_case::{Case, Casing};
 use dyn_clone::DynClone;
 use std::str;
@@ -15,38 +18,8 @@ pub trait Environment: DynClone {
 
 dyn_clone::clone_trait_object!(Environment);
 
-#[macro_export]
-macro_rules! env_runtime {
-    ( #[version = $version:literal]
-      pub fn $name:ident ( $($args:tt)* ) $(-> $return_values:ty)? { $func:expr }
-    ) => {
-        #[derive(Clone)]
-        pub struct $name;
-
-        impl Environment for $name {
-            fn module(&self) -> String {
-                let version = stringify!($version);
-                String::from("env".to_owned() + version)
-            }
-
-            fn name(&self) -> String {
-                let name = stringify!($name);
-                name.from_case(Case::Pascal).to_case(Case::Snake)
-            }
-
-            fn func(&self, store: &mut Store<Runtime>) -> Func {
-                Func::wrap(
-                    store,
-                    |caller: Caller<Runtime>, $($args)*| $(-> $return_values)? {
-                        $func(caller)
-                    }
-                )
-            }
-        }
-    }
-}
-
 pub fn envs() -> Vec<Box<dyn Environment>> {
+    let base_58 = Base58;
     let call_contract = CallContract;
     let get_storage_int = GetStorageInt;
     let get_storage_bool = GetStorageBool;
@@ -71,6 +44,7 @@ pub fn envs() -> Vec<Box<dyn Environment>> {
     let get_tx_payment_amount = GetTxPaymentAmount;
 
     vec![
+        Box::new(base_58),
         Box::new(call_contract),
         Box::new(get_storage_int),
         Box::new(get_storage_bool),
@@ -94,6 +68,34 @@ pub fn envs() -> Vec<Box<dyn Environment>> {
         Box::new(get_tx_payment_asset_id),
         Box::new(get_tx_payment_amount),
     ]
+}
+
+env_runtime! {
+    #[version = 0]
+    pub fn Base58(
+        offset_bytes: u32,
+        length_bytes: u32,
+    ) -> (i32, i32, i32) {
+        |mut caller: Caller<Runtime>| {
+            let (memory, ctx) = match caller.data().memory() {
+                Some(memory) => memory.data_and_store_mut(&mut caller),
+                None => return (RuntimeError::MemoryNotFound as i32, 0, 0),
+            };
+            let offset_memory = ctx.heap_base() as usize;
+
+            let value = match str::from_utf8(
+                &memory[offset_bytes as usize..offset_bytes as usize + length_bytes as usize]
+            ) {
+                Ok(string) => string,
+                Err(_) => return (RuntimeError::Utf8Error as i32, 0 , 0),
+            };
+
+            match value.from_base58() {
+                Ok(result) => write_memory!(ctx, memory, offset_memory, result),
+                Err(_) => (RuntimeError::Base58Error as i32, 0, 0),
+            }
+        }
+    }
 }
 
 env_runtime! {
@@ -152,8 +154,8 @@ env_runtime! {
 env_runtime! {
     #[version = 0]
     pub fn GetStorageInt(
-        offset_contract_id: u32,
-        length_contract_id: u32,
+        offset_address: u32,
+        length_address: u32,
         offset_key: u32,
         length_key: u32,
     ) -> (i32, i64) {
@@ -163,10 +165,10 @@ env_runtime! {
                 None => return (RuntimeError::MemoryNotFound as i32, 0),
             };
 
-            let contract_id = &memory[offset_contract_id as usize..offset_contract_id as usize + length_contract_id as usize];
+            let address = &memory[offset_address as usize..offset_address as usize + length_address as usize];
             let key = &memory[offset_key as usize..offset_key as usize + length_key as usize];
 
-            match ctx.stack.get_storage(contract_id, key) {
+            match ctx.stack.get_storage(address, key) {
                 Ok(result) => {
                     // TODO: DataEntry
                     if result.len() == 8 {
@@ -186,8 +188,8 @@ env_runtime! {
 env_runtime! {
     #[version = 0]
     pub fn GetStorageBool(
-        offset_contract_id: u32,
-        length_contract_id: u32,
+        offset_address: u32,
+        length_address: u32,
         offset_key: u32,
         length_key: u32,
     ) -> (i32, i32) {
@@ -197,10 +199,10 @@ env_runtime! {
                 None => return (RuntimeError::MemoryNotFound as i32, 0),
             };
 
-            let contract_id = &memory[offset_contract_id as usize..offset_contract_id as usize + length_contract_id as usize];
+            let address = &memory[offset_address as usize..offset_address as usize + length_address as usize];
             let key = &memory[offset_key as usize..offset_key as usize + length_key as usize];
 
-            match ctx.stack.get_storage(contract_id, key) {
+            match ctx.stack.get_storage(address, key) {
                 Ok(result) => {
                     // TODO: DataEntry
                     if result.len() == 1 {
@@ -218,35 +220,24 @@ env_runtime! {
 env_runtime! {
     #[version = 0]
     pub fn GetStorageBinary(
-        offset_contract_id: u32,
-        length_contract_id: u32,
+        offset_address: u32,
+        length_address: u32,
         offset_key: u32,
         length_key: u32,
     ) -> (i32, i32, i32) {
         |mut caller: Caller<Runtime>| {
-            let (memory, ctx, offset_memory) = match caller.data().memory() {
-                Some(memory) => {
-                    let offset_memory: usize = match memory.current_pages(&mut caller).to_bytes() {
-                        Some(offset) => offset,
-                        None => return (RuntimeError::MemoryError as i32, 0, 0),
-                    };
-                    let (memory, ctx) = memory.data_and_store_mut(&mut caller);
-                    (memory, ctx, offset_memory)
-
-                },
+            let (memory, ctx) = match caller.data().memory() {
+                Some(memory) => memory.data_and_store_mut(&mut caller),
                 None => return (RuntimeError::MemoryNotFound as i32, 0, 0),
             };
+            let offset_memory = ctx.heap_base() as usize;
 
-            let contract_id = &memory[offset_contract_id as usize..offset_contract_id as usize + length_contract_id as usize];
+            let address = &memory[offset_address as usize..offset_address as usize + length_address as usize];
             let key = &memory[offset_key as usize..offset_key as usize + length_key as usize];
 
-            match ctx.stack.get_storage(contract_id, key) {
-                Ok(result) => {
-                    // TODO: DataEntry
-                    let length = result.len();
-                    memory[offset_memory..offset_memory + length].copy_from_slice(result.as_slice());
-                    (0, offset_memory as i32, length as i32)
-                },
+            match ctx.stack.get_storage(address, key) {
+                // TODO: DataEntry
+                Ok(result) => write_memory!(ctx, memory, offset_memory, result),
                 Err(error) => (error.as_i32(), 0, 0),
             }
         }
@@ -256,35 +247,24 @@ env_runtime! {
 env_runtime! {
     #[version = 0]
     pub fn GetStorageString(
-        offset_contract_id: u32,
-        length_contract_id: u32,
+        offset_address: u32,
+        length_address: u32,
         offset_key: u32,
         length_key: u32,
     ) -> (i32, i32, i32) {
         |mut caller: Caller<Runtime>| {
-            let (memory, ctx, offset_memory) = match caller.data().memory() {
-                Some(memory) => {
-                    let offset_memory: usize = match memory.current_pages(&mut caller).to_bytes() {
-                        Some(offset) => offset,
-                        None => return (RuntimeError::MemoryError as i32, 0, 0),
-                    };
-                    let (memory, ctx) = memory.data_and_store_mut(&mut caller);
-                    (memory, ctx, offset_memory)
-
-                },
+            let (memory, ctx) = match caller.data().memory() {
+                Some(memory) => memory.data_and_store_mut(&mut caller),
                 None => return (RuntimeError::MemoryNotFound as i32, 0, 0),
             };
+            let offset_memory = ctx.heap_base() as usize;
 
-            let contract_id = &memory[offset_contract_id as usize..offset_contract_id as usize + length_contract_id as usize];
+            let address = &memory[offset_address as usize..offset_address as usize + length_address as usize];
             let key = &memory[offset_key as usize..offset_key as usize + length_key as usize];
 
-            match ctx.stack.get_storage(contract_id, key) {
-                Ok(result) => {
-                    // TODO: DataEntry
-                    let length = result.len();
-                    memory[offset_memory..offset_memory + length].copy_from_slice(result.as_slice());
-                    (0, offset_memory as i32, length as i32)
-                },
+            match ctx.stack.get_storage(address, key) {
+                // TODO: DataEntry
+                Ok(result) => write_memory!(ctx, memory, offset_memory, result),
                 Err(error) => (error.as_i32(), 0, 0),
             }
         }
@@ -450,28 +430,17 @@ env_runtime! {
         is_reissuable: i32,
     ) -> (i32, i32, i32) {
         |mut caller: Caller<Runtime>| {
-            let (memory, ctx, offset_memory) = match caller.data().memory() {
-                Some(memory) => {
-                    let offset_memory: usize = match memory.current_pages(&mut caller).to_bytes() {
-                        Some(offset) => offset,
-                        None => return (RuntimeError::MemoryError as i32, 0, 0),
-                    };
-                    let (memory, ctx) = memory.data_and_store_mut(&mut caller);
-                    (memory, ctx, offset_memory)
-
-                },
+            let (memory, ctx) = match caller.data().memory() {
+                Some(memory) => memory.data_and_store_mut(&mut caller),
                 None => return (RuntimeError::MemoryNotFound as i32, 0, 0),
             };
+            let offset_memory = ctx.heap_base() as usize;
 
             let name = &memory[offset_name as usize..offset_name as usize + length_name as usize];
             let description = &memory[offset_description as usize..offset_description as usize + length_description as usize];
 
             match ctx.stack.issue(name, description, quantity, decimals, is_reissuable != 0) {
-                Ok(result) => {
-                    let length = result.len();
-                    memory[offset_memory..offset_memory + length].copy_from_slice(result.as_slice());
-                    (0, offset_memory as i32, length as i32)
-                },
+                Ok(result) => write_memory!(ctx, memory, offset_memory, result),
                 Err(error) => (error.as_i32(), 0, 0),
             }
         }
@@ -533,27 +502,16 @@ env_runtime! {
         amount: i64,
     ) -> (i32, i32, i32) {
         |mut caller: Caller<Runtime>| {
-            let (memory, ctx, offset_memory) = match caller.data().memory() {
-                Some(memory) => {
-                    let offset_memory: usize = match memory.current_pages(&mut caller).to_bytes() {
-                        Some(offset) => offset,
-                        None => return (RuntimeError::MemoryError as i32, 0, 0),
-                    };
-                    let (memory, ctx) = memory.data_and_store_mut(&mut caller);
-                    (memory, ctx, offset_memory)
-
-                },
+            let (memory, ctx) = match caller.data().memory() {
+                Some(memory) => memory.data_and_store_mut(&mut caller),
                 None => return (RuntimeError::MemoryNotFound as i32, 0, 0),
             };
+            let offset_memory = ctx.heap_base() as usize;
 
             let recipient = &memory[offset_recipient as usize..offset_recipient as usize + length_recipient as usize];
 
             match ctx.stack.lease(recipient, amount) {
-                Ok(result) => {
-                    let length = result.len();
-                    memory[offset_memory..offset_memory + length].copy_from_slice(result.as_slice());
-                    (0, offset_memory as i32, length as i32)
-                },
+                Ok(result) => write_memory!(ctx, memory, offset_memory, result),
                 Err(error) => (error.as_i32(), 0, 0),
             }
         }
@@ -610,25 +568,14 @@ env_runtime! {
     #[version = 0]
     pub fn GetTxSender() -> (i32, i32, i32) {
         |mut caller: Caller<Runtime>| {
-            let (memory, ctx, offset_memory) = match caller.data().memory() {
-                Some(memory) => {
-                    let offset_memory: usize = match memory.current_pages(&mut caller).to_bytes() {
-                        Some(offset) => offset,
-                        None => return (RuntimeError::MemoryError as i32, 0, 0),
-                    };
-                    let (memory, ctx) = memory.data_and_store_mut(&mut caller);
-                    (memory, ctx, offset_memory)
-
-                },
+            let (memory, ctx) = match caller.data().memory() {
+                Some(memory) => memory.data_and_store_mut(&mut caller),
                 None => return (RuntimeError::MemoryNotFound as i32, 0, 0),
             };
+            let offset_memory = ctx.heap_base() as usize;
 
             match ctx.stack.get_tx_sender() {
-                Ok(result) => {
-                    let length = result.len();
-                    memory[offset_memory..offset_memory + length].copy_from_slice(result.as_slice());
-                    (0, offset_memory as i32, length as i32)
-                },
+                Ok(result) => write_memory!(ctx, memory, offset_memory, result),
                 Err(error) => (error.as_i32(), 0, 0),
             }
         }
@@ -651,25 +598,14 @@ env_runtime! {
     #[version = 0]
     pub fn GetTxPaymentAssetId(number: i32) -> (i32, i32, i32) {
         |mut caller: Caller<Runtime>| {
-            let (memory, ctx, offset_memory) = match caller.data().memory() {
-                Some(memory) => {
-                    let offset_memory: usize = match memory.current_pages(&mut caller).to_bytes() {
-                        Some(offset) => offset,
-                        None => return (RuntimeError::MemoryError as i32, 0, 0),
-                    };
-                    let (memory, ctx) = memory.data_and_store_mut(&mut caller);
-                    (memory, ctx, offset_memory)
-
-                },
+            let (memory, ctx) = match caller.data().memory() {
+                Some(memory) => memory.data_and_store_mut(&mut caller),
                 None => return (RuntimeError::MemoryNotFound as i32, 0, 0),
             };
+            let offset_memory = ctx.heap_base() as usize;
 
             match ctx.stack.get_tx_payment_asset_id(number) {
-                Ok(result) => {
-                    let length = result.len();
-                    memory[offset_memory..offset_memory + length].copy_from_slice(result.as_slice());
-                    (0, offset_memory as i32, length as i32)
-                },
+                Ok(result) => write_memory!(ctx, memory, offset_memory, result),
                 Err(error) => (error.as_i32(), 0, 0),
             }
         }
