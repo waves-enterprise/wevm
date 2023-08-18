@@ -1,4 +1,5 @@
 use crate::{
+    data_entry::DataEntry,
     env_runtime,
     jvm::Jvm,
     runtime::{Runtime, RuntimeError},
@@ -285,8 +286,9 @@ env_runtime! {
             };
 
             let key = &memory[offset_key as usize..offset_key as usize + length_key as usize];
+            let data_entry = DataEntry::Integer(value).serialize(key);
 
-            match ctx.stack.set_storage(key, "Integer", &value.to_be_bytes()) {
+            match ctx.stack.set_storage(data_entry.as_slice()) {
                 Ok(_) => 0,
                 Err(error) => error.as_i32(),
             }
@@ -308,8 +310,9 @@ env_runtime! {
             };
 
             let key = &memory[offset_key as usize..offset_key as usize + length_key as usize];
+            let data_entry = DataEntry::Boolean(value).serialize(key);
 
-            match ctx.stack.set_storage(key, "Boolean", &(value as u8).to_be_bytes()) {
+            match ctx.stack.set_storage(data_entry.as_slice()) {
                 Ok(_) => 0,
                 Err(error) => error.as_i32(),
             }
@@ -333,8 +336,9 @@ env_runtime! {
 
             let key = &memory[offset_key as usize..offset_key as usize + length_key as usize];
             let value = &memory[offset_value as usize..offset_value as usize + length_value as usize];
+            let data_entry = DataEntry::Binary(value).serialize(key);
 
-            match ctx.stack.set_storage(key, "Binary", value) {
+            match ctx.stack.set_storage(data_entry.as_slice()) {
                 Ok(_) => 0,
                 Err(error) => error.as_i32(),
             }
@@ -358,8 +362,9 @@ env_runtime! {
 
             let key = &memory[offset_key as usize..offset_key as usize + length_key as usize];
             let value = &memory[offset_value as usize..offset_value as usize + length_value as usize];
+            let data_entry = DataEntry::String(value).serialize(key);
 
-            match ctx.stack.set_storage(key, "String", value) {
+            match ctx.stack.set_storage(data_entry.as_slice()) {
                 Ok(_) => 0,
                 Err(error) => error.as_i32(),
             }

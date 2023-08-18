@@ -16,9 +16,9 @@ trait WASMService {
   def getStorage(contractId: Array[Byte], key: Array[Byte]): Array[Byte]
 
   /**
-    * @param data Serialized DataEntry record value
+    * @param value Serialized DataEntry record value
     */
-  def setStorage(data: Array[Byte])
+  def setStorage(value: Array[Byte])
 
   /**
     * @param assetId ID of a token (optional field, array can be empty). Base58 bytes

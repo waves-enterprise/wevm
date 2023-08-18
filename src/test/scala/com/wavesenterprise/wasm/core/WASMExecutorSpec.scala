@@ -1,5 +1,6 @@
 package com.wavesenterprise.wasm.core
 
+import com.wavesenterprise.state.ByteStr
 import org.scalatest.freespec.AnyFreeSpec
 import org.scalatest.matchers.should.Matchers
 
@@ -26,6 +27,17 @@ class WASMExecutorSpec extends AnyFreeSpec with Matchers {
 
       service.balances("null")(service.contract) shouldBe 9999999958L
       service.balances("null")("3NqEjAkFVzem9CGa3bEPhakQc1Sm2G8gAFU") shouldBe 10000000042L
+    }
+
+    "set storage" in {
+      val bytecode = getClass.getResourceAsStream("/set_storage.wasm").readAllBytes()
+
+      executor.runContract(bytecode, "_constructor", Array[Byte](), service) shouldBe 0
+
+      service.storage("integer_key").value shouldBe 42
+      service.storage("boolean_key").value shouldBe true
+      service.storage("binary_key").value.equals(ByteStr(Array[Byte](0, 1))) shouldBe true
+      service.storage("string_key").value shouldBe "test"
     }
   }
 }

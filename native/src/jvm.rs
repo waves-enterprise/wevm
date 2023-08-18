@@ -35,7 +35,7 @@ pub enum JvmError {
 pub trait Jvm {
     fn get_bytecode(&self, contract_id: &[u8]) -> Result<Vec<u8>>;
     fn get_storage(&self, address: &[u8], key: &[u8]) -> Result<Vec<u8>>;
-    fn set_storage(&self, key: &[u8], data_type: &str, value: &[u8]) -> Result<()>;
+    fn set_storage(&self, value: &[u8]) -> Result<()>;
     fn get_balance(&self, asset_id: &[u8], address: &[u8]) -> Result<i64>;
     fn transfer(&self, asset_id: &[u8], recipient: &[u8], amount: i64) -> Result<()>;
     fn issue(
@@ -120,19 +120,11 @@ impl Jvm for Stack {
         Ok(bytes.to_vec())
     }
 
-    fn set_storage(&self, key: &[u8], data_type: &str, value: &[u8]) -> Result<()> {
+    fn set_storage(&self, value: &[u8]) -> Result<()> {
         let mut env = self
             .jvm
             .attach_current_thread()
             .map_err(|_| Error::Jvm(JvmError::AttachCurrentThread))?;
-
-        let key = env
-            .byte_array_from_slice(key)
-            .map_err(|_| Error::Jvm(JvmError::NewByteArray))?;
-
-        let data_type = env
-            .new_string(data_type)
-            .map_err(|_| Error::Jvm(JvmError::NewString))?;
 
         let value = env
             .byte_array_from_slice(value)
@@ -141,12 +133,8 @@ impl Jvm for Stack {
         env.call_method(
             self.jvm_callback.clone(),
             "setStorage",
-            "([BLjava/lang/String;[B)V",
-            &[
-                JValue::Object(&key.into()),
-                JValue::Object(&data_type.into()),
-                JValue::Object(&value.into()),
-            ],
+            "([B)V",
+            &[JValue::Object(&value.into())],
         )
         .map_err(|_| Error::Jvm(JvmError::MethodCall))?;
 

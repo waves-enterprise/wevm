@@ -1,5 +1,44 @@
 use crate::{exec::ExecutableError, Error, Result};
 
+pub enum DataEntry<'a> {
+    Integer(i64),
+    Boolean(i32),
+    Binary(&'a [u8]),
+    String(&'a [u8]),
+}
+
+impl<'a> DataEntry<'a> {
+    pub fn serialize(&self, key: &[u8]) -> Vec<u8> {
+        let mut result: Vec<u8> = vec![];
+
+        result.extend_from_slice(&(key.len() as u16).to_be_bytes());
+        result.extend_from_slice(key);
+
+        match self {
+            DataEntry::Integer(value) => {
+                result.push(0u8);
+                result.extend_from_slice(&value.to_be_bytes());
+            }
+            DataEntry::Boolean(value) => {
+                result.push(1u8);
+                result.push(*value as u8);
+            }
+            DataEntry::Binary(value) => {
+                result.push(2u8);
+                result.extend_from_slice(&(value.len() as u32).to_be_bytes());
+                result.extend_from_slice(value);
+            }
+            DataEntry::String(value) => {
+                result.push(3u8);
+                result.extend_from_slice(&(value.len() as u32).to_be_bytes());
+                result.extend_from_slice(value);
+            }
+        }
+
+        result
+    }
+}
+
 pub fn parse(input: &[u8], memory: &mut [u8], offset_memory: &mut usize) -> Result<Vec<String>> {
     let mut offset_input: usize = 0;
 
