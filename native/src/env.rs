@@ -154,8 +154,8 @@ env_runtime! {
 env_runtime! {
     #[version = 0]
     pub fn GetStorageInt(
-        offset_contract_id: u32,
-        length_contract_id: u32,
+        offset_address: u32,
+        length_address: u32,
         offset_key: u32,
         length_key: u32,
     ) -> (i32, i64) {
@@ -165,10 +165,10 @@ env_runtime! {
                 None => return (RuntimeError::MemoryNotFound as i32, 0),
             };
 
-            let contract_id = &memory[offset_contract_id as usize..offset_contract_id as usize + length_contract_id as usize];
+            let address = &memory[offset_address as usize..offset_address as usize + length_address as usize];
             let key = &memory[offset_key as usize..offset_key as usize + length_key as usize];
 
-            match ctx.stack.get_storage(contract_id, key) {
+            match ctx.stack.get_storage(address, key) {
                 Ok(result) => {
                     // TODO: DataEntry
                     if result.len() == 8 {
@@ -188,8 +188,8 @@ env_runtime! {
 env_runtime! {
     #[version = 0]
     pub fn GetStorageBool(
-        offset_contract_id: u32,
-        length_contract_id: u32,
+        offset_address: u32,
+        length_address: u32,
         offset_key: u32,
         length_key: u32,
     ) -> (i32, i32) {
@@ -199,10 +199,10 @@ env_runtime! {
                 None => return (RuntimeError::MemoryNotFound as i32, 0),
             };
 
-            let contract_id = &memory[offset_contract_id as usize..offset_contract_id as usize + length_contract_id as usize];
+            let address = &memory[offset_address as usize..offset_address as usize + length_address as usize];
             let key = &memory[offset_key as usize..offset_key as usize + length_key as usize];
 
-            match ctx.stack.get_storage(contract_id, key) {
+            match ctx.stack.get_storage(address, key) {
                 Ok(result) => {
                     // TODO: DataEntry
                     if result.len() == 1 {
@@ -220,8 +220,8 @@ env_runtime! {
 env_runtime! {
     #[version = 0]
     pub fn GetStorageBinary(
-        offset_contract_id: u32,
-        length_contract_id: u32,
+        offset_address: u32,
+        length_address: u32,
         offset_key: u32,
         length_key: u32,
     ) -> (i32, i32, i32) {
@@ -232,10 +232,10 @@ env_runtime! {
             };
             let offset_memory = ctx.heap_base() as usize;
 
-            let contract_id = &memory[offset_contract_id as usize..offset_contract_id as usize + length_contract_id as usize];
+            let address = &memory[offset_address as usize..offset_address as usize + length_address as usize];
             let key = &memory[offset_key as usize..offset_key as usize + length_key as usize];
 
-            match ctx.stack.get_storage(contract_id, key) {
+            match ctx.stack.get_storage(address, key) {
                 // TODO: DataEntry
                 Ok(result) => write_memory!(ctx, memory, offset_memory, result),
                 Err(error) => (error.as_i32(), 0, 0),
@@ -247,8 +247,8 @@ env_runtime! {
 env_runtime! {
     #[version = 0]
     pub fn GetStorageString(
-        offset_contract_id: u32,
-        length_contract_id: u32,
+        offset_address: u32,
+        length_address: u32,
         offset_key: u32,
         length_key: u32,
     ) -> (i32, i32, i32) {
@@ -259,10 +259,10 @@ env_runtime! {
             };
             let offset_memory = ctx.heap_base() as usize;
 
-            let contract_id = &memory[offset_contract_id as usize..offset_contract_id as usize + length_contract_id as usize];
+            let address = &memory[offset_address as usize..offset_address as usize + length_address as usize];
             let key = &memory[offset_key as usize..offset_key as usize + length_key as usize];
 
-            match ctx.stack.get_storage(contract_id, key) {
+            match ctx.stack.get_storage(address, key) {
                 // TODO: DataEntry
                 Ok(result) => write_memory!(ctx, memory, offset_memory, result),
                 Err(error) => (error.as_i32(), 0, 0),

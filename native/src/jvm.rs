@@ -34,7 +34,7 @@ pub enum JvmError {
 
 pub trait Jvm {
     fn get_bytecode(&self, contract_id: &[u8]) -> Result<Vec<u8>>;
-    fn get_storage(&self, contract_id: &[u8], key: &[u8]) -> Result<Vec<u8>>;
+    fn get_storage(&self, address: &[u8], key: &[u8]) -> Result<Vec<u8>>;
     fn set_storage(&self, key: &[u8], data_type: &str, value: &[u8]) -> Result<()>;
     fn get_balance(&self, asset_id: &[u8], address: &[u8]) -> Result<i64>;
     fn transfer(&self, asset_id: &[u8], recipient: &[u8], amount: i64) -> Result<()>;
@@ -88,14 +88,14 @@ impl Jvm for Stack {
         Ok(bytes.to_vec())
     }
 
-    fn get_storage(&self, contract_id: &[u8], key: &[u8]) -> Result<Vec<u8>> {
+    fn get_storage(&self, address: &[u8], key: &[u8]) -> Result<Vec<u8>> {
         let mut env = self
             .jvm
             .attach_current_thread()
             .map_err(|_| Error::Jvm(JvmError::AttachCurrentThread))?;
 
-        let contract_id = env
-            .byte_array_from_slice(contract_id)
+        let address = env
+            .byte_array_from_slice(address)
             .map_err(|_| Error::Jvm(JvmError::NewByteArray))?;
 
         let key = env
@@ -107,10 +107,7 @@ impl Jvm for Stack {
                 self.jvm_callback.clone(),
                 "getStorage",
                 "([B[B)[B",
-                &[
-                    JValue::Object(&contract_id.into()),
-                    JValue::Object(&key.into()),
-                ],
+                &[JValue::Object(&address.into()), JValue::Object(&key.into())],
             )
             .map_err(|_| Error::Jvm(JvmError::MethodCall))?
             .l()
