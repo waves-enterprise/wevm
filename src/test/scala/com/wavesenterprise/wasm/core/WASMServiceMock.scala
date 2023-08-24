@@ -1,6 +1,8 @@
 package com.wavesenterprise.wasm.core
 
 import com.wavesenterprise.utils.Base58
+import com.wavesenterprise.state.DataEntry
+import com.wavesenterprise.transaction.docker.ContractTransactionEntryOps.{parse, toBytes}
 
 import scala.collection.mutable.Map
 
@@ -34,10 +36,12 @@ class WASMServiceMock extends WASMService {
     getClass.getResourceAsStream("/mock.wasm").readAllBytes()
   }
 
-  // TODO: Impl
   override def getStorage(contractId: Array[Byte], key: Array[Byte]): Array[Byte] = {
-    println(new String(key))
-    Array.empty[Byte]
+    val k = if (key.isEmpty) throw new Exception else new String(key)
+    this.storage.get(k) match {
+      case Some(value) => toBytes(value)
+      case None => Array.empty[Byte]
+    }
   }
 
   override def setStorage(value: Array[Byte]) = {

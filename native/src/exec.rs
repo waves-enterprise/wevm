@@ -1,5 +1,5 @@
 use crate::{
-    data_entry,
+    data_entry::DataEntry,
     env::Environment,
     runtime::{Runtime, RuntimeError},
     stack::Stack,
@@ -34,7 +34,7 @@ pub enum ExecutableError {
     /// Failed to parse function argument
     FailedParseFuncArgs = 109,
     /// Failed to parse DataEntry arguments
-    FailedParseDataEntry = 110,
+    FailedDeserializeDataEntry = 110,
     /// Failed during execution
     FailedExec = 111,
 }
@@ -128,7 +128,7 @@ impl Executable {
         let array_memory = memory.data_mut(&mut store);
 
         let func_args: Vec<String> =
-            data_entry::parse(input_data.as_slice(), array_memory, &mut offset_memory)?;
+            DataEntry::deserialize_args(input_data.as_slice(), array_memory, &mut offset_memory)?;
 
         store.data_mut().set_heap_base(offset_memory as i32);
 

@@ -29,8 +29,8 @@ class WASMExecutorSpec extends AnyFreeSpec with Matchers {
       service.balances("null")("3NqEjAkFVzem9CGa3bEPhakQc1Sm2G8gAFU") shouldBe 10000000042L
     }
 
-    "set storage" in {
-      val bytecode = getClass.getResourceAsStream("/set_storage.wasm").readAllBytes()
+    "storage" in {
+      val bytecode = getClass.getResourceAsStream("/storage.wasm").readAllBytes()
 
       executor.runContract(bytecode, "_constructor", Array[Byte](), service) shouldBe 0
 
