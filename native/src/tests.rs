@@ -115,6 +115,8 @@ fn test_vm() {
                     (i32.const 2)
                     (i32.const 2))
             )
+
+            (global $__heap_base (export "__heap_base") i32 (i32.const 0))
         )
         "#;
 
@@ -136,6 +138,8 @@ fn test_vm() {
 
                 (i32.const 0)
             )
+
+            (global $__heap_base (export "__heap_base") i32 (i32.const 0))
         )
         "#;
 
@@ -159,6 +163,8 @@ fn test_vm() {
 
                 (i32.const 0)
             )
+
+            (global $__heap_base (export "__heap_base") i32 (i32.const 0))
 
             ;; For test memory
             (data (i32.const 0) "Hi")
