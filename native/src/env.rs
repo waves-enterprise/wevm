@@ -1,5 +1,7 @@
 use crate::{
+    data_entry::DataEntry,
     env_runtime,
+    exec::ExecutableError,
     jvm::Jvm,
     runtime::{Runtime, RuntimeError},
     write_memory,
@@ -169,14 +171,10 @@ env_runtime! {
             let key = &memory[offset_key as usize..offset_key as usize + length_key as usize];
 
             match ctx.stack.get_storage(address, key) {
-                Ok(result) => {
-                    // TODO: DataEntry
-                    if result.len() == 8 {
-                        let mut temp = [0u8; 8];
-                        temp.copy_from_slice(result.as_slice());
-                        (0, i64::from_be_bytes(temp))
-                    } else {
-                        (RuntimeError::InvalidInteger as i32, 0)
+                Ok(bytes) => {
+                    match DataEntry::deserialize_storage(bytes.as_slice()) {
+                        Ok(DataEntry::Integer(integer)) => (0, integer),
+                        _ => (ExecutableError::FailedDeserializeDataEntry as i32, 0),
                     }
                 },
                 Err(error) => (error.as_i32(), 0),
@@ -203,13 +201,12 @@ env_runtime! {
             let key = &memory[offset_key as usize..offset_key as usize + length_key as usize];
 
             match ctx.stack.get_storage(address, key) {
-                Ok(result) => {
-                    // TODO: DataEntry
-                    if result.len() == 1 {
-                        (0, result[0] as i32)
-                    } else {
-                        (RuntimeError::InvalidBool as i32, 0)
+                Ok(bytes) => {
+                    match DataEntry::deserialize_storage(bytes.as_slice()) {
+                        Ok(DataEntry::Boolean(boolean)) => (0, boolean),
+                        _ => (ExecutableError::FailedDeserializeDataEntry as i32, 0),
                     }
+
                 },
                 Err(error) => (error.as_i32(), 0),
             }
@@ -236,8 +233,13 @@ env_runtime! {
             let key = &memory[offset_key as usize..offset_key as usize + length_key as usize];
 
             match ctx.stack.get_storage(address, key) {
-                // TODO: DataEntry
-                Ok(result) => write_memory!(ctx, memory, offset_memory, result),
+                Ok(bytes) => {
+                    let result = match DataEntry::deserialize_storage(bytes.as_slice()) {
+                        Ok(DataEntry::Binary(bytes)) => bytes,
+                        _ => return (ExecutableError::FailedDeserializeDataEntry as i32, 0, 0),
+                    };
+                    write_memory!(ctx, memory, offset_memory, result)
+                },
                 Err(error) => (error.as_i32(), 0, 0),
             }
         }
@@ -263,8 +265,13 @@ env_runtime! {
             let key = &memory[offset_key as usize..offset_key as usize + length_key as usize];
 
             match ctx.stack.get_storage(address, key) {
-                // TODO: DataEntry
-                Ok(result) => write_memory!(ctx, memory, offset_memory, result),
+                Ok(bytes) => {
+                    let result = match DataEntry::deserialize_storage(bytes.as_slice()) {
+                        Ok(DataEntry::String(bytes)) => bytes,
+                        _ => return (ExecutableError::FailedDeserializeDataEntry as i32, 0, 0),
+                    };
+                    write_memory!(ctx, memory, offset_memory, result)
+                },
                 Err(error) => (error.as_i32(), 0, 0),
             }
         }
@@ -285,8 +292,9 @@ env_runtime! {
             };
 
             let key = &memory[offset_key as usize..offset_key as usize + length_key as usize];
+            let data_entry = DataEntry::Integer(value).serialize(key);
 
-            match ctx.stack.set_storage(key, "Integer", &value.to_be_bytes()) {
+            match ctx.stack.set_storage(data_entry.as_slice()) {
                 Ok(_) => 0,
                 Err(error) => error.as_i32(),
             }
@@ -308,8 +316,9 @@ env_runtime! {
             };
 
             let key = &memory[offset_key as usize..offset_key as usize + length_key as usize];
+            let data_entry = DataEntry::Boolean(value).serialize(key);
 
-            match ctx.stack.set_storage(key, "Boolean", &(value as u8).to_be_bytes()) {
+            match ctx.stack.set_storage(data_entry.as_slice()) {
                 Ok(_) => 0,
                 Err(error) => error.as_i32(),
             }
@@ -333,8 +342,9 @@ env_runtime! {
 
             let key = &memory[offset_key as usize..offset_key as usize + length_key as usize];
             let value = &memory[offset_value as usize..offset_value as usize + length_value as usize];
+            let data_entry = DataEntry::Binary(value.to_vec()).serialize(key);
 
-            match ctx.stack.set_storage(key, "Binary", value) {
+            match ctx.stack.set_storage(data_entry.as_slice()) {
                 Ok(_) => 0,
                 Err(error) => error.as_i32(),
             }
@@ -358,8 +368,9 @@ env_runtime! {
 
             let key = &memory[offset_key as usize..offset_key as usize + length_key as usize];
             let value = &memory[offset_value as usize..offset_value as usize + length_value as usize];
+            let data_entry = DataEntry::String(value.to_vec()).serialize(key);
 
-            match ctx.stack.set_storage(key, "String", value) {
+            match ctx.stack.set_storage(data_entry.as_slice()) {
                 Ok(_) => 0,
                 Err(error) => error.as_i32(),
             }

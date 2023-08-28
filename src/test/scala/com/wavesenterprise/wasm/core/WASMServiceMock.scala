@@ -1,6 +1,8 @@
 package com.wavesenterprise.wasm.core
 
 import com.wavesenterprise.utils.Base58
+import com.wavesenterprise.state.DataEntry
+import com.wavesenterprise.transaction.docker.ContractTransactionEntryOps.{parse, toBytes}
 
 import scala.collection.mutable.Map
 
@@ -10,6 +12,8 @@ class WASMServiceMock extends WASMService {
   val recipient = "3NzkzibVRkKUzaRzjUxndpTPvoBzQ3iLng3"
   val asset = "DnK5Xfi2wXUJx9BjK9X6ZpFdTLdq2GtWH9pWrcxcmrhB"
   val lease = "6Tn7ir9MycHW6Gq2F2dGok2stokSwXJadPh4hW8eZ8Sp"
+
+  var storage: Map[String, DataEntry[_]] = Map.empty[String, DataEntry[_]]
 
   var balances: Map[String, Map[String, Long]] = Map(
     "null" -> Map(
@@ -32,28 +36,42 @@ class WASMServiceMock extends WASMService {
     getClass.getResourceAsStream("/mock.wasm").readAllBytes()
   }
 
-  // TODO: Impl
   override def getStorage(contractId: Array[Byte], key: Array[Byte]): Array[Byte] = {
-    println(new String(key))
-    Array.empty[Byte]
+    val k = if (key.isEmpty) throw new Exception else new String(key)
+    this.storage.get(k) match {
+      case Some(value) => toBytes(value)
+      case None => Array.empty[Byte]
+    }
   }
 
-  // TODO: Impl
-  override def setStorage(data: Array[Byte]) = {
-    println(data.mkString(","))
+  override def setStorage(value: Array[Byte]) = {
+    val dataEntry = parse(value, 0)._1
+    this.storage(dataEntry.key) = dataEntry
   }
 
   override def getBalance(assetId: Array[Byte], address: Array[Byte]): Long = {
     val as = if (assetId.isEmpty) "null" else Base58.encode(assetId)
     val ad = if (address.isEmpty) this.contract else Base58.encode(address)
-    this.balances(as)(ad)
+    this.balances.get(as) match {
+      case Some(balances) => balances.get(ad) match {
+        case Some(balance) => balance
+        case None => 0
+      }
+      case None => throw new Exception
+    }
   }
 
   override def transfer(assetId: Array[Byte], recipient: Array[Byte], amount: Long) = {
     val a = if (assetId.isEmpty) "null" else Base58.encode(assetId)
     val r = if (recipient.isEmpty) throw new Exception else Base58.encode(recipient)
 
-    val balance = this.balances(a)(this.contract)
+    val balance = this.balances.get(a) match {
+      case Some(balances) => balances.get(this.contract) match {
+        case Some(balance) => balance
+        case None => 0
+      }
+      case None => throw new Exception
+    }
     if (balance < amount) throw new Exception
 
     this.balances(a)(this.contract) -= amount
@@ -67,7 +85,13 @@ class WASMServiceMock extends WASMService {
     val a = if (assetId.isEmpty) throw new Exception else Base58.encode(assetId)
     if (a != this.asset) throw new Exception
 
-    val balance = this.balances(a)(this.contract)
+    val balance = this.balances.get(a) match {
+      case Some(balances) => balances.get(this.contract) match {
+        case Some(balance) => balance
+        case None => 0
+      }
+      case None => throw new Exception
+    }
     if (balance < amount) throw new Exception
 
     this.balances(a)(this.contract) -= amount
