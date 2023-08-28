@@ -107,6 +107,7 @@ impl TestRunner {
 fn test_vm() {
     let runner = TestRunner::new();
 
+    // Base test
     {
         let wat = r#"
         (module
@@ -126,6 +127,7 @@ fn test_vm() {
         assert_eq!(result[0], Value::I32(4));
     }
 
+    // Import test
     {
         let wat = r#"
         (module
@@ -149,6 +151,7 @@ fn test_vm() {
         assert_eq!(result[0], Value::I32(0));
     }
 
+    // Memory test
     {
         let wat = r#"
         (module
@@ -175,5 +178,32 @@ fn test_vm() {
 
         assert_eq!(result.len(), 1);
         assert_eq!(result[0], Value::I32(0));
+    }
+
+    // Args test
+    {
+        let wat = r#"
+        (module
+            (func (export "_constructor") (param $p0 i32) (result i32)
+                (i32.add
+                    (local.get $p0)
+                    (i32.const 2)
+                )
+            )
+
+            (global $__heap_base (export "__heap_base") i32 (i32.const 0))
+        )
+        "#;
+
+        let result = runner.run(
+            wat,
+            None,
+            vec![
+                0, 1, 0, 8, 116, 101, 115, 116, 95, 107, 101, 121, 0, 0, 0, 0, 0, 0, 0, 0, 1,
+            ],
+        );
+
+        assert_eq!(result.len(), 1);
+        assert_eq!(result[0], Value::I32(3));
     }
 }

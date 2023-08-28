@@ -174,7 +174,7 @@ env_runtime! {
                 Ok(bytes) => {
                     match DataEntry::deserialize_storage(bytes.as_slice()) {
                         Ok(DataEntry::Integer(integer)) => (0, integer),
-                        _ => return (ExecutableError::FailedDeserializeDataEntry as i32, 0),
+                        _ => (ExecutableError::FailedDeserializeDataEntry as i32, 0),
                     }
                 },
                 Err(error) => (error.as_i32(), 0),
@@ -204,7 +204,7 @@ env_runtime! {
                 Ok(bytes) => {
                     match DataEntry::deserialize_storage(bytes.as_slice()) {
                         Ok(DataEntry::Boolean(boolean)) => (0, boolean),
-                        _ => return (ExecutableError::FailedDeserializeDataEntry as i32, 0),
+                        _ => (ExecutableError::FailedDeserializeDataEntry as i32, 0),
                     }
 
                 },

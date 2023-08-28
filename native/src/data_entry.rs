@@ -59,7 +59,7 @@ impl DataEntry {
             return Ok(args);
         }
 
-        let mut count = Self::get_u8(input, &mut offset_input)?;
+        let mut count = Self::get_u16(input, &mut offset_input)?;
         while count > 0 {
             Self::skip_key(input, &mut offset_input)?;
             match Self::get_value(input, &mut offset_input)? {
@@ -71,6 +71,7 @@ impl DataEntry {
                     output[offset_o..offset_o + length].copy_from_slice(value.as_slice());
                     args.push(format!("{}", *offset_output));
                     args.push(format!("{}", length));
+                    *offset_output += length;
                 }
                 Self::String(value) => {
                     let length = value.len();
@@ -78,6 +79,7 @@ impl DataEntry {
                     output[offset_o..offset_o + length].copy_from_slice(value.as_slice());
                     args.push(format!("{}", *offset_output));
                     args.push(format!("{}", length));
+                    *offset_output += length;
                 }
             }
             count -= 1;
@@ -105,20 +107,18 @@ impl DataEntry {
                 Ok(Self::Boolean(boolean as i32))
             }
             2u8 => {
-                let length = Self::get_u16(input, offset)?;
+                let length = Self::get_u32(input, offset)?;
                 let binary = Self::get_bytes(input, offset, length as usize)?;
                 Ok(Self::Binary(binary))
             }
             3u8 => {
-                let length = Self::get_u16(input, offset)?;
+                let length = Self::get_u32(input, offset)?;
                 let string = Self::get_bytes(input, offset, length as usize)?;
                 Ok(Self::String(string))
             }
-            _ => {
-                return Err(Error::Executable(
-                    ExecutableError::FailedDeserializeDataEntry,
-                ))
-            }
+            _ => Err(Error::Executable(
+                ExecutableError::FailedDeserializeDataEntry,
+            )),
         }
     }
 
@@ -142,6 +142,16 @@ impl DataEntry {
         Ok(result)
     }
 
+    fn get_u32(input: &[u8], offset: &mut usize) -> Result<u32> {
+        let bytes = Self::get_bytes(input, offset, 4)?;
+        let result = u32::from_be_bytes(
+            bytes[0..4]
+                .try_into()
+                .map_err(|_| Error::Executable(ExecutableError::FailedDeserializeDataEntry))?,
+        );
+        Ok(result)
+    }
+
     fn get_u64(input: &[u8], offset: &mut usize) -> Result<u64> {
         let bytes = Self::get_bytes(input, offset, 8)?;
         let result = u64::from_be_bytes(
@@ -159,11 +169,9 @@ impl DataEntry {
                 *offset += length;
                 Ok(bytes.to_vec())
             }
-            None => {
-                return Err(Error::Executable(
-                    ExecutableError::FailedDeserializeDataEntry,
-                ))
-            }
+            None => Err(Error::Executable(
+                ExecutableError::FailedDeserializeDataEntry,
+            )),
         }
     }
 }
@@ -188,15 +196,15 @@ mod tests {
         let vec: Vec<u8> = vec![116, 101, 115, 116, 95, 118, 97, 108, 117, 101];
 
         let input = [
-            0, 8, 116, 101, 115, 116, 95, 107, 101, 121, 2, 0, 10, 116, 101, 115, 116, 95, 118, 97,
-            108, 117, 101,
+            0, 8, 116, 101, 115, 116, 95, 107, 101, 121, 2, 0, 0, 0, 10, 116, 101, 115, 116, 95,
+            118, 97, 108, 117, 101,
         ];
         let result = DataEntry::deserialize_storage(&input).expect("Error deserialize DataEntry");
         assert_eq!(result, DataEntry::Binary(vec.clone()));
 
         let input = [
-            0, 8, 116, 101, 115, 116, 95, 107, 101, 121, 3, 0, 10, 116, 101, 115, 116, 95, 118, 97,
-            108, 117, 101,
+            0, 8, 116, 101, 115, 116, 95, 107, 101, 121, 3, 0, 0, 0, 10, 116, 101, 115, 116, 95,
+            118, 97, 108, 117, 101,
         ];
         let result = DataEntry::deserialize_storage(&input).expect("Error deserialize DataEntry");
         assert_eq!(result, DataEntry::String(vec.clone()));
@@ -205,10 +213,11 @@ mod tests {
     #[test]
     fn test_deserialize_args() {
         let input = [
-            4, 0, 8, 116, 101, 115, 116, 95, 107, 101, 121, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 8, 116,
-            101, 115, 116, 95, 107, 101, 121, 1, 1, 0, 8, 116, 101, 115, 116, 95, 107, 101, 121, 2,
-            0, 10, 116, 101, 115, 116, 95, 118, 97, 108, 117, 101, 0, 8, 116, 101, 115, 116, 95,
-            107, 101, 121, 3, 0, 10, 116, 101, 115, 116, 95, 118, 97, 108, 117, 101,
+            0, 4, 0, 8, 116, 101, 115, 116, 95, 107, 101, 121, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 8,
+            116, 101, 115, 116, 95, 107, 101, 121, 1, 1, 0, 8, 116, 101, 115, 116, 95, 107, 101,
+            121, 2, 0, 0, 0, 10, 116, 101, 115, 116, 95, 118, 97, 108, 117, 101, 0, 8, 116, 101,
+            115, 116, 95, 107, 101, 121, 3, 0, 0, 0, 10, 116, 101, 115, 116, 95, 118, 97, 108, 117,
+            101,
         ];
 
         let mut memory = [0u8; 1000];
