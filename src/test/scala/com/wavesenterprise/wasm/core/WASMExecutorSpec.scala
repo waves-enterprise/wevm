@@ -1,9 +1,10 @@
 package com.wavesenterprise.wasm.core
 
-import com.google.common.io.{ByteStreams, ByteArrayDataOutput}
+import com.google.common.io.{ByteArrayDataOutput, ByteStreams}
 import com.wavesenterprise.state.{ByteStr, DataEntry, IntegerDataEntry, BooleanDataEntry, BinaryDataEntry, StringDataEntry}
 import com.wavesenterprise.serialization.BinarySerializer
 import com.wavesenterprise.transaction.docker.ContractTransactionEntryOps.toBytes
+import com.wavesenterprise.utils.Base58
 import org.scalatest.freespec.AnyFreeSpec
 import org.scalatest.matchers.should.Matchers
 
@@ -30,15 +31,17 @@ class WASMExecutorSpec extends AnyFreeSpec with Matchers {
     }
 
     "transfer" in {
+      val contractId = Base58.decode(service.contract).get
       val bytecode = getClass.getResourceAsStream("/transfer.wasm").readAllBytes()
 
-      executor.runContract(bytecode, "_constructor", Array[Byte](), service) shouldBe 0
+      executor.runContract(contractId, bytecode, "_constructor", Array[Byte](), service) shouldBe 0
 
       service.balances("null")(service.contract) shouldBe 9999999958L
       service.balances("null")("3NqEjAkFVzem9CGa3bEPhakQc1Sm2G8gAFU") shouldBe 10000000042L
     }
 
     "storage" in {
+      val contractId = Base58.decode(service.contract).get
       val bytecode = getClass.getResourceAsStream("/storage.wasm").readAllBytes()
 
       val entry1 = IntegerDataEntry("integer_key", 42)
@@ -49,7 +52,7 @@ class WASMExecutorSpec extends AnyFreeSpec with Matchers {
       var args: ByteArrayDataOutput = ByteStreams.newDataOutput()
       writeDataEntryList(List(entry1, entry2, entry3, entry4), args)
 
-      executor.runContract(bytecode, "_constructor", args.toByteArray(), service) shouldBe 0
+      executor.runContract(contractId, bytecode, "_constructor", args.toByteArray(), service) shouldBe 0
 
       service.storage("integer_key") shouldBe entry1
       service.storage("boolean_key") shouldBe entry2

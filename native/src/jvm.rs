@@ -35,40 +35,64 @@ pub enum JvmError {
 pub trait Jvm {
     fn get_bytecode(&self, contract_id: &[u8]) -> Result<Vec<u8>>;
     fn get_storage(&self, address: &[u8], key: &[u8]) -> Result<Vec<u8>>;
-    fn set_storage(&self, value: &[u8]) -> Result<()>;
+    fn set_storage(&self, contract_id: &[u8], value: &[u8]) -> Result<()>;
     fn get_balance(&self, asset_id: &[u8], address: &[u8]) -> Result<i64>;
-    fn transfer(&self, asset_id: &[u8], recipient: &[u8], amount: i64) -> Result<()>;
+    fn transfer(
+        &self,
+        contract_id: &[u8],
+        asset_id: &[u8],
+        recipient: &[u8],
+        amount: i64,
+    ) -> Result<()>;
     fn issue(
         &self,
+        contract_id: &[u8],
         name: &[u8],
         description: &[u8],
         quantity: i64,
         decimals: i32,
         is_reissuable: bool,
     ) -> Result<Vec<u8>>;
-    fn burn(&self, asset_id: &[u8], amount: i64) -> Result<()>;
-    fn reissue(&self, asset_id: &[u8], amount: i64, is_reissuable: bool) -> Result<()>;
-    fn lease(&self, recipient: &[u8], amount: i64) -> Result<Vec<u8>>;
-    fn cancel_lease(&self, lease_id: &[u8]) -> Result<()>;
+    fn burn(&self, contract_id: &[u8], asset_id: &[u8], amount: i64) -> Result<()>;
+    fn reissue(
+        &self,
+        contract_id: &[u8],
+        asset_id: &[u8],
+        amount: i64,
+        is_reissuable: bool,
+    ) -> Result<()>;
+    fn lease(&self, contract_id: &[u8], recipient: &[u8], amount: i64) -> Result<Vec<u8>>;
+    fn cancel_lease(&self, contract_id: &[u8], lease_id: &[u8]) -> Result<()>;
     fn get_block_timestamp(&self) -> Result<i64>;
     fn get_block_height(&self) -> Result<i64>;
     fn get_tx_sender(&self) -> Result<Vec<u8>>;
-    fn get_tx_payments(&self) -> Result<i32>;
-    fn get_tx_payment_asset_id(&self, number: i32) -> Result<Vec<u8>>;
-    fn get_tx_payment_amount(&self, number: i32) -> Result<i64>;
+    fn get_tx_payments(&self, contract_id: &[u8]) -> Result<i32>;
+    fn get_tx_payment_asset_id(&self, contract_id: &[u8], number: i32) -> Result<Vec<u8>>;
+    fn get_tx_payment_amount(&self, contract_id: &[u8], number: i32) -> Result<i64>;
+}
+
+macro_rules! env {
+    ($self:expr) => {{
+        $self
+            .jvm
+            .attach_current_thread()
+            .map_err(|_| Error::Jvm(JvmError::AttachCurrentThread))?
+    }};
+}
+
+macro_rules! byte_array {
+    ($env:expr, $value:expr) => {{
+        $env.byte_array_from_slice($value)
+            .map_err(|_| Error::Jvm(JvmError::NewByteArray))?
+    }};
 }
 
 // Implementing the JVM call
 impl Jvm for Stack {
     fn get_bytecode(&self, contract_id: &[u8]) -> Result<Vec<u8>> {
-        let mut env = self
-            .jvm
-            .attach_current_thread()
-            .map_err(|_| Error::Jvm(JvmError::AttachCurrentThread))?;
+        let mut env = env!(self);
 
-        let contract_id = env
-            .byte_array_from_slice(contract_id)
-            .map_err(|_| Error::Jvm(JvmError::NewByteArray))?;
+        let contract_id = byte_array!(env, contract_id);
 
         let result = env
             .call_method(
@@ -89,18 +113,10 @@ impl Jvm for Stack {
     }
 
     fn get_storage(&self, address: &[u8], key: &[u8]) -> Result<Vec<u8>> {
-        let mut env = self
-            .jvm
-            .attach_current_thread()
-            .map_err(|_| Error::Jvm(JvmError::AttachCurrentThread))?;
+        let mut env = env!(self);
 
-        let address = env
-            .byte_array_from_slice(address)
-            .map_err(|_| Error::Jvm(JvmError::NewByteArray))?;
-
-        let key = env
-            .byte_array_from_slice(key)
-            .map_err(|_| Error::Jvm(JvmError::NewByteArray))?;
+        let address = byte_array!(env, address);
+        let key = byte_array!(env, key);
 
         let result = env
             .call_method(
@@ -120,21 +136,20 @@ impl Jvm for Stack {
         Ok(bytes.to_vec())
     }
 
-    fn set_storage(&self, value: &[u8]) -> Result<()> {
-        let mut env = self
-            .jvm
-            .attach_current_thread()
-            .map_err(|_| Error::Jvm(JvmError::AttachCurrentThread))?;
+    fn set_storage(&self, contract_id: &[u8], value: &[u8]) -> Result<()> {
+        let mut env = env!(self);
 
-        let value = env
-            .byte_array_from_slice(value)
-            .map_err(|_| Error::Jvm(JvmError::NewByteArray))?;
+        let contract_id = byte_array!(env, contract_id);
+        let value = byte_array!(env, value);
 
         env.call_method(
             self.jvm_callback.clone(),
             "setStorage",
-            "([B)V",
-            &[JValue::Object(&value.into())],
+            "([B[B)V",
+            &[
+                JValue::Object(&contract_id.into()),
+                JValue::Object(&value.into()),
+            ],
         )
         .map_err(|_| Error::Jvm(JvmError::MethodCall))?;
 
@@ -142,18 +157,10 @@ impl Jvm for Stack {
     }
 
     fn get_balance(&self, asset_id: &[u8], address: &[u8]) -> Result<i64> {
-        let mut env = self
-            .jvm
-            .attach_current_thread()
-            .map_err(|_| Error::Jvm(JvmError::AttachCurrentThread))?;
+        let mut env = env!(self);
 
-        let asset_id = env
-            .byte_array_from_slice(asset_id)
-            .map_err(|_| Error::Jvm(JvmError::NewByteArray))?;
-
-        let address = env
-            .byte_array_from_slice(address)
-            .map_err(|_| Error::Jvm(JvmError::NewByteArray))?;
+        let asset_id = byte_array!(env, asset_id);
+        let address = byte_array!(env, address);
 
         let result = env
             .call_method(
@@ -172,25 +179,25 @@ impl Jvm for Stack {
         Ok(result)
     }
 
-    fn transfer(&self, asset_id: &[u8], recipient: &[u8], amount: i64) -> Result<()> {
-        let mut env = self
-            .jvm
-            .attach_current_thread()
-            .map_err(|_| Error::Jvm(JvmError::AttachCurrentThread))?;
+    fn transfer(
+        &self,
+        contract_id: &[u8],
+        asset_id: &[u8],
+        recipient: &[u8],
+        amount: i64,
+    ) -> Result<()> {
+        let mut env = env!(self);
 
-        let asset_id = env
-            .byte_array_from_slice(asset_id)
-            .map_err(|_| Error::Jvm(JvmError::NewByteArray))?;
-
-        let recipient = env
-            .byte_array_from_slice(recipient)
-            .map_err(|_| Error::Jvm(JvmError::NewByteArray))?;
+        let contract_id = byte_array!(env, contract_id);
+        let asset_id = byte_array!(env, asset_id);
+        let recipient = byte_array!(env, recipient);
 
         env.call_method(
             self.jvm_callback.clone(),
             "transfer",
-            "([B[BJ)V",
+            "([B[B[BJ)V",
             &[
+                JValue::Object(&contract_id.into()),
                 JValue::Object(&asset_id.into()),
                 JValue::Object(&recipient.into()),
                 amount.into(),
@@ -203,31 +210,26 @@ impl Jvm for Stack {
 
     fn issue(
         &self,
+        contract_id: &[u8],
         name: &[u8],
         description: &[u8],
         quantity: i64,
         decimals: i32,
         is_reissuable: bool,
     ) -> Result<Vec<u8>> {
-        let mut env = self
-            .jvm
-            .attach_current_thread()
-            .map_err(|_| Error::Jvm(JvmError::AttachCurrentThread))?;
+        let mut env = env!(self);
 
-        let name = env
-            .byte_array_from_slice(name)
-            .map_err(|_| Error::Jvm(JvmError::NewByteArray))?;
-
-        let description = env
-            .byte_array_from_slice(description)
-            .map_err(|_| Error::Jvm(JvmError::NewByteArray))?;
+        let contract_id = byte_array!(env, contract_id);
+        let name = byte_array!(env, name);
+        let description = byte_array!(env, description);
 
         let result = env
             .call_method(
                 self.jvm_callback.clone(),
                 "issue",
-                "([B[BJIZ)[B",
+                "([B[B[BJIZ)[B",
                 &[
+                    JValue::Object(&contract_id.into()),
                     JValue::Object(&name.into()),
                     JValue::Object(&description.into()),
                     quantity.into(),
@@ -246,42 +248,45 @@ impl Jvm for Stack {
         Ok(bytes.to_vec())
     }
 
-    fn burn(&self, asset_id: &[u8], amount: i64) -> Result<()> {
-        let mut env = self
-            .jvm
-            .attach_current_thread()
-            .map_err(|_| Error::Jvm(JvmError::AttachCurrentThread))?;
+    fn burn(&self, contract_id: &[u8], asset_id: &[u8], amount: i64) -> Result<()> {
+        let mut env = env!(self);
 
-        let asset_id = env
-            .byte_array_from_slice(asset_id)
-            .map_err(|_| Error::Jvm(JvmError::NewByteArray))?;
+        let contract_id = byte_array!(env, contract_id);
+        let asset_id = byte_array!(env, asset_id);
 
         env.call_method(
             self.jvm_callback.clone(),
             "burn",
-            "([BJ)V",
-            &[JValue::Object(&asset_id.into()), amount.into()],
+            "([B[BJ)V",
+            &[
+                JValue::Object(&contract_id.into()),
+                JValue::Object(&asset_id.into()),
+                amount.into(),
+            ],
         )
         .map_err(|_| Error::Jvm(JvmError::MethodCall))?;
 
         Ok(())
     }
 
-    fn reissue(&self, asset_id: &[u8], amount: i64, is_reissuable: bool) -> Result<()> {
-        let mut env = self
-            .jvm
-            .attach_current_thread()
-            .map_err(|_| Error::Jvm(JvmError::AttachCurrentThread))?;
+    fn reissue(
+        &self,
+        contract_id: &[u8],
+        asset_id: &[u8],
+        amount: i64,
+        is_reissuable: bool,
+    ) -> Result<()> {
+        let mut env = env!(self);
 
-        let asset_id = env
-            .byte_array_from_slice(asset_id)
-            .map_err(|_| Error::Jvm(JvmError::NewByteArray))?;
+        let contract_id = byte_array!(env, contract_id);
+        let asset_id = byte_array!(env, asset_id);
 
         env.call_method(
             self.jvm_callback.clone(),
             "reissue",
-            "([BJZ)V",
+            "([B[BJZ)V",
             &[
+                JValue::Object(&contract_id.into()),
                 JValue::Object(&asset_id.into()),
                 amount.into(),
                 is_reissuable.into(),
@@ -292,22 +297,22 @@ impl Jvm for Stack {
         Ok(())
     }
 
-    fn lease(&self, recipient: &[u8], amount: i64) -> Result<Vec<u8>> {
-        let mut env = self
-            .jvm
-            .attach_current_thread()
-            .map_err(|_| Error::Jvm(JvmError::AttachCurrentThread))?;
+    fn lease(&self, contract_id: &[u8], recipient: &[u8], amount: i64) -> Result<Vec<u8>> {
+        let mut env = env!(self);
 
-        let recipient = env
-            .byte_array_from_slice(recipient)
-            .map_err(|_| Error::Jvm(JvmError::NewByteArray))?;
+        let contract_id = byte_array!(env, contract_id);
+        let recipient = byte_array!(env, recipient);
 
         let result = env
             .call_method(
                 self.jvm_callback.clone(),
                 "lease",
-                "([BJ)[B",
-                &[JValue::Object(&recipient.into()), amount.into()],
+                "([B[BJ)[B",
+                &[
+                    JValue::Object(&contract_id.into()),
+                    JValue::Object(&recipient.into()),
+                    amount.into(),
+                ],
             )
             .map_err(|_| Error::Jvm(JvmError::MethodCall))?
             .l()
@@ -320,21 +325,20 @@ impl Jvm for Stack {
         Ok(bytes.to_vec())
     }
 
-    fn cancel_lease(&self, lease_id: &[u8]) -> Result<()> {
-        let mut env = self
-            .jvm
-            .attach_current_thread()
-            .map_err(|_| Error::Jvm(JvmError::AttachCurrentThread))?;
+    fn cancel_lease(&self, contract_id: &[u8], lease_id: &[u8]) -> Result<()> {
+        let mut env = env!(self);
 
-        let lease_id = env
-            .byte_array_from_slice(lease_id)
-            .map_err(|_| Error::Jvm(JvmError::NewByteArray))?;
+        let contract_id = byte_array!(env, contract_id);
+        let lease_id = byte_array!(env, lease_id);
 
         env.call_method(
             self.jvm_callback.clone(),
             "cancelLease",
-            "([B)V",
-            &[JValue::Object(&lease_id.into())],
+            "([B[B)V",
+            &[
+                JValue::Object(&contract_id.into()),
+                JValue::Object(&lease_id.into()),
+            ],
         )
         .map_err(|_| Error::Jvm(JvmError::MethodCall))?;
 
@@ -342,10 +346,7 @@ impl Jvm for Stack {
     }
 
     fn get_block_timestamp(&self) -> Result<i64> {
-        let mut env = self
-            .jvm
-            .attach_current_thread()
-            .map_err(|_| Error::Jvm(JvmError::AttachCurrentThread))?;
+        let mut env = env!(self);
 
         let result = env
             .call_method(self.jvm_callback.clone(), "getBlockTimestamp", "()J", &[])
@@ -357,10 +358,7 @@ impl Jvm for Stack {
     }
 
     fn get_block_height(&self) -> Result<i64> {
-        let mut env = self
-            .jvm
-            .attach_current_thread()
-            .map_err(|_| Error::Jvm(JvmError::AttachCurrentThread))?;
+        let mut env = env!(self);
 
         let result = env
             .call_method(self.jvm_callback.clone(), "getBlockHeight", "()J", &[])
@@ -372,10 +370,7 @@ impl Jvm for Stack {
     }
 
     fn get_tx_sender(&self) -> Result<Vec<u8>> {
-        let mut env = self
-            .jvm
-            .attach_current_thread()
-            .map_err(|_| Error::Jvm(JvmError::AttachCurrentThread))?;
+        let mut env = env!(self);
 
         let result = env
             .call_method(self.jvm_callback.clone(), "getTxSender", "()[B", &[])
@@ -390,14 +385,18 @@ impl Jvm for Stack {
         Ok(bytes.to_vec())
     }
 
-    fn get_tx_payments(&self) -> Result<i32> {
-        let mut env = self
-            .jvm
-            .attach_current_thread()
-            .map_err(|_| Error::Jvm(JvmError::AttachCurrentThread))?;
+    fn get_tx_payments(&self, contract_id: &[u8]) -> Result<i32> {
+        let mut env = env!(self);
+
+        let contract_id = byte_array!(env, contract_id);
 
         let result = env
-            .call_method(self.jvm_callback.clone(), "getTxPayments", "()I", &[])
+            .call_method(
+                self.jvm_callback.clone(),
+                "getTxPayments",
+                "([B)I",
+                &[JValue::Object(&contract_id.into())],
+            )
             .map_err(|_| Error::Jvm(JvmError::MethodCall))?
             .i()
             .map_err(|_| Error::Jvm(JvmError::ReceiveInt))?;
@@ -405,18 +404,17 @@ impl Jvm for Stack {
         Ok(result)
     }
 
-    fn get_tx_payment_asset_id(&self, number: i32) -> Result<Vec<u8>> {
-        let mut env = self
-            .jvm
-            .attach_current_thread()
-            .map_err(|_| Error::Jvm(JvmError::AttachCurrentThread))?;
+    fn get_tx_payment_asset_id(&self, contract_id: &[u8], number: i32) -> Result<Vec<u8>> {
+        let mut env = env!(self);
+
+        let contract_id = byte_array!(env, contract_id);
 
         let result = env
             .call_method(
                 self.jvm_callback.clone(),
                 "getTxPaymentAssetId",
-                "(I)[B",
-                &[number.into()],
+                "([BI)[B",
+                &[JValue::Object(&contract_id.into()), number.into()],
             )
             .map_err(|_| Error::Jvm(JvmError::MethodCall))?
             .l()
@@ -429,18 +427,17 @@ impl Jvm for Stack {
         Ok(bytes.to_vec())
     }
 
-    fn get_tx_payment_amount(&self, number: i32) -> Result<i64> {
-        let mut env = self
-            .jvm
-            .attach_current_thread()
-            .map_err(|_| Error::Jvm(JvmError::AttachCurrentThread))?;
+    fn get_tx_payment_amount(&self, contract_id: &[u8], number: i32) -> Result<i64> {
+        let mut env = env!(self);
+
+        let contract_id = byte_array!(env, contract_id);
 
         let result = env
             .call_method(
                 self.jvm_callback.clone(),
                 "getTxPaymentAmount",
-                "(I)J",
-                &[number.into()],
+                "([BI)J",
+                &[JValue::Object(&contract_id.into()), number.into()],
             )
             .map_err(|_| Error::Jvm(JvmError::MethodCall))?
             .j()

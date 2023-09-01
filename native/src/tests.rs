@@ -94,7 +94,7 @@ impl TestRunner {
             Box::new(test_memory),
         ];
 
-        let mut stack = Stack::new(bytecode, memory, envs, jvm, global_ref)
+        let mut stack = Stack::new(vec![], bytecode, memory, envs, jvm, global_ref)
             .expect("Call stack creation failed");
 
         stack

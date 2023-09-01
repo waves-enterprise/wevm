@@ -64,11 +64,17 @@ pub type Result<T, E = Error> = core::result::Result<T, E>;
 pub extern "system" fn Java_com_wavesenterprise_wasm_core_WASMExecutor_runContract<'local>(
     mut env: JNIEnv<'local>,
     _class: JClass<'local>,
+    contract_id: JByteArray<'local>,
     bytecode: JByteArray<'local>,
     func_name: JString<'local>,
     func_args: JByteArray<'local>,
     callback: JObject<'local>,
 ) -> jint {
+    let contract_id = match env.convert_byte_array(contract_id) {
+        Ok(bytes) => bytes,
+        Err(_) => return JvmError::ByteArrayConversion as jint,
+    };
+
     let bytecode = match env.convert_byte_array(bytecode) {
         Ok(bytes) => bytes,
         Err(_) => return JvmError::ByteArrayConversion as jint,
@@ -87,7 +93,7 @@ pub extern "system" fn Java_com_wavesenterprise_wasm_core_WASMExecutor_runContra
         Err(_) => return JvmError::NewGlobalRef as jint,
     };
 
-    let mut stack = match Stack::new(bytecode, memory, envs, jvm, callback) {
+    let mut stack = match Stack::new(contract_id, bytecode, memory, envs, jvm, callback) {
         Ok(stack) => stack,
         Err(error) => return error.as_jint(),
     };
