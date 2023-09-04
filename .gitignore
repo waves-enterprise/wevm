@@ -2,5 +2,7 @@
 /core/target
 /native/target
 /native/Cargo.lock
+/native/wat2wasm/target
+/native/wat2wasm/Cargo.lock
 /project/project
 /project/target
