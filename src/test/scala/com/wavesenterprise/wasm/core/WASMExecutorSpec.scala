@@ -68,5 +68,29 @@ class WASMExecutorSpec extends AnyFreeSpec with Matchers {
 
       service.balances(service.asset)(service.contract) shouldBe 9999999982L
     }
+
+    "lease" in {
+      val contractId = Base58.decode(service.contract).get
+      val bytecode = getClass.getResourceAsStream("/lease.wasm").readAllBytes()
+
+      executor.runContract(contractId, bytecode, "_constructor", Array[Byte](), service) shouldBe 0
+    }
+
+    "block and tx" in {
+      val contractId = Base58.decode(service.contract).get
+      val bytecode = getClass.getResourceAsStream("/block_and_tx.wasm").readAllBytes()
+
+      executor.runContract(contractId, bytecode, "_constructor", Array[Byte](), service) shouldBe 0
+
+      val txSender = BinaryDataEntry("tx_sender", ByteStr.decodeBase58(service.txSender).get)
+      val txPaymentAssetId = BinaryDataEntry("tx_payment_asset_id", ByteStr.decodeBase58(service.asset).get)
+
+      service.storage("block_timestamp").value shouldBe 1690202857485L
+      service.storage("block_height").value shouldBe 3745592L
+      service.storage("tx_sender") shouldBe txSender
+      service.storage("tx_payments").value shouldBe 2
+      service.storage("tx_payment_asset_id") shouldBe txPaymentAssetId
+      service.storage("tx_payment_amount").value shouldBe 2400000000L
+    }
   }
 }

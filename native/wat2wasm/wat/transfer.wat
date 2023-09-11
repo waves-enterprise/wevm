@@ -1,5 +1,6 @@
 (module
     (import "env" "memory" (memory 2 16))
+
     (import "env0" "base_58" (func $base_58 (param i32 i32) (result i32 i32 i32)))
     (import "env0" "get_balance" (func $get_balance (param i32 i32 i32 i32) (result i32 i64)))
     (import "env0" "transfer" (func $transfer (param i32 i32 i32 i32 i64) (result i32)))
