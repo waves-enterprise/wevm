@@ -1,12 +1,21 @@
-use std::fs;
-use std::io::Write;
+use clap::Parser;
+use std::{fs, io::Write};
+
+#[derive(Parser, Debug)]
+#[command(author, version, about, long_about = None)]
+struct Args {
+    #[arg(long)]
+    input: String,
+    #[arg(long)]
+    output: String,
+}
 
 fn main() {
-    let paths = fs::read_dir("./wat").unwrap();
+    let args = Args::parse();
+    let paths = fs::read_dir(args.input).unwrap();
 
     for path in paths {
         let path = path.unwrap();
-
         let wat = path.path();
         let name = path
             .file_name()
@@ -20,10 +29,10 @@ fn main() {
             .create(true)
             .write(true)
             .truncate(true)
-            .open(format!("../../src/test/resources/{}", name))
+            .open(format!("{}/{}", args.output, name))
             .unwrap();
-
         let _ = wasm.write_all(&binary);
+
         println!("OK");
     }
 }

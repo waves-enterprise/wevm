@@ -6,3 +6,4 @@
 /native/wat2wasm/Cargo.lock
 /project/project
 /project/target
+/src/test/resources/*.wasm

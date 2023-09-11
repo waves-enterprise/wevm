@@ -30,16 +30,6 @@ class WASMExecutorSpec extends AnyFreeSpec with Matchers {
       executor.validateBytecode(wrongBytecode) shouldBe 100
     }
 
-    "transfer" in {
-      val contractId = Base58.decode(service.contract).get
-      val bytecode = getClass.getResourceAsStream("/transfer.wasm").readAllBytes()
-
-      executor.runContract(contractId, bytecode, "_constructor", Array[Byte](), service) shouldBe 0
-
-      service.balances("null")(service.contract) shouldBe 9999999958L
-      service.balances("null")("3NqEjAkFVzem9CGa3bEPhakQc1Sm2G8gAFU") shouldBe 10000000042L
-    }
-
     "storage" in {
       val contractId = Base58.decode(service.contract).get
       val bytecode = getClass.getResourceAsStream("/storage.wasm").readAllBytes()
@@ -58,6 +48,25 @@ class WASMExecutorSpec extends AnyFreeSpec with Matchers {
       service.storage("boolean_key") shouldBe entry2
       service.storage("binary_key") shouldBe entry3
       service.storage("string_key") shouldBe entry4
+    }
+
+    "transfer" in {
+      val contractId = Base58.decode(service.contract).get
+      val bytecode = getClass.getResourceAsStream("/transfer.wasm").readAllBytes()
+
+      executor.runContract(contractId, bytecode, "_constructor", Array[Byte](), service) shouldBe 0
+
+      service.balances("null")(service.contract) shouldBe 9999999958L
+      service.balances("null")("3NqEjAkFVzem9CGa3bEPhakQc1Sm2G8gAFU") shouldBe 10000000042L
+    }
+
+    "asset" in {
+      val contractId = Base58.decode(service.contract).get
+      val bytecode = getClass.getResourceAsStream("/asset.wasm").readAllBytes()
+
+      executor.runContract(contractId, bytecode, "_constructor", Array[Byte](), service) shouldBe 0
+
+      service.balances(service.asset)(service.contract) shouldBe 9999999982L
     }
   }
 }

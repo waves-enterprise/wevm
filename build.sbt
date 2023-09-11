@@ -1,3 +1,5 @@
+import scala.sys.process._
+
 libraryDependencies += "org.scalatest" %% "scalatest" % "3.1.0" % "test"
 libraryDependencies += "com.wavesenterprise" % "we-core" % "1.12.3" % "test"
 
@@ -15,3 +17,13 @@ lazy val native = (project in file("native"))
     nativeCompile / sourceDirectory := baseDirectory.value,
   )
   .enablePlugins(JniNative)
+
+lazy val buildWAT = taskKey[Unit]("build WAT contract")
+buildWAT := {
+  val wat2wasm = baseDirectory.value / "native" / "wat2wasm"
+
+  val input = wat2wasm / "wat"
+  val output = baseDirectory.value / "src" / "test" / "resources"
+
+  val success: Int = ( s"cargo run --manifest-path ${wat2wasm}/Cargo.toml -- --input ${input} --output ${output}" #&& "echo WAT build successfully" ! )
+}
