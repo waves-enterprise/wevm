@@ -4,6 +4,7 @@ import com.github.sbt.jni.syntax.NativeLoader
 
 class WASMExecutor extends NativeLoader("wevm") {
   @native def runContract(
+      contractId: Array[Byte],
       bytecode: Array[Byte],
       funcName: String,
       funcArgs: Array[Byte],

@@ -135,7 +135,7 @@ env_runtime! {
                 &memory[offset_func_args as usize..offset_func_args as usize + length_func_args as usize]
             );
 
-            match ctx.stack.call(bytecode, func_name, input_data) {
+            match ctx.stack.call(contract_id.to_vec(), bytecode, func_name, input_data) {
                 Ok(result) => {
                     // TODO: Functions cannot return any values, they can only return an error code
                     if result.len() != 1 {
@@ -167,10 +167,15 @@ env_runtime! {
                 None => return (RuntimeError::MemoryNotFound as i32, 0),
             };
 
-            let address = &memory[offset_address as usize..offset_address as usize + length_address as usize];
+            let address = if length_address != 0 {
+                memory[offset_address as usize..offset_address as usize + length_address as usize].to_vec()
+            } else {
+                ctx.stack.top_frame().contract_id()
+            };
+
             let key = &memory[offset_key as usize..offset_key as usize + length_key as usize];
 
-            match ctx.stack.get_storage(address, key) {
+            match ctx.stack.get_storage(address.as_slice(), key) {
                 Ok(bytes) => {
                     match DataEntry::deserialize_storage(bytes.as_slice()) {
                         Ok(DataEntry::Integer(integer)) => (0, integer),
@@ -197,10 +202,15 @@ env_runtime! {
                 None => return (RuntimeError::MemoryNotFound as i32, 0),
             };
 
-            let address = &memory[offset_address as usize..offset_address as usize + length_address as usize];
+            let address = if length_address != 0 {
+                memory[offset_address as usize..offset_address as usize + length_address as usize].to_vec()
+            } else {
+                ctx.stack.top_frame().contract_id()
+            };
+
             let key = &memory[offset_key as usize..offset_key as usize + length_key as usize];
 
-            match ctx.stack.get_storage(address, key) {
+            match ctx.stack.get_storage(address.as_slice(), key) {
                 Ok(bytes) => {
                     match DataEntry::deserialize_storage(bytes.as_slice()) {
                         Ok(DataEntry::Boolean(boolean)) => (0, boolean),
@@ -229,10 +239,15 @@ env_runtime! {
             };
             let offset_memory = ctx.heap_base() as usize;
 
-            let address = &memory[offset_address as usize..offset_address as usize + length_address as usize];
+            let address = if length_address != 0 {
+                memory[offset_address as usize..offset_address as usize + length_address as usize].to_vec()
+            } else {
+                ctx.stack.top_frame().contract_id()
+            };
+
             let key = &memory[offset_key as usize..offset_key as usize + length_key as usize];
 
-            match ctx.stack.get_storage(address, key) {
+            match ctx.stack.get_storage(address.as_slice(), key) {
                 Ok(bytes) => {
                     let result = match DataEntry::deserialize_storage(bytes.as_slice()) {
                         Ok(DataEntry::Binary(bytes)) => bytes,
@@ -261,10 +276,15 @@ env_runtime! {
             };
             let offset_memory = ctx.heap_base() as usize;
 
-            let address = &memory[offset_address as usize..offset_address as usize + length_address as usize];
+            let address = if length_address != 0 {
+                memory[offset_address as usize..offset_address as usize + length_address as usize].to_vec()
+            } else {
+                ctx.stack.top_frame().contract_id()
+            };
+
             let key = &memory[offset_key as usize..offset_key as usize + length_key as usize];
 
-            match ctx.stack.get_storage(address, key) {
+            match ctx.stack.get_storage(address.as_slice(), key) {
                 Ok(bytes) => {
                     let result = match DataEntry::deserialize_storage(bytes.as_slice()) {
                         Ok(DataEntry::String(bytes)) => bytes,
@@ -291,10 +311,11 @@ env_runtime! {
                 None => return RuntimeError::MemoryNotFound as i32,
             };
 
+            let contract_id = ctx.stack.top_frame().contract_id();
             let key = &memory[offset_key as usize..offset_key as usize + length_key as usize];
             let data_entry = DataEntry::Integer(value).serialize(key);
 
-            match ctx.stack.set_storage(data_entry.as_slice()) {
+            match ctx.stack.set_storage(contract_id.as_slice(), data_entry.as_slice()) {
                 Ok(_) => 0,
                 Err(error) => error.as_i32(),
             }
@@ -315,10 +336,11 @@ env_runtime! {
                 None => return RuntimeError::MemoryNotFound as i32,
             };
 
+            let contract_id = ctx.stack.top_frame().contract_id();
             let key = &memory[offset_key as usize..offset_key as usize + length_key as usize];
             let data_entry = DataEntry::Boolean(value).serialize(key);
 
-            match ctx.stack.set_storage(data_entry.as_slice()) {
+            match ctx.stack.set_storage(contract_id.as_slice(), data_entry.as_slice()) {
                 Ok(_) => 0,
                 Err(error) => error.as_i32(),
             }
@@ -340,11 +362,12 @@ env_runtime! {
                 None => return RuntimeError::MemoryNotFound as i32,
             };
 
+            let contract_id = ctx.stack.top_frame().contract_id();
             let key = &memory[offset_key as usize..offset_key as usize + length_key as usize];
             let value = &memory[offset_value as usize..offset_value as usize + length_value as usize];
             let data_entry = DataEntry::Binary(value.to_vec()).serialize(key);
 
-            match ctx.stack.set_storage(data_entry.as_slice()) {
+            match ctx.stack.set_storage(contract_id.as_slice(), data_entry.as_slice()) {
                 Ok(_) => 0,
                 Err(error) => error.as_i32(),
             }
@@ -366,11 +389,12 @@ env_runtime! {
                 None => return RuntimeError::MemoryNotFound as i32,
             };
 
+            let contract_id = ctx.stack.top_frame().contract_id();
             let key = &memory[offset_key as usize..offset_key as usize + length_key as usize];
             let value = &memory[offset_value as usize..offset_value as usize + length_value as usize];
             let data_entry = DataEntry::String(value.to_vec()).serialize(key);
 
-            match ctx.stack.set_storage(data_entry.as_slice()) {
+            match ctx.stack.set_storage(contract_id.as_slice(), data_entry.as_slice()) {
                 Ok(_) => 0,
                 Err(error) => error.as_i32(),
             }
@@ -393,9 +417,13 @@ env_runtime! {
             };
 
             let asset_id = &memory[offset_asset_id as usize..offset_asset_id as usize + length_asset_id as usize];
-            let address = &memory[offset_address as usize..offset_address as usize + length_address as usize];
+            let address = if length_address != 0 {
+                memory[offset_address as usize..offset_address as usize + length_address as usize].to_vec()
+            } else {
+                ctx.stack.top_frame().contract_id()
+            };
 
-            match ctx.stack.get_balance(asset_id, address) {
+            match ctx.stack.get_balance(asset_id, address.as_slice()) {
                 Ok(result) => (0, result),
                 Err(error) => (error.as_i32(), 0),
             }
@@ -418,10 +446,11 @@ env_runtime! {
                 None => return RuntimeError::MemoryNotFound as i32,
             };
 
+            let contract_id = ctx.stack.top_frame().contract_id();
             let asset_id = &memory[offset_asset_id as usize..offset_asset_id as usize + length_asset_id as usize];
             let recipient = &memory[offset_recipient as usize..offset_recipient as usize + length_recipient as usize];
 
-            match ctx.stack.transfer(asset_id, recipient, amount) {
+            match ctx.stack.transfer(contract_id.as_slice(), asset_id, recipient, amount) {
                 Ok(_) => 0,
                 Err(error) => error.as_i32(),
             }
@@ -447,10 +476,11 @@ env_runtime! {
             };
             let offset_memory = ctx.heap_base() as usize;
 
+            let contract_id = ctx.stack.top_frame().contract_id();
             let name = &memory[offset_name as usize..offset_name as usize + length_name as usize];
             let description = &memory[offset_description as usize..offset_description as usize + length_description as usize];
 
-            match ctx.stack.issue(name, description, quantity, decimals, is_reissuable != 0) {
+            match ctx.stack.issue(contract_id.as_slice(), name, description, quantity, decimals, is_reissuable != 0) {
                 Ok(result) => write_memory!(ctx, memory, offset_memory, result),
                 Err(error) => (error.as_i32(), 0, 0),
             }
@@ -471,9 +501,10 @@ env_runtime! {
                 None => return RuntimeError::MemoryNotFound as i32,
             };
 
+            let contract_id = ctx.stack.top_frame().contract_id();
             let asset_id = &memory[offset_asset_id as usize..offset_asset_id as usize + length_asset_id as usize];
 
-            match ctx.stack.burn(asset_id, amount) {
+            match ctx.stack.burn(contract_id.as_slice(), asset_id, amount) {
                 Ok(_) => 0,
                 Err(error) => error.as_i32(),
             }
@@ -495,9 +526,10 @@ env_runtime! {
                 None => return RuntimeError::MemoryNotFound as i32,
             };
 
+            let contract_id = ctx.stack.top_frame().contract_id();
             let asset_id = &memory[offset_asset_id as usize..offset_asset_id as usize + length_asset_id as usize];
 
-            match ctx.stack.reissue(asset_id, amount, is_reissuable != 0) {
+            match ctx.stack.reissue(contract_id.as_slice(), asset_id, amount, is_reissuable != 0) {
                 Ok(_) => 0,
                 Err(error) => error.as_i32(),
             }
@@ -519,9 +551,10 @@ env_runtime! {
             };
             let offset_memory = ctx.heap_base() as usize;
 
+            let contract_id = ctx.stack.top_frame().contract_id();
             let recipient = &memory[offset_recipient as usize..offset_recipient as usize + length_recipient as usize];
 
-            match ctx.stack.lease(recipient, amount) {
+            match ctx.stack.lease(contract_id.as_slice(), recipient, amount) {
                 Ok(result) => write_memory!(ctx, memory, offset_memory, result),
                 Err(error) => (error.as_i32(), 0, 0),
             }
@@ -541,9 +574,10 @@ env_runtime! {
                 None => return RuntimeError::MemoryNotFound as i32,
             };
 
+            let contract_id = ctx.stack.top_frame().contract_id();
             let lease_id = &memory[offset_lease_id as usize..offset_lease_id as usize + length_lease_id as usize];
 
-            match ctx.stack.cancel_lease(lease_id) {
+            match ctx.stack.cancel_lease(contract_id.as_slice(), lease_id) {
                 Ok(_) => 0,
                 Err(error) => error.as_i32(),
             }
@@ -597,7 +631,9 @@ env_runtime! {
     #[version = 0]
     pub fn GetTxPayments() -> (i32, i32) {
         |caller: Caller<Runtime>| {
-            match caller.data().stack.get_tx_payments() {
+            let contract_id = caller.data().stack.top_frame().contract_id();
+
+            match caller.data().stack.get_tx_payments(contract_id.as_slice()) {
                 Ok(result) => (0, result),
                 Err(error) => (error.as_i32(), 0),
             }
@@ -615,7 +651,9 @@ env_runtime! {
             };
             let offset_memory = ctx.heap_base() as usize;
 
-            match ctx.stack.get_tx_payment_asset_id(number) {
+            let contract_id = ctx.stack.top_frame().contract_id();
+
+            match ctx.stack.get_tx_payment_asset_id(contract_id.as_slice(), number) {
                 Ok(result) => write_memory!(ctx, memory, offset_memory, result),
                 Err(error) => (error.as_i32(), 0, 0),
             }
@@ -627,7 +665,9 @@ env_runtime! {
     #[version = 0]
     pub fn GetTxPaymentAmount(number: i32) -> (i32, i64) {
         |caller: Caller<Runtime>| {
-            match caller.data().stack.get_tx_payment_amount(number) {
+            let contract_id = caller.data().stack.top_frame().contract_id();
+
+            match caller.data().stack.get_tx_payment_amount(contract_id.as_slice(), number) {
                 Ok(result) => (0, result),
                 Err(error) => (error.as_i32(), 0),
             }
