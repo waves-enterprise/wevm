@@ -1,4 +1,4 @@
-use crate::stack::Stack;
+use crate::{data_entry::DataEntry, stack::Stack};
 use wasmi::Memory;
 
 #[derive(Copy, Clone, Debug)]
@@ -12,10 +12,42 @@ pub enum RuntimeError {
     Base58Error = 306,
 }
 
+pub struct Args {
+    bytes: Vec<u8>,
+    length: u16,
+}
+
+impl Default for Args {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl Args {
+    pub fn new() -> Self {
+        Self {
+            bytes: vec![],
+            length: 0,
+        }
+    }
+
+    pub fn as_list_data_entry(&self) -> Vec<u8> {
+        let mut bytes = self.length.to_be_bytes().to_vec();
+        bytes.extend(self.bytes.clone());
+        bytes
+    }
+
+    pub fn push(&mut self, value: DataEntry) {
+        self.bytes.extend(value.serialize(None));
+        self.length += 1;
+    }
+}
+
 pub struct Runtime<'a> {
     memory: Option<Memory>,
     pub stack: &'a mut Stack,
     heap_base: i32,
+    pub args: Args,
 }
 
 impl<'a> Runtime<'a> {
@@ -24,6 +56,7 @@ impl<'a> Runtime<'a> {
             memory: None,
             stack,
             heap_base: 0,
+            args: Args::new(),
         }
     }
 

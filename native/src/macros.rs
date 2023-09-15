@@ -29,6 +29,23 @@ macro_rules! env_runtime {
     }
 }
 
+/// Collects Environments into a Vec
+#[macro_export]
+macro_rules! env_items {
+    ( $($env:ident),+ ) => {
+        pub fn to_vec() -> Vec<Box<dyn Environment>> {
+            let mut result: Vec<Box<dyn Environment>> = vec![];
+
+            $(
+                let env = $env;
+                result.push(Box::new(env));
+            )+
+
+            result
+        }
+    }
+}
+
 /// Wrapper over writing to WASM linear memory
 /// Functions using this wrapper return (i32, i32, i32)
 /// * First value - error code

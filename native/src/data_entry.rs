@@ -9,11 +9,16 @@ pub enum DataEntry {
 }
 
 impl DataEntry {
-    pub fn serialize(&self, key: &[u8]) -> Vec<u8> {
+    pub fn serialize(&self, key: Option<&[u8]>) -> Vec<u8> {
         let mut result: Vec<u8> = vec![];
 
-        result.extend_from_slice(&(key.len() as u16).to_be_bytes());
-        result.extend_from_slice(key);
+        match key {
+            Some(bytes) => {
+                result.extend_from_slice(&(bytes.len() as u16).to_be_bytes());
+                result.extend_from_slice(bytes);
+            }
+            None => result.extend_from_slice(&0u16.to_be_bytes()),
+        }
 
         match self {
             Self::Integer(value) => {
