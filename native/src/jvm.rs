@@ -34,6 +34,7 @@ pub enum JvmError {
 
 pub trait Jvm {
     fn get_bytecode(&self, contract_id: &[u8]) -> Result<Vec<u8>>;
+    fn add_payments(&self, contract_id: &[u8], payments: &[u8]) -> Result<()>;
     fn get_storage(&self, address: &[u8], key: &[u8]) -> Result<Vec<u8>>;
     fn set_storage(&self, contract_id: &[u8], value: &[u8]) -> Result<()>;
     fn get_balance(&self, asset_id: &[u8], address: &[u8]) -> Result<i64>;
@@ -110,6 +111,26 @@ impl Jvm for Stack {
             .map_err(|_| Error::Jvm(JvmError::ByteArrayConversion))?;
 
         Ok(bytes.to_vec())
+    }
+
+    fn add_payments(&self, contract_id: &[u8], payments: &[u8]) -> Result<()> {
+        let mut env = env!(self);
+
+        let contract_id = byte_array!(env, contract_id);
+        let payments = byte_array!(env, payments);
+
+        env.call_method(
+            self.jvm_callback.clone(),
+            "addPayments",
+            "([B[B)V",
+            &[
+                JValue::Object(&contract_id.into()),
+                JValue::Object(&payments.into()),
+            ],
+        )
+        .map_err(|_| Error::Jvm(JvmError::MethodCall))?;
+
+        Ok(())
     }
 
     fn get_storage(&self, address: &[u8], key: &[u8]) -> Result<Vec<u8>> {

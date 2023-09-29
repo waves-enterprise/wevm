@@ -31,7 +31,7 @@ impl Args {
         }
     }
 
-    pub fn as_list_data_entry(&self) -> Vec<u8> {
+    pub fn as_bytes(&self) -> Vec<u8> {
         let mut bytes = self.length.to_be_bytes().to_vec();
         bytes.extend(self.bytes.clone());
         bytes
@@ -43,20 +43,60 @@ impl Args {
     }
 }
 
+pub struct Payments {
+    bytes: Vec<u8>,
+    length: u16,
+}
+
+impl Default for Payments {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl Payments {
+    pub fn new() -> Self {
+        Self {
+            bytes: vec![],
+            length: 0,
+        }
+    }
+
+    pub fn as_bytes(&self) -> Vec<u8> {
+        let mut bytes = self.length.to_be_bytes().to_vec();
+        bytes.extend(self.bytes.clone());
+        bytes
+    }
+
+    pub fn push(&mut self, asset_id: &[u8], amount: i64) {
+        if asset_id.is_empty() {
+            self.bytes.push(0);
+        } else {
+            self.bytes.push(1);
+            self.bytes.extend_from_slice(asset_id);
+        }
+
+        self.bytes.extend_from_slice(&amount.to_be_bytes());
+        self.length += 1;
+    }
+}
+
 pub struct Runtime<'a> {
     memory: Option<Memory>,
     pub stack: &'a mut Stack,
     heap_base: i32,
     pub args: Args,
+    pub payments: Payments,
 }
 
 impl<'a> Runtime<'a> {
     pub fn new(stack: &'a mut Stack) -> Self {
-        Runtime {
+        Self {
             memory: None,
             stack,
             heap_base: 0,
             args: Args::new(),
+            payments: Payments::new(),
         }
     }
 
