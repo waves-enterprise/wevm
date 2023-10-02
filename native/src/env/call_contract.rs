@@ -10,17 +10,17 @@ use std::str;
 use wasmi::{core::Value, Caller, Func, Store};
 
 env_items!(
-    AddArgInt,
-    AddArgBool,
-    AddArgBinary,
-    AddArgString,
-    AddPayment,
+    CallArgInt,
+    CallArgBool,
+    CallArgBinary,
+    CallArgString,
+    CallPayment,
     CallContract
 );
 
 env_runtime! {
     #[version = 0]
-    pub fn AddArgInt(value: i64) {
+    pub fn CallArgInt(value: i64) {
         |mut caller: Caller<Runtime>| {
             caller.data_mut().args.push(DataEntry::Integer(value));
         }
@@ -29,7 +29,7 @@ env_runtime! {
 
 env_runtime! {
     #[version = 0]
-    pub fn AddArgBool(value: i32) {
+    pub fn CallArgBool(value: i32) {
         |mut caller: Caller<Runtime>| {
             caller.data_mut().args.push(DataEntry::Boolean(value));
         }
@@ -38,7 +38,7 @@ env_runtime! {
 
 env_runtime! {
     #[version = 0]
-    pub fn AddArgBinary(offset_value: u32, length_value: u32) -> i32 {
+    pub fn CallArgBinary(offset_value: u32, length_value: u32) -> i32 {
         |mut caller: Caller<Runtime>| {
             let (memory, ctx) = match caller.data().memory() {
                 Some(memory) => memory.data_and_store_mut(&mut caller),
@@ -55,7 +55,7 @@ env_runtime! {
 
 env_runtime! {
     #[version = 0]
-    pub fn AddArgString(offset_value: u32, length_value: u32) -> i32 {
+    pub fn CallArgString(offset_value: u32, length_value: u32) -> i32 {
         |mut caller: Caller<Runtime>| {
             let (memory, ctx) = match caller.data().memory() {
                 Some(memory) => memory.data_and_store_mut(&mut caller),
@@ -72,7 +72,7 @@ env_runtime! {
 
 env_runtime! {
     #[version = 0]
-    pub fn AddPayment(offset_asset_id: u32, length_asset_id: u32, amount: i64) -> i32 {
+    pub fn CallPayment(offset_asset_id: u32, length_asset_id: u32, amount: i64) -> i32 {
         |mut caller: Caller<Runtime>| {
             let (memory, ctx) = match caller.data().memory() {
                 Some(memory) => memory.data_and_store_mut(&mut caller),

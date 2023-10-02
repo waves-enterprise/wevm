@@ -3,12 +3,12 @@
 
     (import "env0" "base_58" (func $base_58 (param i32 i32) (result i32 i32 i32)))
 
-    (import "env0" "add_arg_int" (func $add_arg_int (param i64)))
-    (import "env0" "add_arg_bool" (func $add_arg_bool (param i32)))
-    (import "env0" "add_arg_binary" (func $add_arg_binary (param i32 i32) (result i32)))
-    (import "env0" "add_arg_string" (func $add_arg_string (param i32 i32) (result i32)))
+    (import "env0" "call_arg_int" (func $call_arg_int (param i64)))
+    (import "env0" "call_arg_bool" (func $call_arg_bool (param i32)))
+    (import "env0" "call_arg_binary" (func $call_arg_binary (param i32 i32) (result i32)))
+    (import "env0" "call_arg_string" (func $call_arg_string (param i32 i32) (result i32)))
 
-    (import "env0" "add_payment" (func $add_payment (param i32 i32 i64) (result i32)))
+    (import "env0" "call_payment" (func $call_payment (param i32 i32 i64) (result i32)))
 
     (import "env0" "call_contract" (func $call_contract (param i32 i32 i32 i32) (result i32)))
 
@@ -16,17 +16,17 @@
         (local $offset i32) (local $length i32) (local $error i32)
 
         (block $code
-            (call $add_arg_int
+            (call $call_arg_int
                 (i64.const 42)
             )
 
-            (call $add_arg_bool
+            (call $call_arg_bool
                 (i32.const  1)
             )
 
             (br_if $code
                 (local.tee $error
-                    (call $add_arg_binary
+                    (call $call_arg_binary
                         (i32.const 0)
                         (i32.const 2)
                     )
@@ -35,7 +35,7 @@
 
             (br_if $code
                 (local.tee $error
-                    (call $add_arg_string
+                    (call $call_arg_string
                         (i32.const 2)
                         (i32.const 4)
                     )
@@ -56,7 +56,7 @@
 
             (br_if $code
                 (local.tee $error
-                    (call $add_payment
+                    (call $call_payment
                         (i32.const 0)
                         (i32.const 0)
                         (i64.const 4200000000)
@@ -66,7 +66,7 @@
 
             (br_if $code
                 (local.tee $error
-                    (call $add_payment
+                    (call $call_payment
                         (local.get $offset)
                         (local.get $length)
                         (i64.const 2400000000)
