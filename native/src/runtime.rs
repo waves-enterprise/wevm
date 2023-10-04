@@ -115,4 +115,11 @@ impl<'a> Runtime<'a> {
     pub fn set_heap_base(&mut self, value: i32) {
         self.heap_base = value;
     }
+
+    pub fn args_and_payments(&mut self) -> (Vec<u8>, Vec<u8>) {
+        let result = (self.args.as_bytes(), self.payments.as_bytes());
+        self.args = Args::new();
+        self.payments = Payments::new();
+        result
+    }
 }

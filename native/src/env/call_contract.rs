@@ -115,9 +115,9 @@ env_runtime! {
                 Err(_) => return RuntimeError::Utf8Error as i32,
             };
 
-            let input_data = ctx.args.as_bytes();
+            let (input_data, payments) = ctx.args_and_payments();
 
-            match ctx.stack.add_payments(contract_id, &ctx.payments.as_bytes()) {
+            match ctx.stack.add_payments(contract_id, &payments) {
                 Ok(()) => (),
                 Err(error) => return error.as_i32(),
             }
