@@ -9,7 +9,11 @@
     (import "env0" "get_storage_int" (func $get_storage_int (param i32 i32 i32 i32) (result i32 i64)))
     (import "env0" "get_storage_bool" (func $get_storage_bool (param i32 i32 i32 i32) (result i32 i32)))
 
-    (func (export "_constructor") (param $p_int i64) (param $p_bool i32) (param $p_binary_offset i32) (param $p_binary_length i32) (param $p_string_offset i32) (param $p_string_length i32) (result i32)
+    (func (export "_constructor") (result i32)
+        (i32.const 0)
+    )
+
+    (func (export "save") (param $p_int i64) (param $p_bool i32) (param $p_binary_offset i32) (param $p_binary_length i32) (param $p_string_offset i32) (param $p_string_length i32) (result i32)
         (local $error i32)
 
         (block $code

@@ -9,6 +9,12 @@ trait WASMService {
   def getBytecode(contractId: Array[Byte]): Array[Byte]
 
   /**
+    * @param contractId ID of a contract. Base58 bytes
+    * @param payments Serialized list assetId and amount
+    */
+  def addPayments(contractId: Array[Byte], payments: Array[Byte])
+
+  /**
     * @param contractId ID of a contract (possible contractId called this function). Base58 bytes
     * @param key Record key. UTF-8 bytes
     * @return Record value

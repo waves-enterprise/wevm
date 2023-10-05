@@ -10,7 +10,6 @@ import org.scalatest.matchers.should.Matchers
 
 class WASMExecutorSpec extends AnyFreeSpec with Matchers {
   val executor = new WASMExecutor
-  val service = new WASMServiceMock
 
   def writeDataEntryList(dataEntryList: List[DataEntry[_]], output: ByteArrayDataOutput): Unit =
     BinarySerializer.writeShortIterable(dataEntryList, dataEntryWrite, output)
@@ -31,6 +30,8 @@ class WASMExecutorSpec extends AnyFreeSpec with Matchers {
     }
 
     "storage" in {
+      val service = new WASMServiceMock
+
       val contractId = Base58.decode(service.contract).get
       val bytecode = getClass.getResourceAsStream("/storage.wasm").readAllBytes()
 
@@ -42,15 +43,17 @@ class WASMExecutorSpec extends AnyFreeSpec with Matchers {
       var args: ByteArrayDataOutput = ByteStreams.newDataOutput()
       writeDataEntryList(List(entry1, entry2, entry3, entry4), args)
 
-      executor.runContract(contractId, bytecode, "_constructor", args.toByteArray(), service) shouldBe 0
+      executor.runContract(contractId, bytecode, "save", args.toByteArray(), service) shouldBe 0
 
-      service.storage("integer_key") shouldBe entry1
-      service.storage("boolean_key") shouldBe entry2
-      service.storage("binary_key") shouldBe entry3
-      service.storage("string_key") shouldBe entry4
+      service.storage(service.contract)("integer_key") shouldBe entry1
+      service.storage(service.contract)("boolean_key") shouldBe entry2
+      service.storage(service.contract)("binary_key") shouldBe entry3
+      service.storage(service.contract)("string_key") shouldBe entry4
     }
 
     "transfer" in {
+      val service = new WASMServiceMock
+
       val contractId = Base58.decode(service.contract).get
       val bytecode = getClass.getResourceAsStream("/transfer.wasm").readAllBytes()
 
@@ -61,6 +64,8 @@ class WASMExecutorSpec extends AnyFreeSpec with Matchers {
     }
 
     "asset" in {
+      val service = new WASMServiceMock
+
       val contractId = Base58.decode(service.contract).get
       val bytecode = getClass.getResourceAsStream("/asset.wasm").readAllBytes()
 
@@ -70,6 +75,8 @@ class WASMExecutorSpec extends AnyFreeSpec with Matchers {
     }
 
     "lease" in {
+      val service = new WASMServiceMock
+
       val contractId = Base58.decode(service.contract).get
       val bytecode = getClass.getResourceAsStream("/lease.wasm").readAllBytes()
 
@@ -77,6 +84,8 @@ class WASMExecutorSpec extends AnyFreeSpec with Matchers {
     }
 
     "block and tx" in {
+      val service = new WASMServiceMock
+
       val contractId = Base58.decode(service.contract).get
       val bytecode = getClass.getResourceAsStream("/block_and_tx.wasm").readAllBytes()
 
@@ -85,12 +94,34 @@ class WASMExecutorSpec extends AnyFreeSpec with Matchers {
       val txSender = BinaryDataEntry("tx_sender", ByteStr.decodeBase58(service.txSender).get)
       val txPaymentAssetId = BinaryDataEntry("tx_payment_asset_id", ByteStr.decodeBase58(service.asset).get)
 
-      service.storage("block_timestamp").value shouldBe 1690202857485L
-      service.storage("block_height").value shouldBe 3745592L
-      service.storage("tx_sender") shouldBe txSender
-      service.storage("tx_payments").value shouldBe 2
-      service.storage("tx_payment_asset_id") shouldBe txPaymentAssetId
-      service.storage("tx_payment_amount").value shouldBe 2400000000L
+      service.storage(service.contract)("block_timestamp").value shouldBe 1690202857485L
+      service.storage(service.contract)("block_height").value shouldBe 3745592L
+      service.storage(service.contract)("tx_sender") shouldBe txSender
+      service.storage(service.contract)("tx_payments").value shouldBe 2
+      service.storage(service.contract)("tx_payment_asset_id") shouldBe txPaymentAssetId
+      service.storage(service.contract)("tx_payment_amount").value shouldBe 2400000000L
+    }
+
+    "call contract" in {
+      val service = new WASMServiceMock
+
+      val contractId = Base58.decode(service.contract).get
+      val bytecode = getClass.getResourceAsStream("/call_contract.wasm").readAllBytes()
+
+      executor.runContract(contractId, bytecode, "_constructor", Array[Byte](), service) shouldBe 0
+
+      val entry1 = IntegerDataEntry("integer_key", 42)
+      val entry2 = BooleanDataEntry("boolean_key", true)
+      val entry3 = BinaryDataEntry("binary_key", ByteStr(Array[Byte](0, 1)))
+      val entry4 = StringDataEntry("string_key", "test")
+
+      service.storage(service.contractMock)("integer_key") shouldBe entry1
+      service.storage(service.contractMock)("boolean_key") shouldBe entry2
+      service.storage(service.contractMock)("binary_key") shouldBe entry3
+      service.storage(service.contractMock)("string_key") shouldBe entry4
+
+      service.payments(service.contractMock).apply(0) shouldBe ("null", 4200000000L)
+      service.payments(service.contractMock).apply(1) shouldBe (service.asset, 2400000000L)
     }
   }
 }

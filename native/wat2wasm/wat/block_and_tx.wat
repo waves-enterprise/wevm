@@ -7,9 +7,9 @@
     (import "env0" "get_block_timestamp" (func $get_block_timestamp (result i32 i64)))
     (import "env0" "get_block_height" (func $get_block_height (result i32 i64)))
     (import "env0" "get_tx_sender" (func $get_tx_sender (result i32 i32 i32)))
-    (import "env0" "get_tx_payments" (func $get_tx_payments (result i32 i32)))
-    (import "env0" "get_tx_payment_asset_id" (func $get_tx_payment_asset_id (param i32) (result i32 i32 i32)))
-    (import "env0" "get_tx_payment_amount" (func $get_tx_payment_amount (param i32) (result i32 i64)))
+    (import "env0" "get_payments" (func $get_payments (result i32 i32)))
+    (import "env0" "get_payment_asset_id" (func $get_payment_asset_id (param i32) (result i32 i32 i32)))
+    (import "env0" "get_payment_amount" (func $get_payment_amount (param i32) (result i32 i64)))
 
     (func (export "_constructor") (result i32)
         (local $int i64) (local $offset i32) (local $length i32) (local $number i32) (local $error i32)
@@ -70,7 +70,7 @@
                 )
             )
 
-            (call $get_tx_payments)
+            (call $get_payments)
 
             (local.set $number)
 
@@ -90,7 +90,7 @@
                 )
             )
 
-            (call $get_tx_payment_asset_id
+            (call $get_payment_asset_id
                 (i32.const 1)
             )
 
@@ -112,7 +112,7 @@
                 )
             )
 
-            (call $get_tx_payment_amount
+            (call $get_payment_amount
                 (i32.const 1)
             )
 
