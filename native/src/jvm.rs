@@ -4,6 +4,7 @@ use jni::objects::{JByteArray, JObject, JValue};
 /// A primitive java type.
 /// L - Object
 /// Z - Boolean
+/// B - Byte
 /// I - Integer
 /// J - Long
 /// V - Void
@@ -26,13 +27,16 @@ pub enum JvmError {
     NewString = 206,
     /// Failed to receive object
     ReceiveObject = 207,
-    /// Failed to receive long
-    ReceiveLong = 208,
-    /// Failed to receive int
+    /// Failed to receive byte
+    ReceiveByte = 208,
+    /// Failed to receive integer
     ReceiveInt = 209,
+    /// Failed to receive long
+    ReceiveLong = 210,
 }
 
 pub trait Jvm {
+    fn get_chain_id(&self) -> Result<i8>;
     fn get_bytecode(&self, contract_id: &[u8]) -> Result<Vec<u8>>;
     fn add_payments(&self, contract_id: &[u8], payments: &[u8]) -> Result<()>;
     fn get_storage(&self, address: &[u8], key: &[u8]) -> Result<Vec<u8>>;
@@ -90,6 +94,18 @@ macro_rules! byte_array {
 
 // Implementing the JVM call
 impl Jvm for Stack {
+    fn get_chain_id(&self) -> Result<i8> {
+        let mut env = env!(self);
+
+        let result = env
+            .call_method(self.jvm_callback.clone(), "getChainId", "()B", &[])
+            .map_err(|_| Error::Jvm(JvmError::MethodCall))?
+            .b()
+            .map_err(|_| Error::Jvm(JvmError::ReceiveByte))?;
+
+        Ok(result)
+    }
+
     fn get_bytecode(&self, contract_id: &[u8]) -> Result<Vec<u8>> {
         let mut env = env!(self);
 

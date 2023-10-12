@@ -13,6 +13,7 @@ env_items!(Lease, CancelLease);
 env_runtime! {
     #[version = 0]
     pub fn Lease(
+        address_version: u32,
         offset_recipient: u32,
         length_recipient: u32,
         amount: i64,
@@ -27,7 +28,21 @@ env_runtime! {
             let contract_id = ctx.stack.top_frame().contract_id();
             let recipient = &memory[offset_recipient as usize..offset_recipient as usize + length_recipient as usize];
 
-            match ctx.stack.lease(contract_id.as_slice(), recipient, amount) {
+            let mut result: Vec<u8> = vec![];
+            if address_version == 1 {
+                result.extend_from_slice(recipient);
+            } else if address_version == 2 {
+                result.push(2);
+
+                match ctx.stack.get_chain_id() {
+                    Ok(chain_id) => result.push(chain_id as u8),
+                    Err(error) => return (error.as_i32(), 0, 0),
+                }
+
+                result.extend_from_slice(recipient);
+            }
+
+            match ctx.stack.lease(contract_id.as_slice(), result.as_slice(), amount) {
                 Ok(result) => write_memory!(ctx, memory, offset_memory, result),
                 Err(error) => (error.as_i32(), 0, 0),
             }

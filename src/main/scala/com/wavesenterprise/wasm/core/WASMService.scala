@@ -3,6 +3,11 @@ package com.wavesenterprise.wasm.core
 trait WASMService {
 
   /**
+    * @return Blockchain Id
+    */
+  def getChainId(): Byte
+
+  /**
     * @param contractId ID of a contract. Base58 bytes
     * @return Bytecode contract
     */
