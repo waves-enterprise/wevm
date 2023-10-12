@@ -123,5 +123,21 @@ class WASMExecutorSpec extends AnyFreeSpec with Matchers {
       service.payments(service.contractMock).apply(0) shouldBe ("null", 4200000000L)
       service.payments(service.contractMock).apply(1) shouldBe (service.asset, 2400000000L)
     }
+
+    "base58" in {
+      val service = new WASMServiceMock
+
+      val contractId = Base58.decode(service.contract).get
+      val bytecode = getClass.getResourceAsStream("/base58.wasm").readAllBytes()
+
+      val entry = StringDataEntry("address", "3NqEjAkFVzem9CGa3bEPhakQc1Sm2G8gAFU")
+
+      var args: ByteArrayDataOutput = ByteStreams.newDataOutput()
+      writeDataEntryList(List(entry), args)
+
+      executor.runContract(contractId, bytecode, "_constructor", args.toByteArray(), service) shouldBe 0
+
+      service.storage(service.contract)("address") shouldBe entry
+    }
   }
 }
