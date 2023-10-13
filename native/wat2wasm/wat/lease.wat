@@ -2,7 +2,8 @@
     (import "env" "memory" (memory 2 16))
 
     (import "env0" "base_58" (func $base_58 (param i32 i32) (result i32 i32 i32)))
-    (import "env0" "lease" (func $lease (param i32 i32 i32 i64) (result i32 i32 i32)))
+    (import "env0" "lease_address" (func $lease_address (param i32 i32 i64) (result i32 i32 i32)))
+    (import "env0" "lease_alias" (func $lease_alias (param i32 i32 i64) (result i32 i32 i32)))
     (import "env0" "cancel_lease" (func $cancel_lease (param i32 i32) (result i32)))
 
     (func (export "_constructor") (result i32)
@@ -20,8 +21,7 @@
                 (local.tee $error)
             )
 
-            (call $lease
-                (i32.const 1)
+            (call $lease_address
                 (local.get $address_offset)
                 (local.get $address_length)
                 (i64.const 42)
@@ -43,8 +43,7 @@
                 (local.tee $error)
             )
 
-            (call $lease
-                (i32.const 2)
+            (call $lease_alias
                 (i32.const 35) ;; Offset alias
                 (i32.const 5)  ;; Length alias
                 (i64.const 24)

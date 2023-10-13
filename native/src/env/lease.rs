@@ -8,14 +8,13 @@ use crate::{
 use convert_case::{Case, Casing};
 use wasmi::{Caller, Func, Store};
 
-env_items!(Lease, CancelLease);
+env_items!(LeaseAddress, LeaseAlias, CancelLease);
 
 env_runtime! {
     #[version = 0]
-    pub fn Lease(
-        address_version: u32,
-        offset_recipient: u32,
-        length_recipient: u32,
+    pub fn LeaseAddress(
+        offset_address: u32,
+        length_address: u32,
         amount: i64,
     ) -> (i32, i32, i32) {
         |mut caller: Caller<Runtime>| {
@@ -26,23 +25,42 @@ env_runtime! {
             let offset_memory = ctx.heap_base() as usize;
 
             let contract_id = ctx.stack.top_frame().contract_id();
-            let recipient = &memory[offset_recipient as usize..offset_recipient as usize + length_recipient as usize];
+            let address = &memory[offset_address as usize..offset_address as usize + length_address as usize];
 
-            let mut result: Vec<u8> = vec![];
-            if address_version == 1 {
-                result.extend_from_slice(recipient);
-            } else if address_version == 2 {
-                result.push(2);
-
-                match ctx.stack.get_chain_id() {
-                    Ok(chain_id) => result.push(chain_id as u8),
-                    Err(error) => return (error.as_i32(), 0, 0),
-                }
-
-                result.extend_from_slice(recipient);
+            match ctx.stack.lease(contract_id.as_slice(), address, amount) {
+                Ok(result) => write_memory!(ctx, memory, offset_memory, result),
+                Err(error) => (error.as_i32(), 0, 0),
             }
+        }
+    }
+}
 
-            match ctx.stack.lease(contract_id.as_slice(), result.as_slice(), amount) {
+env_runtime! {
+    #[version = 0]
+    pub fn LeaseAlias(
+        offset_alias: u32,
+        length_alias: u32,
+        amount: i64,
+    ) -> (i32, i32, i32) {
+        |mut caller: Caller<Runtime>| {
+            let (memory, ctx) = match caller.data().memory() {
+                Some(memory) => memory.data_and_store_mut(&mut caller),
+                None => return (RuntimeError::MemoryNotFound as i32, 0, 0),
+            };
+            let offset_memory = ctx.heap_base() as usize;
+
+            let contract_id = ctx.stack.top_frame().contract_id();
+            let alias = &memory[offset_alias as usize..offset_alias as usize + length_alias as usize];
+
+            let mut bytes: Vec<u8> = vec![];
+            bytes.push(2);
+            match ctx.stack.get_chain_id() {
+                Ok(chain_id) => bytes.push(chain_id as u8),
+                Err(error) => return (error.as_i32(), 0, 0),
+            }
+            bytes.extend_from_slice(alias);
+
+            match ctx.stack.lease(contract_id.as_slice(), bytes.as_slice(), amount) {
                 Ok(result) => write_memory!(ctx, memory, offset_memory, result),
                 Err(error) => (error.as_i32(), 0, 0),
             }
