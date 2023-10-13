@@ -6,6 +6,8 @@ import com.wavesenterprise.state.DataEntry
 import com.wavesenterprise.transaction.docker.ContractTransactionEntryOps.{parse, toBytes}
 import com.wavesenterprise.utils.Base58
 
+import java.nio.charset.StandardCharsets.UTF_8
+
 import scala.collection.mutable.{Map, Seq}
 
 class WASMServiceMock extends WASMService {
@@ -14,6 +16,7 @@ class WASMServiceMock extends WASMService {
 
   val txSender = "3NqEjAkFVzem9CGa3bEPhakQc1Sm2G8gAFU"
   val recipient = "3NzkzibVRkKUzaRzjUxndpTPvoBzQ3iLng3"
+  val alias = "miner"
   val asset = "DnK5Xfi2wXUJx9BjK9X6ZpFdTLdq2GtWH9pWrcxcmrhB"
   val lease = "6Tn7ir9MycHW6Gq2F2dGok2stokSwXJadPh4hW8eZ8Sp"
 
@@ -44,6 +47,8 @@ class WASMServiceMock extends WASMService {
     ),
     this.contractMock -> Seq.empty[(String, Long)],
   )
+
+  override def getChainId(): Byte = 'V'.toByte
 
   override def getBytecode(contractId: Array[Byte]): Array[Byte] = {
     if (Base58.encode(contractId) != this.contractMock) throw new Exception
@@ -141,8 +146,15 @@ class WASMServiceMock extends WASMService {
   override def reissue(contractId: Array[Byte], assetId: Array[Byte], amount: Long, isReissuable: Boolean) =
     this.balances(Base58.encode(assetId))(Base58.encode(contractId)) += amount
 
-  override def lease(contractId: Array[Byte], recipient: Array[Byte], amount: Long): Array[Byte] =
-    if (Base58.encode(recipient) == this.recipient) Base58.decode(this.lease).get else throw new Exception
+  override def lease(contractId: Array[Byte], recipient: Array[Byte], amount: Long): Array[Byte] = {
+    recipient(0) match {
+      case 1 => if (Base58.encode(recipient) != this.recipient) throw new Exception
+      case 2 => if (new String(recipient.drop(2), UTF_8) != this.alias) throw new Exception
+      case _ => throw new Exception
+    }
+
+    Base58.decode(this.lease).get
+  }
 
   override def cancelLease(contractId: Array[Byte], leaseId: Array[Byte]) =
     if (Base58.encode(leaseId) != this.lease) throw new Exception
