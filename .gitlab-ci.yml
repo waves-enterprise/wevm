@@ -1,0 +1,21 @@
+image: ${REGISTRY}/it/docker:19.03.1
+
+services:
+  - name: ${REGISTRY}/it/docker:19.03.1-dind
+    alias: docker
+
+variables:
+  DOCKER_TLS_CERTDIR: "/certs"
+  GIT_STRATEGY: "clone"
+
+stages:
+  - ci
+
+ci:
+  stage: ci
+  script:
+    - docker build -t wevm-ci-image --no-cache .
+    - docker run -e "SBT_CREDENTIALS=${SBT_CREDENTIALS}" wevm-ci-image
+  only:
+    - tags
+    - branches
