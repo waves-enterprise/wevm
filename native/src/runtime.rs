@@ -3,13 +3,14 @@ use wasmi::Memory;
 
 #[derive(Copy, Clone, Debug)]
 pub enum RuntimeError {
-    MemoryNotFound = 300,
-    MemoryError = 301,
-    Utf8Error = 302,
-    InvalidResult = 303,
-    InvalidInteger = 304,
-    InvalidBool = 305,
-    Base58Error = 306,
+    Exception = 300,
+    MemoryNotFound = 301,
+    MemoryError = 302,
+    Utf8Error = 303,
+    InvalidResult = 304,
+    InvalidInteger = 305,
+    InvalidBool = 306,
+    Base58Error = 307,
 }
 
 pub struct Args {
