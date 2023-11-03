@@ -72,7 +72,7 @@
             )
 
             (local.set $error
-                (i32.const -1)
+                (i32.const 300)
             )
             (br_if $code
                 (i64.ne
@@ -94,7 +94,7 @@
             )
 
             (local.set $error
-                (i32.const -1)
+                (i32.const 300)
             )
             (br_if $code
                 (i32.ne
