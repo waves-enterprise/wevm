@@ -1,7 +1,7 @@
 (module
     (import "env" "memory" (memory 2 16))
 
-    (import "env0" "bytes_equals" (func $bytes_equals (param i32 i32 i32 i32) (result i32 i32)))
+    (import "env0" "binary_equals" (func $binary_equals (param i32 i32 i32 i32) (result i32 i32)))
     (import "env0" "string_equals" (func $string_equals (param i32 i32 i32 i32) (result i32 i32)))
     (import "env0" "concat" (func $concat (param i32 i32 i32 i32) (result i32 i32 i32)))
 
@@ -23,7 +23,7 @@
                 (local.tee $error)
             )
 
-            (call $bytes_equals
+            (call $binary_equals
                 (i32.const 0)
                 (i32.const 4)
                 (local.get $offset)
