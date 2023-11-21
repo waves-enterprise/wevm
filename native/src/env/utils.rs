@@ -9,7 +9,7 @@ use convert_case::{Case, Casing};
 use std::str;
 use wasmi::{Caller, Func, Store};
 
-env_items!(Base58, ToBase58String, BinaryEquals, StringEquals, Concat);
+env_items!(Base58, ToBase58String, BinaryEquals, StringEquals, Join);
 
 env_runtime! {
     #[version = 0]
@@ -117,7 +117,7 @@ env_runtime! {
 
 env_runtime! {
     #[version = 0]
-    pub fn Concat(
+    pub fn Join(
         offset_left: u32,
         length_left: u32,
         offset_right: u32,
