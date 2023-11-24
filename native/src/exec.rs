@@ -81,7 +81,8 @@ impl Executable {
             .set_stack_limits(stack_limits)
             .wasm_mutable_global(false)
             .wasm_sign_extension(false)
-            .wasm_saturating_float_to_int(false);
+            .wasm_saturating_float_to_int(false)
+            .wasm_multi_value(true);
 
         let engine = Engine::new(&config);
         let module = Module::new(&engine, &mut &bytecode[..])

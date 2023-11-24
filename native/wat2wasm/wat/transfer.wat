@@ -33,15 +33,14 @@
                 (local.tee $error)
             )
 
-            (block $require
-                (br_if $require
-                    (i64.ge_s
-                        (local.get $balance)
-                        (i64.const 1)
-                    )
-                )
-                (return
-                    (i32.const -1)
+            (local.set $error
+                (i32.const 300)
+            )
+
+            (br_if $code
+                (i64.lt_s
+                    (local.get $balance)
+                    (i64.const 43)
                 )
             )
 
