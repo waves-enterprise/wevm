@@ -1,4 +1,7 @@
-use crate::{env::Environment, env_runtime, runtime::Runtime, stack::Stack};
+use crate::{
+    env::Environment, env_runtime, exec::ExecutableError, runtime::Runtime, stack::Stack, Error,
+    Result,
+};
 use convert_case::{Case, Casing};
 use jni::{InitArgsBuilder, JNIVersion, JavaVM};
 use std::str;
@@ -62,7 +65,12 @@ impl TestRunner {
         Self { java_vm }
     }
 
-    pub fn run(&self, wat: &str, memory: Option<(u32, u32)>, input_data: Vec<u8>) -> Vec<Value> {
+    pub fn run(
+        &self,
+        wat: &str,
+        memory: Option<(u32, u32)>,
+        input_data: Vec<u8>,
+    ) -> Result<Vec<Value>> {
         // Preparing a fake jvm to initialize the call stack
         let env = self
             .java_vm
@@ -97,9 +105,7 @@ impl TestRunner {
         let mut stack = Stack::new(vec![], bytecode, memory, envs, jvm, global_ref)
             .expect("Call stack creation failed");
 
-        stack
-            .run("_constructor", input_data)
-            .expect("Bytecode execution failed")
+        stack.run("_constructor", input_data)
     }
 }
 
@@ -122,9 +128,11 @@ fn test_vm() {
         "#;
 
         let result = runner.run(wat, None, vec![]);
+        assert!(result.is_ok());
 
-        assert_eq!(result.len(), 1);
-        assert_eq!(result[0], Value::I32(4));
+        let values = result.unwrap();
+        assert_eq!(values.len(), 1);
+        assert_eq!(values[0], Value::I32(4));
     }
 
     // Import test
@@ -146,9 +154,11 @@ fn test_vm() {
         "#;
 
         let result = runner.run(wat, None, vec![]);
+        assert!(result.is_ok());
 
-        assert_eq!(result.len(), 1);
-        assert_eq!(result[0], Value::I32(0));
+        let values = result.unwrap();
+        assert_eq!(values.len(), 1);
+        assert_eq!(values[0], Value::I32(0));
     }
 
     // Memory test
@@ -175,9 +185,11 @@ fn test_vm() {
         "#;
 
         let result = runner.run(wat, None, vec![]);
+        assert!(result.is_ok());
 
-        assert_eq!(result.len(), 1);
-        assert_eq!(result[0], Value::I32(0));
+        let values = result.unwrap();
+        assert_eq!(values.len(), 1);
+        assert_eq!(values[0], Value::I32(0));
     }
 
     // Args test
@@ -202,8 +214,39 @@ fn test_vm() {
                 0, 1, 0, 8, 116, 101, 115, 116, 95, 107, 101, 121, 0, 0, 0, 0, 0, 0, 0, 0, 1,
             ],
         );
+        assert!(result.is_ok());
 
-        assert_eq!(result.len(), 1);
-        assert_eq!(result[0], Value::I32(3));
+        let values = result.unwrap();
+        assert_eq!(values.len(), 1);
+        assert_eq!(values[0], Value::I32(3));
+    }
+
+    // Negative test
+    {
+        let wat = r#"
+        (module
+            (func (export "_constructor") (param $p0 f32) (result f32)
+                (f32.add
+                    (local.get $p0)
+                    (f32.const 2)
+                )
+            )
+
+            (global $__heap_base (export "__heap_base") i32 (i32.const 0))
+        )
+        "#;
+
+        let result = runner.run(
+            wat,
+            None,
+            vec![
+                0, 1, 0, 8, 116, 101, 115, 116, 95, 107, 101, 121, 0, 0, 0, 0, 0, 0, 0, 0, 1,
+            ],
+        );
+        assert!(result.is_err());
+        assert_eq!(
+            result.unwrap_err(),
+            Error::Executable(ExecutableError::FailedParseFuncArgs)
+        );
     }
 }

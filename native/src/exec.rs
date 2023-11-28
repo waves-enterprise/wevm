@@ -7,11 +7,11 @@ use crate::{
 };
 use std::{fmt, str::FromStr};
 use wasmi::{
-    core::{Value, ValueType, F32, F64},
+    core::{Value, ValueType},
     Config, Engine, Func, FuncType, Memory, MemoryType, Module, StackLimits, Store,
 };
 
-#[derive(Copy, Clone, Debug)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 pub enum ExecutableError {
     /// Failed to parse and validate Wasm bytecode
     InvalidBytecode = 100,
@@ -64,6 +64,7 @@ impl fmt::Display for LoadableFunction {
     }
 }
 
+#[derive(Debug)]
 pub struct Executable {
     module: Module,
     /// Initial memory size of a contract's sandbox.
@@ -232,16 +233,8 @@ impl Executable {
                 match param_type {
                     ValueType::I32 => arg.parse::<i32>().map(Value::from).map_err(make_err!()),
                     ValueType::I64 => arg.parse::<i64>().map(Value::from).map_err(make_err!()),
-                    ValueType::F32 => arg
-                        .parse::<f32>()
-                        .map(F32::from)
-                        .map(Value::from)
-                        .map_err(make_err!()),
-                    ValueType::F64 => arg
-                        .parse::<f64>()
-                        .map(F64::from)
-                        .map(Value::from)
-                        .map_err(make_err!()),
+                    ValueType::F32 => Err(Error::Executable(ExecutableError::FailedParseFuncArgs)),
+                    ValueType::F64 => Err(Error::Executable(ExecutableError::FailedParseFuncArgs)),
                 }
             })
             .collect::<Result<Vec<_>, _>>()?;
@@ -306,6 +299,10 @@ mod tests {
 
         let exec = Executable::new(bytecode, memory.0, memory.1);
         assert!(exec.is_err());
+        assert_eq!(
+            exec.unwrap_err(),
+            Error::Executable(ExecutableError::ConstructorNotFound)
+        );
     }
 
     #[test]

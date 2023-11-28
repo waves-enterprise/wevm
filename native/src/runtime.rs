@@ -1,7 +1,7 @@
 use crate::{data_entry::DataEntry, stack::Stack};
 use wasmi::Memory;
 
-#[derive(Copy, Clone, Debug)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 pub enum RuntimeError {
     Exception = 300,
     MemoryNotFound = 301,

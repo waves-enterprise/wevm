@@ -9,7 +9,7 @@ use jni::objects::{JByteArray, JObject, JValue};
 /// J - Long
 /// V - Void
 
-#[derive(Copy, Clone, Debug)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 pub enum JvmError {
     /// Failed attaches the current thread to the Java VM
     AttachCurrentThread = 200,

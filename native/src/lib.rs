@@ -22,7 +22,7 @@ use jni::{
 };
 use wasmi::core::Value;
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum Error {
     Jvm(JvmError),
     Executable(ExecutableError),
