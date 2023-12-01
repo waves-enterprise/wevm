@@ -1,11 +1,13 @@
 use crate::{
     env::Environment,
-    exec::{Executable, LoadableFunction},
-    Result,
+    exec::{Executable, ExecutableError, LoadableFunction},
+    Error, Result,
 };
 use jni::{objects::GlobalRef, JavaVM};
 use std::str::FromStr;
 use wasmi::core::Value;
+
+const MAX_FRAMES: usize = 128;
 
 pub struct Frame {
     contract_id: Vec<u8>,
@@ -18,7 +20,6 @@ impl Frame {
     }
 }
 
-// TODO: It is necessary to limit the number of possible frames
 pub struct Stack {
     frames: Vec<Frame>,
     first_frame: Frame,
@@ -64,7 +65,7 @@ impl Stack {
             bytecode,
         };
 
-        self.push_frame(frame);
+        self.push_frame(frame)?;
         self.run(func_name, input_data)
     }
 
@@ -85,7 +86,13 @@ impl Stack {
         self.frames.last().unwrap_or(&self.first_frame)
     }
 
-    fn push_frame(&mut self, frame: Frame) {
+    fn push_frame(&mut self, frame: Frame) -> Result<()> {
+        if self.frames.len() == MAX_FRAMES {
+            return Err(Error::Executable(ExecutableError::StackOverflow));
+        }
+
         self.frames.push(frame);
+
+        Ok(())
     }
 }

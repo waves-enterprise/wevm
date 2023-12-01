@@ -37,6 +37,8 @@ pub enum ExecutableError {
     FailedDeserializeDataEntry = 110,
     /// Failed during execution
     FailedExec = 111,
+    /// Call stack overflow error
+    StackOverflow = 112,
 }
 
 pub enum LoadableFunction {
