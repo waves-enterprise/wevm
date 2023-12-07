@@ -12,11 +12,16 @@ const MAX_FRAMES: usize = 128;
 pub struct Frame {
     contract_id: Vec<u8>,
     bytecode: Vec<u8>,
+    nonce: u64,
 }
 
 impl Frame {
     pub fn contract_id(&self) -> Vec<u8> {
         self.contract_id.clone()
+    }
+
+    pub fn payment_id(&self) -> Vec<u8> {
+        create_payment_id(self.contract_id.clone(), self.nonce)
     }
 }
 
@@ -27,6 +32,7 @@ pub struct Stack {
     envs: Vec<Box<dyn Environment>>,
     pub jvm: JavaVM,
     pub jvm_callback: GlobalRef,
+    nonce: u64,
 }
 
 impl Stack {
@@ -41,6 +47,7 @@ impl Stack {
         let first_frame = Frame {
             contract_id,
             bytecode,
+            nonce: 0,
         };
 
         Ok(Stack {
@@ -50,6 +57,7 @@ impl Stack {
             envs,
             jvm,
             jvm_callback,
+            nonce: 0,
         })
     }
 
@@ -57,12 +65,14 @@ impl Stack {
         &mut self,
         contract_id: Vec<u8>,
         bytecode: Vec<u8>,
+        nonce: u64,
         func_name: &str,
         input_data: Vec<u8>,
     ) -> Result<Vec<Value>> {
         let frame = Frame {
             contract_id,
             bytecode,
+            nonce,
         };
 
         self.push_frame(frame)?;
@@ -86,6 +96,11 @@ impl Stack {
         self.frames.last().unwrap_or(&self.first_frame)
     }
 
+    pub fn get_nonce(&mut self) -> u64 {
+        self.nonce += 1;
+        self.nonce
+    }
+
     fn push_frame(&mut self, frame: Frame) -> Result<()> {
         if self.frames.len() == MAX_FRAMES {
             return Err(Error::Executable(ExecutableError::StackOverflow));
@@ -95,4 +110,10 @@ impl Stack {
 
         Ok(())
     }
+}
+
+pub fn create_payment_id(contract_id: Vec<u8>, nonce: u64) -> Vec<u8> {
+    let mut result = contract_id;
+    result.extend_from_slice(&nonce.to_be_bytes());
+    result
 }

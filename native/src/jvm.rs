@@ -129,10 +129,10 @@ impl Jvm for Stack {
         Ok(bytes.to_vec())
     }
 
-    fn add_payments(&self, contract_id: &[u8], payments: &[u8]) -> Result<()> {
+    fn add_payments(&self, payment_id: &[u8], payments: &[u8]) -> Result<()> {
         let mut env = env!(self);
 
-        let contract_id = byte_array!(env, contract_id);
+        let payment_id = byte_array!(env, payment_id);
         let payments = byte_array!(env, payments);
 
         env.call_method(
@@ -140,7 +140,7 @@ impl Jvm for Stack {
             "addPayments",
             "([B[B)V",
             &[
-                JValue::Object(&contract_id.into()),
+                JValue::Object(&payment_id.into()),
                 JValue::Object(&payments.into()),
             ],
         )
@@ -422,17 +422,17 @@ impl Jvm for Stack {
         Ok(bytes.to_vec())
     }
 
-    fn get_tx_payments(&self, contract_id: &[u8]) -> Result<i32> {
+    fn get_tx_payments(&self, payment_id: &[u8]) -> Result<i32> {
         let mut env = env!(self);
 
-        let contract_id = byte_array!(env, contract_id);
+        let payment_id = byte_array!(env, payment_id);
 
         let result = env
             .call_method(
                 self.jvm_callback.clone(),
                 "getTxPayments",
                 "([B)I",
-                &[JValue::Object(&contract_id.into())],
+                &[JValue::Object(&payment_id.into())],
             )
             .map_err(|_| Error::Jvm(JvmError::MethodCall))?
             .i()
@@ -441,17 +441,17 @@ impl Jvm for Stack {
         Ok(result)
     }
 
-    fn get_tx_payment_asset_id(&self, contract_id: &[u8], number: i32) -> Result<Vec<u8>> {
+    fn get_tx_payment_asset_id(&self, payment_id: &[u8], number: i32) -> Result<Vec<u8>> {
         let mut env = env!(self);
 
-        let contract_id = byte_array!(env, contract_id);
+        let payment_id = byte_array!(env, payment_id);
 
         let result = env
             .call_method(
                 self.jvm_callback.clone(),
                 "getTxPaymentAssetId",
                 "([BI)[B",
-                &[JValue::Object(&contract_id.into()), number.into()],
+                &[JValue::Object(&payment_id.into()), number.into()],
             )
             .map_err(|_| Error::Jvm(JvmError::MethodCall))?
             .l()
@@ -464,17 +464,17 @@ impl Jvm for Stack {
         Ok(bytes.to_vec())
     }
 
-    fn get_tx_payment_amount(&self, contract_id: &[u8], number: i32) -> Result<i64> {
+    fn get_tx_payment_amount(&self, payment_id: &[u8], number: i32) -> Result<i64> {
         let mut env = env!(self);
 
-        let contract_id = byte_array!(env, contract_id);
+        let payment_id = byte_array!(env, payment_id);
 
         let result = env
             .call_method(
                 self.jvm_callback.clone(),
                 "getTxPaymentAmount",
                 "([BI)J",
-                &[JValue::Object(&contract_id.into()), number.into()],
+                &[JValue::Object(&payment_id.into()), number.into()],
             )
             .map_err(|_| Error::Jvm(JvmError::MethodCall))?
             .j()
