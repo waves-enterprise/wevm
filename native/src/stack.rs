@@ -7,7 +7,7 @@ use jni::{objects::GlobalRef, JavaVM};
 use std::str::FromStr;
 use wasmi::core::Value;
 
-const MAX_FRAMES: usize = 128;
+const MAX_FRAMES: usize = 64;
 
 pub struct Frame {
     contract_id: Vec<u8>,
