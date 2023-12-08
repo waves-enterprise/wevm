@@ -4,6 +4,7 @@ use crate::{
     env_items, env_runtime,
     jvm::Jvm,
     runtime::{Runtime, RuntimeError},
+    stack::create_payment_id,
 };
 use convert_case::{Case, Casing};
 use std::str;
@@ -117,12 +118,17 @@ env_runtime! {
 
             let (input_data, payments) = ctx.args_and_payments();
 
-            match ctx.stack.add_payments(contract_id, &payments) {
+            // Since a single contract can be invoked multiple times during execution,
+            // it is necessary to have a unique identifier to distinguish each unique execution
+            let nonce = ctx.stack.get_nonce();
+            let payment_id = create_payment_id(contract_id.to_vec(), nonce);
+
+            match ctx.stack.add_payments(payment_id.as_slice(), &payments) {
                 Ok(()) => (),
                 Err(error) => return error.as_i32(),
             }
 
-            match ctx.stack.call(contract_id.to_vec(), bytecode, func_name, input_data) {
+            match ctx.stack.call(contract_id.to_vec(), bytecode, nonce, func_name, input_data) {
                 Ok(result) => {
                     // TODO: Functions cannot return any values, they can only return an error code
                     if result.len() != 1 {

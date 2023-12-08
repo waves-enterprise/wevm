@@ -11,14 +11,17 @@ import java.nio.charset.StandardCharsets.UTF_8
 import scala.collection.mutable.{Map, Seq}
 
 class WASMServiceMock extends WASMService {
-  val contract = "4WVhw3QdiinpE5QXDG7QfqLiLanM7ewBw4ChX4qyGjs2"
+  val contract     = "4WVhw3QdiinpE5QXDG7QfqLiLanM7ewBw4ChX4qyGjs2"
   val contractMock = "2sqPS2VAKmK77FoNakw1VtDTCbDSa7nqh5wTXvJeYGo2"
 
-  val txSender = "3NqEjAkFVzem9CGa3bEPhakQc1Sm2G8gAFU"
+  val txSender  = "3NqEjAkFVzem9CGa3bEPhakQc1Sm2G8gAFU"
   val recipient = "3NzkzibVRkKUzaRzjUxndpTPvoBzQ3iLng3"
-  val alias = "miner"
-  val asset = "DnK5Xfi2wXUJx9BjK9X6ZpFdTLdq2GtWH9pWrcxcmrhB"
-  val lease = "6Tn7ir9MycHW6Gq2F2dGok2stokSwXJadPh4hW8eZ8Sp"
+  val alias     = "miner"
+  val asset     = "DnK5Xfi2wXUJx9BjK9X6ZpFdTLdq2GtWH9pWrcxcmrhB"
+  val lease     = "6Tn7ir9MycHW6Gq2F2dGok2stokSwXJadPh4hW8eZ8Sp"
+
+  val paymentIdContract = Base58.encode(Base58.decode(this.contract).get ++ Array.fill[Byte](8)(0))
+  val paymentIdMock     = Base58.encode(Base58.decode(this.contractMock).get ++ Array[Byte](0, 0, 0, 0, 0, 0, 0, 1))
 
   var storage: Map[String, Map[String, DataEntry[_]]] = Map(
     this.contract -> Map.empty[String, DataEntry[_]],
@@ -41,11 +44,11 @@ class WASMServiceMock extends WASMService {
   )
 
   var payments: Map[String, Seq[(String, Long)]] = Map(
-    this.contract -> Seq(
+    paymentIdContract -> Seq(
       ("null", 4200000000L),
       (this.asset, 2400000000L),
     ),
-    this.contractMock -> Seq.empty[(String, Long)],
+    paymentIdMock -> Seq.empty[(String, Long)],
   )
 
   override def getChainId(): Byte = 'V'.toByte
@@ -55,9 +58,9 @@ class WASMServiceMock extends WASMService {
     getClass.getResourceAsStream("/storage.wasm").readAllBytes()
   }
 
-  override def addPayments(contractId: Array[Byte], payments: Array[Byte]) = {
+  override def addPayments(paymentId: Array[Byte], payments: Array[Byte]) = {
     val assetLength = 32
-    var start = 2
+    var start       = 2
 
     var count: Int = ((payments(0) & 0xff) << 8) | (payments(1) & 0xff)
     while (count > 0) {
@@ -76,7 +79,7 @@ class WASMServiceMock extends WASMService {
       start += Longs.BYTES
 
       val payment: (String, Long) = (assetId, amount)
-      this.payments(Base58.encode(contractId)) = this.payments(Base58.encode(contractId)) :+ payment
+      this.payments(Base58.encode(paymentId)) = this.payments(Base58.encode(paymentId)) :+ payment
 
       count -= 1
     }
@@ -166,11 +169,11 @@ class WASMServiceMock extends WASMService {
   override def getTxSender: Array[Byte] =
     Base58.decode(this.txSender).get
 
-  override def getTxPayments(contractId: Array[Byte]): Int =
-    this.payments(Base58.encode(contractId)).size
+  override def getTxPayments(paymentId: Array[Byte]): Int =
+    this.payments(Base58.encode(paymentId)).size
 
-  override def getTxPaymentAssetId(contractId: Array[Byte], number: Int): Array[Byte] =
-    this.payments.get(Base58.encode(contractId)) match {
+  override def getTxPaymentAssetId(paymentId: Array[Byte], number: Int): Array[Byte] =
+    this.payments.get(Base58.encode(paymentId)) match {
       case Some(seq) => {
         val assetId = seq.apply(number)._1
         if (assetId == "null") Array.empty[Byte] else Base58.decode(assetId).get
@@ -178,8 +181,8 @@ class WASMServiceMock extends WASMService {
       case None => throw new Exception
     }
 
-  override def getTxPaymentAmount(contractId: Array[Byte], number: Int): Long =
-    this.payments.get(Base58.encode(contractId)) match {
+  override def getTxPaymentAmount(paymentId: Array[Byte], number: Int): Long =
+    this.payments.get(Base58.encode(paymentId)) match {
       case Some(seq) => seq.apply(number)._2
       case None => throw new Exception
     }

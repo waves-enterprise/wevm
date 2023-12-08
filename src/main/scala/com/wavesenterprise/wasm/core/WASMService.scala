@@ -14,10 +14,10 @@ trait WASMService {
   def getBytecode(contractId: Array[Byte]): Array[Byte]
 
   /**
-    * @param contractId ID of a contract. Base58 bytes
+    * @param paymentId Unique payment identifier. Represents the concatenation of contractId bytes and unique 8 bytes
     * @param payments Serialized list assetId and amount
     */
-  def addPayments(contractId: Array[Byte], payments: Array[Byte])
+  def addPayments(paymentId: Array[Byte], payments: Array[Byte])
 
   /**
     * @param contractId ID of a contract (possible contractId called this function). Base58 bytes
@@ -97,22 +97,22 @@ trait WASMService {
   def getTxSender: Array[Byte]
 
   /**
-    * @param contractId ID of a contract called this function. Base58 bytes
+    * @param paymentId Unique payment identifier. Represents the concatenation of contractId bytes and unique 8 bytes
     * @return Number of attached payments
     */
-  def getTxPayments(contractId: Array[Byte]): Int
+  def getTxPayments(paymentId: Array[Byte]): Int
 
   /**
-    * @param contractId ID of a contract called this function. Base58 bytes
+    * @param paymentId Unique payment identifier. Represents the concatenation of contractId bytes and unique 8 bytes
     * @param number Attached payment number
     * @return assetId of a token (optional field, array can be empty). Base58 bytes
     */
-  def getTxPaymentAssetId(contractId: Array[Byte], number: Int): Array[Byte]
+  def getTxPaymentAssetId(paymentId: Array[Byte], number: Int): Array[Byte]
 
   /**
-    * @param contractId ID of a contract called this function. Base58 bytes
+    * @param paymentId Unique payment identifier. Represents the concatenation of contractId bytes and unique 8 bytes
     * @param number Attached payment number
     * @return Amount of tokens
     */
-  def getTxPaymentAmount(contractId: Array[Byte], number: Int): Long
+  def getTxPaymentAmount(paymentId: Array[Byte], number: Int): Long
 }

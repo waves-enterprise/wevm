@@ -120,8 +120,8 @@ class WASMExecutorSpec extends AnyFreeSpec with Matchers {
       service.storage(service.contractMock)("binary_key") shouldBe entry3
       service.storage(service.contractMock)("string_key") shouldBe entry4
 
-      service.payments(service.contractMock).apply(0) shouldBe ("null", 4200000000L)
-      service.payments(service.contractMock).apply(1) shouldBe (service.asset, 2400000000L)
+      service.payments(service.paymentIdMock).apply(0) shouldBe ("null", 4200000000L)
+      service.payments(service.paymentIdMock).apply(1) shouldBe (service.asset, 2400000000L)
     }
 
     "base58" in {

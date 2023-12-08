@@ -14,9 +14,9 @@ env_runtime! {
     #[version = 0]
     pub fn GetPayments() -> (i32, i32) {
         |caller: Caller<Runtime>| {
-            let contract_id = caller.data().stack.top_frame().contract_id();
+            let payment_id = caller.data().stack.top_frame().payment_id();
 
-            match caller.data().stack.get_tx_payments(contract_id.as_slice()) {
+            match caller.data().stack.get_tx_payments(payment_id.as_slice()) {
                 Ok(result) => (0, result),
                 Err(error) => (error.as_i32(), 0),
             }
@@ -34,9 +34,9 @@ env_runtime! {
             };
             let offset_memory = ctx.heap_base() as usize;
 
-            let contract_id = ctx.stack.top_frame().contract_id();
+            let payment_id = ctx.stack.top_frame().payment_id();
 
-            match ctx.stack.get_tx_payment_asset_id(contract_id.as_slice(), number) {
+            match ctx.stack.get_tx_payment_asset_id(payment_id.as_slice(), number) {
                 Ok(result) => write_memory!(ctx, memory, offset_memory, result),
                 Err(error) => (error.as_i32(), 0, 0),
             }
@@ -48,9 +48,9 @@ env_runtime! {
     #[version = 0]
     pub fn GetPaymentAmount(number: i32) -> (i32, i64) {
         |caller: Caller<Runtime>| {
-            let contract_id = caller.data().stack.top_frame().contract_id();
+            let payment_id = caller.data().stack.top_frame().payment_id();
 
-            match caller.data().stack.get_tx_payment_amount(contract_id.as_slice(), number) {
+            match caller.data().stack.get_tx_payment_amount(payment_id.as_slice(), number) {
                 Ok(result) => (0, result),
                 Err(error) => (error.as_i32(), 0),
             }
