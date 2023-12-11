@@ -5,13 +5,13 @@ use crate::{
 };
 use jni::objects::{JByteArray, JObject, JValue};
 
-/// A primitive java type.
-/// L - Object
-/// Z - Boolean
-/// B - Byte
-/// I - Integer
-/// J - Long
-/// V - Void
+// A primitive java type.
+// L - Object
+// Z - Boolean
+// B - Byte
+// I - Integer
+// J - Long
+// V - Void
 
 macro_rules! env {
     ($self:expr) => {{
