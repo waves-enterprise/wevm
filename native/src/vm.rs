@@ -1,7 +1,7 @@
 use crate::{
     env::Environment,
-    error::{Error, Result},
-    exec::{Executable, ExecutableError, LoadableFunction},
+    error::{Error, ExecutableError, Result},
+    exec::{Executable, LoadableFunction},
 };
 use jni::{objects::GlobalRef, JavaVM};
 use std::str::FromStr;

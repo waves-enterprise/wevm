@@ -1,20 +1,19 @@
 mod data_entry;
 mod env;
+mod error;
 mod exec;
-mod jvm;
 mod macros;
+mod node;
 mod runtime;
-mod stack;
+mod vm;
+
+#[cfg(feature = "jvm")]
+mod jvm;
 
 #[cfg(test)]
 mod tests;
 
-use crate::{
-    exec::{Executable, ExecutableError},
-    jvm::JvmError,
-    runtime::RuntimeError,
-    stack::Stack,
-};
+use crate::{error::JvmError, exec::Executable, vm::Vm};
 use jni::{
     objects::{JByteArray, JClass, JObject, JString},
     sys::jint,
@@ -22,32 +21,8 @@ use jni::{
 };
 use wasmi::core::Value;
 
-#[derive(Debug, PartialEq)]
-pub enum Error {
-    Jvm(JvmError),
-    Executable(ExecutableError),
-    Runtime(RuntimeError),
-}
-
-impl Error {
-    pub fn as_jint(&self) -> jint {
-        match self {
-            Error::Jvm(error) => *error as jint,
-            Error::Executable(error) => *error as jint,
-            Error::Runtime(error) => *error as jint,
-        }
-    }
-
-    pub fn as_i32(&self) -> i32 {
-        match self {
-            Error::Jvm(error) => *error as i32,
-            Error::Executable(error) => *error as i32,
-            Error::Runtime(error) => *error as i32,
-        }
-    }
-}
-
-pub type Result<T, E = Error> = core::result::Result<T, E>;
+/// Size of allocated linear memory.
+const MEMORY: (u32, u32) = (2, 16);
 
 // This `#[no_mangle]` keeps rust from "mangling" the name and making it unique
 // for this crate. The name follow a strict naming convention so that the
@@ -60,6 +35,8 @@ pub type Result<T, E = Error> = core::result::Result<T, E>;
 // It's usually not necessary to explicitly name the `'local` input lifetimes but
 // in this case we want to return a reference and show the compiler what
 // local frame lifetime it is associated with.
+
+/// External Java function to execute bytecode contract.
 #[no_mangle]
 pub extern "system" fn Java_com_wavesenterprise_wasm_core_WASMExecutor_runContract<'local>(
     mut env: JNIEnv<'local>,
@@ -80,7 +57,6 @@ pub extern "system" fn Java_com_wavesenterprise_wasm_core_WASMExecutor_runContra
         Err(_) => return JvmError::ByteArrayConversion as jint,
     };
 
-    let memory: (u32, u32) = (2, 16);
     let envs = env::envs();
 
     let jvm = match env.get_java_vm() {
@@ -93,8 +69,15 @@ pub extern "system" fn Java_com_wavesenterprise_wasm_core_WASMExecutor_runContra
         Err(_) => return JvmError::NewGlobalRef as jint,
     };
 
-    let mut stack = match Stack::new(contract_id, bytecode, memory, envs, jvm, callback) {
-        Ok(stack) => stack,
+    let mut vm = match Vm::new(
+        contract_id,
+        bytecode,
+        MEMORY,
+        envs,
+        Some(jvm),
+        Some(callback),
+    ) {
+        Ok(vm) => vm,
         Err(error) => return error.as_jint(),
     };
 
@@ -108,7 +91,7 @@ pub extern "system" fn Java_com_wavesenterprise_wasm_core_WASMExecutor_runContra
         Err(_) => return JvmError::ByteArrayConversion as jint,
     };
 
-    let result = match stack.run(&func_name, input_data) {
+    let result = match vm.run(&func_name, input_data) {
         Ok(result) => result,
         Err(error) => return error.as_jint(),
     };
@@ -119,6 +102,7 @@ pub extern "system" fn Java_com_wavesenterprise_wasm_core_WASMExecutor_runContra
     }
 }
 
+/// External Java function to validate bytecode contract.
 #[no_mangle]
 pub extern "system" fn Java_com_wavesenterprise_wasm_core_WASMExecutor_validateBytecode<'local>(
     env: JNIEnv<'local>,
@@ -130,9 +114,7 @@ pub extern "system" fn Java_com_wavesenterprise_wasm_core_WASMExecutor_validateB
         Err(_) => return JvmError::ByteArrayConversion as jint,
     };
 
-    let memory: (u32, u32) = (2, 16);
-
-    match Executable::new(bytecode, memory.0, memory.1) {
+    match Executable::new(bytecode, MEMORY.0, MEMORY.1) {
         Ok(_) => 0,
         Err(error) => error.as_jint(),
     }

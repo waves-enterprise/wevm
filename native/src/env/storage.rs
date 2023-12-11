@@ -2,9 +2,9 @@ use crate::{
     data_entry::DataEntry,
     env::Environment,
     env_items, env_runtime,
-    exec::ExecutableError,
-    jvm::Jvm,
-    runtime::{Runtime, RuntimeError},
+    error::{ExecutableError, RuntimeError},
+    node::Node,
+    runtime::Runtime,
     write_memory,
 };
 use convert_case::{Case, Casing};
@@ -38,12 +38,12 @@ env_runtime! {
             let address = if length_address != 0 {
                 memory[offset_address as usize..offset_address as usize + length_address as usize].to_vec()
             } else {
-                ctx.stack.top_frame().contract_id()
+                ctx.vm.top_frame().contract_id()
             };
 
             let key = &memory[offset_key as usize..offset_key as usize + length_key as usize];
 
-            match ctx.stack.get_storage(address.as_slice(), key) {
+            match ctx.vm.get_storage(address.as_slice(), key) {
                 Ok(bytes) => {
                     match DataEntry::deserialize_storage(bytes.as_slice()) {
                         Ok(DataEntry::Integer(integer)) => (0, integer),
@@ -73,12 +73,12 @@ env_runtime! {
             let address = if length_address != 0 {
                 memory[offset_address as usize..offset_address as usize + length_address as usize].to_vec()
             } else {
-                ctx.stack.top_frame().contract_id()
+                ctx.vm.top_frame().contract_id()
             };
 
             let key = &memory[offset_key as usize..offset_key as usize + length_key as usize];
 
-            match ctx.stack.get_storage(address.as_slice(), key) {
+            match ctx.vm.get_storage(address.as_slice(), key) {
                 Ok(bytes) => {
                     match DataEntry::deserialize_storage(bytes.as_slice()) {
                         Ok(DataEntry::Boolean(boolean)) => (0, boolean),
@@ -110,12 +110,12 @@ env_runtime! {
             let address = if length_address != 0 {
                 memory[offset_address as usize..offset_address as usize + length_address as usize].to_vec()
             } else {
-                ctx.stack.top_frame().contract_id()
+                ctx.vm.top_frame().contract_id()
             };
 
             let key = &memory[offset_key as usize..offset_key as usize + length_key as usize];
 
-            match ctx.stack.get_storage(address.as_slice(), key) {
+            match ctx.vm.get_storage(address.as_slice(), key) {
                 Ok(bytes) => {
                     let result = match DataEntry::deserialize_storage(bytes.as_slice()) {
                         Ok(DataEntry::Binary(bytes)) => bytes,
@@ -147,12 +147,12 @@ env_runtime! {
             let address = if length_address != 0 {
                 memory[offset_address as usize..offset_address as usize + length_address as usize].to_vec()
             } else {
-                ctx.stack.top_frame().contract_id()
+                ctx.vm.top_frame().contract_id()
             };
 
             let key = &memory[offset_key as usize..offset_key as usize + length_key as usize];
 
-            match ctx.stack.get_storage(address.as_slice(), key) {
+            match ctx.vm.get_storage(address.as_slice(), key) {
                 Ok(bytes) => {
                     let result = match DataEntry::deserialize_storage(bytes.as_slice()) {
                         Ok(DataEntry::String(bytes)) => bytes,
@@ -179,11 +179,11 @@ env_runtime! {
                 None => return RuntimeError::MemoryNotFound as i32,
             };
 
-            let contract_id = ctx.stack.top_frame().contract_id();
+            let contract_id = ctx.vm.top_frame().contract_id();
             let key = &memory[offset_key as usize..offset_key as usize + length_key as usize];
             let data_entry = DataEntry::Integer(value).serialize(Some(key));
 
-            match ctx.stack.set_storage(contract_id.as_slice(), data_entry.as_slice()) {
+            match ctx.vm.set_storage(contract_id.as_slice(), data_entry.as_slice()) {
                 Ok(_) => 0,
                 Err(error) => error.as_i32(),
             }
@@ -204,11 +204,11 @@ env_runtime! {
                 None => return RuntimeError::MemoryNotFound as i32,
             };
 
-            let contract_id = ctx.stack.top_frame().contract_id();
+            let contract_id = ctx.vm.top_frame().contract_id();
             let key = &memory[offset_key as usize..offset_key as usize + length_key as usize];
             let data_entry = DataEntry::Boolean(value).serialize(Some(key));
 
-            match ctx.stack.set_storage(contract_id.as_slice(), data_entry.as_slice()) {
+            match ctx.vm.set_storage(contract_id.as_slice(), data_entry.as_slice()) {
                 Ok(_) => 0,
                 Err(error) => error.as_i32(),
             }
@@ -230,12 +230,12 @@ env_runtime! {
                 None => return RuntimeError::MemoryNotFound as i32,
             };
 
-            let contract_id = ctx.stack.top_frame().contract_id();
+            let contract_id = ctx.vm.top_frame().contract_id();
             let key = &memory[offset_key as usize..offset_key as usize + length_key as usize];
             let value = &memory[offset_value as usize..offset_value as usize + length_value as usize];
             let data_entry = DataEntry::Binary(value.to_vec()).serialize(Some(key));
 
-            match ctx.stack.set_storage(contract_id.as_slice(), data_entry.as_slice()) {
+            match ctx.vm.set_storage(contract_id.as_slice(), data_entry.as_slice()) {
                 Ok(_) => 0,
                 Err(error) => error.as_i32(),
             }
@@ -257,12 +257,12 @@ env_runtime! {
                 None => return RuntimeError::MemoryNotFound as i32,
             };
 
-            let contract_id = ctx.stack.top_frame().contract_id();
+            let contract_id = ctx.vm.top_frame().contract_id();
             let key = &memory[offset_key as usize..offset_key as usize + length_key as usize];
             let value = &memory[offset_value as usize..offset_value as usize + length_value as usize];
             let data_entry = DataEntry::String(value.to_vec()).serialize(Some(key));
 
-            match ctx.stack.set_storage(contract_id.as_slice(), data_entry.as_slice()) {
+            match ctx.vm.set_storage(contract_id.as_slice(), data_entry.as_slice()) {
                 Ok(_) => 0,
                 Err(error) => error.as_i32(),
             }

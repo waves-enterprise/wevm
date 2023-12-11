@@ -17,4 +17,7 @@ jni = { version = "0.21.0", features = ["invocation"] }
 wat = "1"
 
 [lib]
-crate_type = ["cdylib"]
+crate_type = ["cdylib", "rlib"]
+
+[features]
+jvm = []

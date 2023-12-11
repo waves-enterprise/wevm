@@ -1,8 +1,5 @@
 use crate::{
-    env::Environment,
-    env_items, env_runtime,
-    runtime::{Runtime, RuntimeError},
-    write_memory,
+    env::Environment, env_items, env_runtime, error::RuntimeError, runtime::Runtime, write_memory,
 };
 use base58::{FromBase58, ToBase58};
 use convert_case::{Case, Casing};

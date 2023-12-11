@@ -1,6 +1,9 @@
 use crate::{
-    env::Environment, env_runtime, exec::ExecutableError, runtime::Runtime, stack::Stack, Error,
-    Result,
+    env::Environment,
+    env_runtime,
+    error::{Error, ExecutableError, Result},
+    runtime::Runtime,
+    vm::Vm,
 };
 use convert_case::{Case, Casing};
 use jni::{InitArgsBuilder, JNIVersion, JavaVM};
@@ -102,7 +105,7 @@ impl TestRunner {
             Box::new(test_memory),
         ];
 
-        let mut stack = Stack::new(vec![], bytecode, memory, envs, jvm, global_ref)
+        let mut stack = Vm::new(vec![], bytecode, memory, envs, Some(jvm), Some(global_ref))
             .expect("Call stack creation failed");
 
         stack.run("_constructor", input_data)

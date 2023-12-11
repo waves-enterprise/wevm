@@ -1,3 +1,4 @@
+/// Macro allows you to wrap imported functions into convenient constructs for linking with `wasmi`.
 #[macro_export]
 macro_rules! env_runtime {
     ( #[version = $version:literal]
@@ -29,7 +30,7 @@ macro_rules! env_runtime {
     }
 }
 
-/// Collects Environments into a Vec
+/// Collects Environments into a Vec.
 #[macro_export]
 macro_rules! env_items {
     ( $($env:ident),+ ) => {
@@ -46,8 +47,8 @@ macro_rules! env_items {
     }
 }
 
-/// Wrapper over writing to WASM linear memory
-/// Functions using this wrapper return (i32, i32, i32)
+/// Wrapper over writing to WASM linear memory.
+/// Functions using this wrapper return (i32, i32, i32):
 /// * First value - error code
 /// * Second value - memory offset
 /// * Third value - length of data in memory

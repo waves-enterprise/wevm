@@ -1,4 +1,8 @@
-use crate::{stack::Stack, Error, Result};
+use crate::{
+    error::{Error, JvmError, Result},
+    node::Node,
+    vm::Vm,
+};
 use jni::objects::{JByteArray, JObject, JValue};
 
 /// A primitive java type.
@@ -9,79 +13,14 @@ use jni::objects::{JByteArray, JObject, JValue};
 /// J - Long
 /// V - Void
 
-#[derive(Clone, Copy, Debug, PartialEq)]
-pub enum JvmError {
-    /// Failed attaches the current thread to the Java VM
-    AttachCurrentThread = 200,
-    /// Failed JVM method call
-    MethodCall = 201,
-    /// Failed byte array conversion
-    ByteArrayConversion = 202,
-    /// Failed receiving JavaVM interface
-    GetJavaVM = 203,
-    /// Error callback new_global_ref
-    NewGlobalRef = 204,
-    /// Couldn't create java byte array
-    NewByteArray = 205,
-    /// Couldn't create java string
-    NewString = 206,
-    /// Failed to receive object
-    ReceiveObject = 207,
-    /// Failed to receive byte
-    ReceiveByte = 208,
-    /// Failed to receive integer
-    ReceiveInt = 209,
-    /// Failed to receive long
-    ReceiveLong = 210,
-}
-
-pub trait Jvm {
-    fn get_chain_id(&self) -> Result<i8>;
-    fn get_bytecode(&self, contract_id: &[u8]) -> Result<Vec<u8>>;
-    fn add_payments(&self, contract_id: &[u8], payments: &[u8]) -> Result<()>;
-    fn get_storage(&self, address: &[u8], key: &[u8]) -> Result<Vec<u8>>;
-    fn set_storage(&self, contract_id: &[u8], value: &[u8]) -> Result<()>;
-    fn get_balance(&self, asset_id: &[u8], address: &[u8]) -> Result<i64>;
-    fn transfer(
-        &self,
-        contract_id: &[u8],
-        asset_id: &[u8],
-        recipient: &[u8],
-        amount: i64,
-    ) -> Result<()>;
-    fn issue(
-        &self,
-        contract_id: &[u8],
-        name: &[u8],
-        description: &[u8],
-        quantity: i64,
-        decimals: i32,
-        is_reissuable: bool,
-    ) -> Result<Vec<u8>>;
-    fn burn(&self, contract_id: &[u8], asset_id: &[u8], amount: i64) -> Result<()>;
-    fn reissue(
-        &self,
-        contract_id: &[u8],
-        asset_id: &[u8],
-        amount: i64,
-        is_reissuable: bool,
-    ) -> Result<()>;
-    fn lease(&self, contract_id: &[u8], recipient: &[u8], amount: i64) -> Result<Vec<u8>>;
-    fn cancel_lease(&self, contract_id: &[u8], lease_id: &[u8]) -> Result<()>;
-    fn get_block_timestamp(&self) -> Result<i64>;
-    fn get_block_height(&self) -> Result<i64>;
-    fn get_tx_sender(&self) -> Result<Vec<u8>>;
-    fn get_tx_payments(&self, contract_id: &[u8]) -> Result<i32>;
-    fn get_tx_payment_asset_id(&self, contract_id: &[u8], number: i32) -> Result<Vec<u8>>;
-    fn get_tx_payment_amount(&self, contract_id: &[u8], number: i32) -> Result<i64>;
-}
-
 macro_rules! env {
     ($self:expr) => {{
-        $self
-            .jvm
-            .attach_current_thread()
-            .map_err(|_| Error::Jvm(JvmError::AttachCurrentThread))?
+        match &$self.jvm {
+            Some(jvm) => jvm
+                .attach_current_thread()
+                .map_err(|_| Error::Jvm(JvmError::AttachCurrentThread))?,
+            None => return Err(Error::Jvm(JvmError::JvmNotFound)),
+        }
     }};
 }
 
@@ -92,13 +31,22 @@ macro_rules! byte_array {
     }};
 }
 
+macro_rules! jvm_callback {
+    ($jvm_callback:expr) => {
+        match $jvm_callback {
+            Some(jvm_callback) => jvm_callback,
+            None => return Err(Error::Jvm(JvmError::JvmCallbackNotFound)),
+        }
+    };
+}
+
 // Implementing the JVM call
-impl Jvm for Stack {
+impl Node for Vm {
     fn get_chain_id(&self) -> Result<i8> {
         let mut env = env!(self);
 
         let result = env
-            .call_method(self.jvm_callback.clone(), "getChainId", "()B", &[])
+            .call_method(jvm_callback!(&self.jvm_callback), "getChainId", "()B", &[])
             .map_err(|_| Error::Jvm(JvmError::MethodCall))?
             .b()
             .map_err(|_| Error::Jvm(JvmError::ReceiveByte))?;
@@ -113,7 +61,7 @@ impl Jvm for Stack {
 
         let result = env
             .call_method(
-                self.jvm_callback.clone(),
+                jvm_callback!(&self.jvm_callback),
                 "getBytecode",
                 "([B)[B",
                 &[JValue::Object(&contract_id.into())],
@@ -136,7 +84,7 @@ impl Jvm for Stack {
         let payments = byte_array!(env, payments);
 
         env.call_method(
-            self.jvm_callback.clone(),
+            jvm_callback!(&self.jvm_callback),
             "addPayments",
             "([B[B)V",
             &[
@@ -157,7 +105,7 @@ impl Jvm for Stack {
 
         let result = env
             .call_method(
-                self.jvm_callback.clone(),
+                jvm_callback!(&self.jvm_callback),
                 "getStorage",
                 "([B[B)[B",
                 &[JValue::Object(&address.into()), JValue::Object(&key.into())],
@@ -180,7 +128,7 @@ impl Jvm for Stack {
         let value = byte_array!(env, value);
 
         env.call_method(
-            self.jvm_callback.clone(),
+            jvm_callback!(&self.jvm_callback),
             "setStorage",
             "([B[B)V",
             &[
@@ -201,7 +149,7 @@ impl Jvm for Stack {
 
         let result = env
             .call_method(
-                self.jvm_callback.clone(),
+                jvm_callback!(&self.jvm_callback),
                 "getBalance",
                 "([B[B)J",
                 &[
@@ -230,7 +178,7 @@ impl Jvm for Stack {
         let recipient = byte_array!(env, recipient);
 
         env.call_method(
-            self.jvm_callback.clone(),
+            jvm_callback!(&self.jvm_callback),
             "transfer",
             "([B[B[BJ)V",
             &[
@@ -262,7 +210,7 @@ impl Jvm for Stack {
 
         let result = env
             .call_method(
-                self.jvm_callback.clone(),
+                jvm_callback!(&self.jvm_callback),
                 "issue",
                 "([B[B[BJIZ)[B",
                 &[
@@ -292,7 +240,7 @@ impl Jvm for Stack {
         let asset_id = byte_array!(env, asset_id);
 
         env.call_method(
-            self.jvm_callback.clone(),
+            jvm_callback!(&self.jvm_callback),
             "burn",
             "([B[BJ)V",
             &[
@@ -319,7 +267,7 @@ impl Jvm for Stack {
         let asset_id = byte_array!(env, asset_id);
 
         env.call_method(
-            self.jvm_callback.clone(),
+            jvm_callback!(&self.jvm_callback),
             "reissue",
             "([B[BJZ)V",
             &[
@@ -342,7 +290,7 @@ impl Jvm for Stack {
 
         let result = env
             .call_method(
-                self.jvm_callback.clone(),
+                jvm_callback!(&self.jvm_callback),
                 "lease",
                 "([B[BJ)[B",
                 &[
@@ -369,7 +317,7 @@ impl Jvm for Stack {
         let lease_id = byte_array!(env, lease_id);
 
         env.call_method(
-            self.jvm_callback.clone(),
+            jvm_callback!(&self.jvm_callback),
             "cancelLease",
             "([B[B)V",
             &[
@@ -386,7 +334,12 @@ impl Jvm for Stack {
         let mut env = env!(self);
 
         let result = env
-            .call_method(self.jvm_callback.clone(), "getBlockTimestamp", "()J", &[])
+            .call_method(
+                jvm_callback!(&self.jvm_callback),
+                "getBlockTimestamp",
+                "()J",
+                &[],
+            )
             .map_err(|_| Error::Jvm(JvmError::MethodCall))?
             .j()
             .map_err(|_| Error::Jvm(JvmError::ReceiveLong))?;
@@ -398,7 +351,12 @@ impl Jvm for Stack {
         let mut env = env!(self);
 
         let result = env
-            .call_method(self.jvm_callback.clone(), "getBlockHeight", "()J", &[])
+            .call_method(
+                jvm_callback!(&self.jvm_callback),
+                "getBlockHeight",
+                "()J",
+                &[],
+            )
             .map_err(|_| Error::Jvm(JvmError::MethodCall))?
             .j()
             .map_err(|_| Error::Jvm(JvmError::ReceiveLong))?;
@@ -410,7 +368,12 @@ impl Jvm for Stack {
         let mut env = env!(self);
 
         let result = env
-            .call_method(self.jvm_callback.clone(), "getTxSender", "()[B", &[])
+            .call_method(
+                jvm_callback!(&self.jvm_callback),
+                "getTxSender",
+                "()[B",
+                &[],
+            )
             .map_err(|_| Error::Jvm(JvmError::MethodCall))?
             .l()
             .map_err(|_| Error::Jvm(JvmError::ReceiveObject))?;
@@ -429,7 +392,7 @@ impl Jvm for Stack {
 
         let result = env
             .call_method(
-                self.jvm_callback.clone(),
+                jvm_callback!(&self.jvm_callback),
                 "getTxPayments",
                 "([B)I",
                 &[JValue::Object(&payment_id.into())],
@@ -448,7 +411,7 @@ impl Jvm for Stack {
 
         let result = env
             .call_method(
-                self.jvm_callback.clone(),
+                jvm_callback!(&self.jvm_callback),
                 "getTxPaymentAssetId",
                 "([BI)[B",
                 &[JValue::Object(&payment_id.into()), number.into()],
@@ -471,7 +434,7 @@ impl Jvm for Stack {
 
         let result = env
             .call_method(
-                self.jvm_callback.clone(),
+                jvm_callback!(&self.jvm_callback),
                 "getTxPaymentAmount",
                 "([BI)J",
                 &[JValue::Object(&payment_id.into()), number.into()],
@@ -481,16 +444,5 @@ impl Jvm for Stack {
             .map_err(|_| Error::Jvm(JvmError::ReceiveLong))?;
 
         Ok(result)
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use jni::sys::jint;
-
-    #[test]
-    fn test_error() {
-        assert_eq!(JvmError::AttachCurrentThread as jint, 200);
     }
 }
