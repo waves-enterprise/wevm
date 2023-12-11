@@ -1,7 +1,7 @@
 use crate::{
     env::Environment,
+    error::{Error, Result},
     exec::{Executable, ExecutableError, LoadableFunction},
-    Error, Result,
 };
 use jni::{objects::GlobalRef, JavaVM};
 use std::str::FromStr;
@@ -9,6 +9,7 @@ use wasmi::core::Value;
 
 const MAX_FRAMES: usize = 64;
 
+/// A frame of the call stack that stores the `contract_id` and `bytecode` of the contract.
 pub struct Frame {
     contract_id: Vec<u8>,
     bytecode: Vec<u8>,
@@ -25,24 +26,31 @@ impl Frame {
     }
 }
 
-pub struct Stack {
+/// The entry point for the virtual machine.
+/// Contains:
+/// * Call stack
+/// * WASM environment
+/// * Interface to interact with node (or simulation)
+pub struct Vm {
     frames: Vec<Frame>,
     first_frame: Frame,
     memory: (u32, u32),
     envs: Vec<Box<dyn Environment>>,
-    pub jvm: JavaVM,
-    pub jvm_callback: GlobalRef,
+    pub jvm: Option<JavaVM>,
+    pub jvm_callback: Option<GlobalRef>,
     nonce: u64,
 }
 
-impl Stack {
+impl Vm {
+    /// VM initialization.
+    /// During initialization, the first contract is placed on the stack of the call.
     pub fn new(
         contract_id: Vec<u8>,
         bytecode: Vec<u8>,
         memory: (u32, u32),
         envs: Vec<Box<dyn Environment>>,
-        jvm: JavaVM,
-        jvm_callback: GlobalRef,
+        jvm: Option<JavaVM>,
+        jvm_callback: Option<GlobalRef>,
     ) -> Result<Self> {
         let first_frame = Frame {
             contract_id,
@@ -50,7 +58,7 @@ impl Stack {
             nonce: 0,
         };
 
-        Ok(Stack {
+        Ok(Self {
             frames: Default::default(),
             first_frame,
             memory,
@@ -61,6 +69,8 @@ impl Stack {
         })
     }
 
+    /// Calling another contract when a contract is executed.
+    /// Contract is placed on top of the call stack.
     pub fn call(
         &mut self,
         contract_id: Vec<u8>,
@@ -79,6 +89,7 @@ impl Stack {
         self.run(func_name, input_data)
     }
 
+    /// Run contract. The contract is taken from the top of the call stack.
     pub fn run(&mut self, func_name: &str, input_data: Vec<u8>) -> Result<Vec<Value>> {
         let frame = self.top_frame();
 
@@ -92,6 +103,7 @@ impl Stack {
         result
     }
 
+    /// Getting the frame at the top of the call stack.
     pub fn top_frame(&self) -> &Frame {
         self.frames.last().unwrap_or(&self.first_frame)
     }
