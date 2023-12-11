@@ -4,7 +4,7 @@ use crate::error::Result;
 pub trait Node {
     fn get_chain_id(&self) -> Result<i8>;
     fn get_bytecode(&self, contract_id: &[u8]) -> Result<Vec<u8>>;
-    fn add_payments(&self, contract_id: &[u8], payments: &[u8]) -> Result<()>;
+    fn add_payments(&self, payment_id: &[u8], payments: &[u8]) -> Result<()>;
     fn get_storage(&self, address: &[u8], key: &[u8]) -> Result<Vec<u8>>;
     fn set_storage(&self, contract_id: &[u8], value: &[u8]) -> Result<()>;
     fn get_balance(&self, asset_id: &[u8], address: &[u8]) -> Result<i64>;
@@ -37,7 +37,7 @@ pub trait Node {
     fn get_block_timestamp(&self) -> Result<i64>;
     fn get_block_height(&self) -> Result<i64>;
     fn get_tx_sender(&self) -> Result<Vec<u8>>;
-    fn get_tx_payments(&self, contract_id: &[u8]) -> Result<i32>;
-    fn get_tx_payment_asset_id(&self, contract_id: &[u8], number: i32) -> Result<Vec<u8>>;
-    fn get_tx_payment_amount(&self, contract_id: &[u8], number: i32) -> Result<i64>;
+    fn get_tx_payments(&self, payment_id: &[u8]) -> Result<i32>;
+    fn get_tx_payment_asset_id(&self, payment_id: &[u8], number: i32) -> Result<Vec<u8>>;
+    fn get_tx_payment_amount(&self, payment_id: &[u8], number: i32) -> Result<i64>;
 }
