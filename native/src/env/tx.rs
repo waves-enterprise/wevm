@@ -1,8 +1,5 @@
 use crate::{
-    env::Environment,
-    env_items, env_runtime,
-    jvm::Jvm,
-    runtime::{Runtime, RuntimeError},
+    env::Environment, env_items, env_runtime, error::RuntimeError, node::Node, runtime::Runtime,
     write_memory,
 };
 use convert_case::{Case, Casing};
@@ -20,7 +17,7 @@ env_runtime! {
             };
             let offset_memory = ctx.heap_base() as usize;
 
-            match ctx.stack.get_tx_sender() {
+            match ctx.vm.get_tx_sender() {
                 Ok(result) => write_memory!(ctx, memory, offset_memory, result),
                 Err(error) => (error.as_i32(), 0, 0),
             }

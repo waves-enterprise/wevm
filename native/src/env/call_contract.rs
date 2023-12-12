@@ -1,10 +1,6 @@
 use crate::{
-    data_entry::DataEntry,
-    env::Environment,
-    env_items, env_runtime,
-    jvm::Jvm,
-    runtime::{Runtime, RuntimeError},
-    stack::create_payment_id,
+    data_entry::DataEntry, env::Environment, env_items, env_runtime, error::RuntimeError,
+    node::Node, runtime::Runtime, vm::create_payment_id,
 };
 use convert_case::{Case, Casing};
 use std::str;
@@ -104,7 +100,7 @@ env_runtime! {
 
             let contract_id = &memory[offset_contract_id as usize..offset_contract_id as usize + length_contract_id as usize];
 
-            let bytecode = match ctx.stack.get_bytecode(contract_id) {
+            let bytecode = match ctx.vm.get_bytecode(contract_id) {
                 Ok(bytecode) => bytecode,
                 Err(error) => return error.as_i32(),
             };
@@ -120,15 +116,15 @@ env_runtime! {
 
             // Since a single contract can be invoked multiple times during execution,
             // it is necessary to have a unique identifier to distinguish each unique execution
-            let nonce = ctx.stack.get_nonce();
+            let nonce = ctx.vm.get_nonce();
             let payment_id = create_payment_id(contract_id.to_vec(), nonce);
 
-            match ctx.stack.add_payments(payment_id.as_slice(), &payments) {
+            match ctx.vm.add_payments(payment_id.as_slice(), &payments) {
                 Ok(()) => (),
                 Err(error) => return error.as_i32(),
             }
 
-            match ctx.stack.call(contract_id.to_vec(), bytecode, nonce, func_name, input_data) {
+            match ctx.vm.call(contract_id.to_vec(), bytecode, nonce, func_name, input_data) {
                 Ok(result) => {
                     // TODO: Functions cannot return any values, they can only return an error code
                     if result.len() != 1 {

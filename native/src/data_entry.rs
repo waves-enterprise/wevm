@@ -1,4 +1,4 @@
-use crate::{exec::ExecutableError, Error, Result};
+use crate::error::{Error, ExecutableError, Result};
 
 #[derive(Debug, Eq, PartialEq)]
 pub enum DataEntry {
@@ -39,6 +39,18 @@ impl DataEntry {
                 result.extend_from_slice(&(value.len() as u32).to_be_bytes());
                 result.extend_from_slice(value);
             }
+        }
+
+        result
+    }
+
+    pub fn serialize_vec(data_entry: Vec<DataEntry>) -> Vec<u8> {
+        let mut result: Vec<u8> = vec![];
+
+        result.extend_from_slice(&(data_entry.len() as u16).to_be_bytes());
+
+        for item in data_entry {
+            result.extend(item.serialize(None));
         }
 
         result

@@ -1,9 +1,9 @@
 use crate::{
     data_entry::DataEntry,
     env::Environment,
-    runtime::{Runtime, RuntimeError},
-    stack::Stack,
-    Error, Result,
+    error::{Error, ExecutableError, Result, RuntimeError},
+    runtime::Runtime,
+    vm::Vm,
 };
 use std::{fmt, str::FromStr};
 use wasmi::{
@@ -11,36 +11,7 @@ use wasmi::{
     Config, Engine, Func, FuncType, Memory, MemoryType, Module, StackLimits, Store,
 };
 
-#[derive(Clone, Copy, Debug, PartialEq)]
-pub enum ExecutableError {
-    /// Failed to parse and validate Wasm bytecode
-    InvalidBytecode = 100,
-    /// Could not found constructor
-    ConstructorNotFound = 101,
-    /// An error that may occur upon operating with virtual or linear memory
-    MemoryError = 102,
-    /// Limits limit the amount of memory well below u32::MAX
-    MemoryLimits = 103,
-    /// An error that may occur upon operating with Linker instances
-    LinkerError = 104,
-    /// Failed to instantiate and start the Wasm bytecode
-    InstantiateFailed = 105,
-    /// Global heap base not found
-    HeapBaseNotFound = 106,
-    /// Could not find function
-    FuncNotFound = 107,
-    /// invalid number of arguments
-    InvalidNumArgs = 108,
-    /// Failed to parse function argument
-    FailedParseFuncArgs = 109,
-    /// Failed to parse DataEntry arguments
-    FailedDeserializeDataEntry = 110,
-    /// Failed during execution
-    FailedExec = 111,
-    /// Call stack overflow error
-    StackOverflow = 112,
-}
-
+/// Enumeration of possible executable functions of a WASM contract.
 pub enum LoadableFunction {
     Constructor,
     Call(String),
@@ -76,6 +47,7 @@ pub struct Executable {
 }
 
 impl Executable {
+    /// Initializing the WASM contract executable.
     pub fn new(bytecode: Vec<u8>, initial: u32, maximum: u32) -> Result<Self> {
         let stack_limits = StackLimits::default();
 
@@ -100,21 +72,22 @@ impl Executable {
             return Err(Error::Executable(ExecutableError::ConstructorNotFound));
         }
 
-        Ok(Executable {
+        Ok(Self {
             module,
             initial,
             maximum,
         })
     }
 
+    /// Execution of the WASM contract function.
     pub fn execute(
         &self,
         func_name: &LoadableFunction,
         input_data: Vec<u8>,
         envs: Vec<Box<dyn Environment>>,
-        stack: &mut Stack,
+        vm: &mut Vm,
     ) -> Result<Vec<Value>> {
-        let runtime = Runtime::new(stack);
+        let runtime = Runtime::new(vm);
 
         let (func, mut store) = Self::load_wasm_func(
             &self.module,
@@ -259,7 +232,6 @@ impl Executable {
 mod tests {
     use super::*;
     use crate::tests::wat2wasm;
-    use jni::sys::jint;
 
     #[test]
     fn test_executable_valid_bytecode() {
@@ -305,10 +277,5 @@ mod tests {
             exec.unwrap_err(),
             Error::Executable(ExecutableError::ConstructorNotFound)
         );
-    }
-
-    #[test]
-    fn test_error() {
-        assert_eq!(ExecutableError::InvalidBytecode as jint, 100);
     }
 }

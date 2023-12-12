@@ -1,5 +1,6 @@
-import scala.sys.process._
+import com.github.sbt.jni.build.Cargo
 import com.typesafe.sbt.git.JGit
+import scala.sys.process._
 
 import scala.jdk.CollectionConverters._
 
@@ -147,6 +148,7 @@ lazy val wevmNative = (project in file("native"))
   .settings(crossPaths := false)
   .settings(
     nativeCompile / sourceDirectory := baseDirectory.value,
+    nativeBuildTool := Cargo.make(Seq("--release", "--features jvm"))
   )
   .settings(publicationSettings)
   .settings(
