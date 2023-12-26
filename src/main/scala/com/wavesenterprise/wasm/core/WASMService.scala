@@ -56,7 +56,7 @@ trait WASMService {
     * @param isReissuable Re-issuability of a token
     * @return assetId. Base58 bytes
     */
-  def issue(contractId: Array[Byte], name: Array[Byte], description: Array[Byte], quantity: Long, decimals: Int, isReissuable: Boolean): Array[Byte]
+  def issue(contractId: Array[Byte], name: Array[Byte], description: Array[Byte], quantity: Long, decimals: Long, isReissuable: Boolean): Array[Byte]
 
   /**
     * @param contractId ID of a contract called this function. Base58 bytes
@@ -100,19 +100,19 @@ trait WASMService {
     * @param paymentId Unique payment identifier. Represents the concatenation of contractId bytes and unique 8 bytes
     * @return Number of attached payments
     */
-  def getTxPayments(paymentId: Array[Byte]): Int
+  def getTxPayments(paymentId: Array[Byte]): Long
 
   /**
     * @param paymentId Unique payment identifier. Represents the concatenation of contractId bytes and unique 8 bytes
     * @param number Attached payment number
     * @return assetId of a token (optional field, array can be empty). Base58 bytes
     */
-  def getTxPaymentAssetId(paymentId: Array[Byte], number: Int): Array[Byte]
+  def getTxPaymentAssetId(paymentId: Array[Byte], number: Long): Array[Byte]
 
   /**
     * @param paymentId Unique payment identifier. Represents the concatenation of contractId bytes and unique 8 bytes
     * @param number Attached payment number
     * @return Amount of tokens
     */
-  def getTxPaymentAmount(paymentId: Array[Byte], number: Int): Long
+  def getTxPaymentAmount(paymentId: Array[Byte], number: Long): Long
 }

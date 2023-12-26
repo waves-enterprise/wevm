@@ -9,7 +9,7 @@ env_items!(GetPayments, GetPaymentAssetId, GetPaymentAmount);
 
 env_runtime! {
     #[version = 0]
-    pub fn GetPayments() -> (i32, i32) {
+    pub fn GetPayments() -> (i32, i64) {
         |caller: Caller<Runtime>| {
             let payment_id = caller.data().vm.top_frame().payment_id();
 
@@ -23,7 +23,7 @@ env_runtime! {
 
 env_runtime! {
     #[version = 0]
-    pub fn GetPaymentAssetId(number: i32) -> (i32, i32, i32) {
+    pub fn GetPaymentAssetId(number: i64) -> (i32, i32, i32) {
         |mut caller: Caller<Runtime>| {
             let (memory, ctx) = match caller.data().memory() {
                 Some(memory) => memory.data_and_store_mut(&mut caller),
@@ -43,7 +43,7 @@ env_runtime! {
 
 env_runtime! {
     #[version = 0]
-    pub fn GetPaymentAmount(number: i32) -> (i32, i64) {
+    pub fn GetPaymentAmount(number: i64) -> (i32, i64) {
         |caller: Caller<Runtime>| {
             let payment_id = caller.data().vm.top_frame().payment_id();
 

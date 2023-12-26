@@ -130,7 +130,7 @@ class WASMServiceMock extends WASMService {
     this.balances(a)(r) += amount
   }
 
-  override def issue(contractId: Array[Byte], name: Array[Byte], description: Array[Byte], quantity: Long, decimals: Int, isReissuable: Boolean): Array[Byte] =
+  override def issue(contractId: Array[Byte], name: Array[Byte], description: Array[Byte], quantity: Long, decimals: Long, isReissuable: Boolean): Array[Byte] =
     Base58.decode(this.asset).get
 
   override def burn(contractId: Array[Byte], assetId: Array[Byte], amount: Long) = {
@@ -169,21 +169,21 @@ class WASMServiceMock extends WASMService {
   override def getTxSender: Array[Byte] =
     Base58.decode(this.txSender).get
 
-  override def getTxPayments(paymentId: Array[Byte]): Int =
+  override def getTxPayments(paymentId: Array[Byte]): Long =
     this.payments(Base58.encode(paymentId)).size
 
-  override def getTxPaymentAssetId(paymentId: Array[Byte], number: Int): Array[Byte] =
+  override def getTxPaymentAssetId(paymentId: Array[Byte], number: Long): Array[Byte] =
     this.payments.get(Base58.encode(paymentId)) match {
       case Some(seq) => {
-        val assetId = seq.apply(number)._1
+        val assetId = seq.apply(number.toInt)._1
         if (assetId == "null") Array.empty[Byte] else Base58.decode(assetId).get
       }
       case None => throw new Exception
     }
 
-  override def getTxPaymentAmount(paymentId: Array[Byte], number: Int): Long =
+  override def getTxPaymentAmount(paymentId: Array[Byte], number: Long): Long =
     this.payments.get(Base58.encode(paymentId)) match {
-      case Some(seq) => seq.apply(number)._2
+      case Some(seq) => seq.apply(number.toInt)._2
       case None => throw new Exception
     }
 }

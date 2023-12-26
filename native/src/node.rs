@@ -21,7 +21,7 @@ pub trait Node {
         name: &[u8],
         description: &[u8],
         quantity: i64,
-        decimals: i32,
+        decimals: i64,
         is_reissuable: bool,
     ) -> Result<Vec<u8>>;
     fn burn(&self, contract_id: &[u8], asset_id: &[u8], amount: i64) -> Result<()>;
@@ -37,7 +37,7 @@ pub trait Node {
     fn get_block_timestamp(&self) -> Result<i64>;
     fn get_block_height(&self) -> Result<i64>;
     fn get_tx_sender(&self) -> Result<Vec<u8>>;
-    fn get_tx_payments(&self, payment_id: &[u8]) -> Result<i32>;
-    fn get_tx_payment_asset_id(&self, payment_id: &[u8], number: i32) -> Result<Vec<u8>>;
-    fn get_tx_payment_amount(&self, payment_id: &[u8], number: i32) -> Result<i64>;
+    fn get_tx_payments(&self, payment_id: &[u8]) -> Result<i64>;
+    fn get_tx_payment_asset_id(&self, payment_id: &[u8], number: i64) -> Result<Vec<u8>>;
+    fn get_tx_payment_amount(&self, payment_id: &[u8], number: i64) -> Result<i64>;
 }

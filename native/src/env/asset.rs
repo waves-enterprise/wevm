@@ -71,7 +71,7 @@ env_runtime! {
         offset_description: u32,
         length_description: u32,
         quantity: i64,
-        decimals: i32,
+        decimals: i64,
         is_reissuable: i32,
     ) -> (i32, i32, i32) {
         |mut caller: Caller<Runtime>| {
