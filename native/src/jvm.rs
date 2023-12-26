@@ -199,7 +199,7 @@ impl Node for Vm {
         name: &[u8],
         description: &[u8],
         quantity: i64,
-        decimals: i32,
+        decimals: i64,
         is_reissuable: bool,
     ) -> Result<Vec<u8>> {
         let mut env = env!(self);
@@ -212,7 +212,7 @@ impl Node for Vm {
             .call_method(
                 jvm_callback!(&self.jvm_callback),
                 "issue",
-                "([B[B[BJIZ)[B",
+                "([B[B[BJJZ)[B",
                 &[
                     JValue::Object(&contract_id.into()),
                     JValue::Object(&name.into()),
@@ -385,7 +385,7 @@ impl Node for Vm {
         Ok(bytes.to_vec())
     }
 
-    fn get_tx_payments(&self, payment_id: &[u8]) -> Result<i32> {
+    fn get_tx_payments(&self, payment_id: &[u8]) -> Result<i64> {
         let mut env = env!(self);
 
         let payment_id = byte_array!(env, payment_id);
@@ -394,17 +394,17 @@ impl Node for Vm {
             .call_method(
                 jvm_callback!(&self.jvm_callback),
                 "getTxPayments",
-                "([B)I",
+                "([B)J",
                 &[JValue::Object(&payment_id.into())],
             )
             .map_err(|_| Error::Jvm(JvmError::MethodCall))?
-            .i()
+            .j()
             .map_err(|_| Error::Jvm(JvmError::ReceiveInt))?;
 
         Ok(result)
     }
 
-    fn get_tx_payment_asset_id(&self, payment_id: &[u8], number: i32) -> Result<Vec<u8>> {
+    fn get_tx_payment_asset_id(&self, payment_id: &[u8], number: i64) -> Result<Vec<u8>> {
         let mut env = env!(self);
 
         let payment_id = byte_array!(env, payment_id);
@@ -413,7 +413,7 @@ impl Node for Vm {
             .call_method(
                 jvm_callback!(&self.jvm_callback),
                 "getTxPaymentAssetId",
-                "([BI)[B",
+                "([BJ)[B",
                 &[JValue::Object(&payment_id.into()), number.into()],
             )
             .map_err(|_| Error::Jvm(JvmError::MethodCall))?
@@ -427,7 +427,7 @@ impl Node for Vm {
         Ok(bytes.to_vec())
     }
 
-    fn get_tx_payment_amount(&self, payment_id: &[u8], number: i32) -> Result<i64> {
+    fn get_tx_payment_amount(&self, payment_id: &[u8], number: i64) -> Result<i64> {
         let mut env = env!(self);
 
         let payment_id = byte_array!(env, payment_id);
@@ -436,7 +436,7 @@ impl Node for Vm {
             .call_method(
                 jvm_callback!(&self.jvm_callback),
                 "getTxPaymentAmount",
-                "([BI)J",
+                "([BJ)J",
                 &[JValue::Object(&payment_id.into()), number.into()],
             )
             .map_err(|_| Error::Jvm(JvmError::MethodCall))?

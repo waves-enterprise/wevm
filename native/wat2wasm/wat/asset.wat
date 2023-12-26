@@ -1,7 +1,7 @@
 (module
     (import "env" "memory" (memory 2 16))
 
-    (import "env0" "issue" (func $issue (param i32 i32 i32 i32 i64 i32 i32) (result i32 i32 i32)))
+    (import "env0" "issue" (func $issue (param i32 i32 i32 i32 i64 i64 i32) (result i32 i32 i32)))
     (import "env0" "burn" (func $burn (param i32 i32 i64) (result i32)))
     (import "env0" "reissue" (func $reissue (param i32 i32 i64 i32) (result i32)))
 
@@ -14,7 +14,7 @@
                 (i32.const 4)   ;; Description offset
                 (i32.const 10)  ;; Description length
                 (i64.const 100) ;; Quantity
-                (i32.const 8)   ;; Decimals
+                (i64.const 8)   ;; Decimals
                 (i32.const 1)   ;; Is reissuable
             )
 
