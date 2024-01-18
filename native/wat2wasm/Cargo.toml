@@ -2,6 +2,12 @@
 name = "wat2wasm"
 version = "0.1.0"
 edition = "2021"
+authors = ["DEADBLACKCLOVER <deadblackclover@protonmail.com>"]
+description = "Translator WebAssembly text format to WebAssembly binary format"
+license = "MIT"
+readme = "README.md"
+homepage = "https://github.com/waves-enterprise/wevm"
+repository = "https://github.com/waves-enterprise/wevm"
 
 [dependencies]
 clap = { version = "4.1.6", features = ["derive"] }

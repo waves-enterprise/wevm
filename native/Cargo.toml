@@ -2,6 +2,12 @@
 name = "wevm"
 version = "0.1.1"
 edition = "2021"
+authors = ["DEADBLACKCLOVER <deadblackclover@protonmail.com>"]
+description = "Waves Enterprise Virtual Machine for WASM smart-contracts"
+license = "MIT"
+readme = "README.md"
+homepage = "https://github.com/waves-enterprise/wevm"
+repository = "https://github.com/waves-enterprise/wevm"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
