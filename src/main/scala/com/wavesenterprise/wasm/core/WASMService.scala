@@ -14,10 +14,11 @@ trait WASMService {
   def getBytecode(contractId: Array[Byte]): Array[Byte]
 
   /**
+    * @param contractId ID of a contract called this function. Base58 bytes
     * @param paymentId Unique payment identifier. Represents the concatenation of contractId bytes and unique 8 bytes
     * @param payments Serialized list assetId and amount
     */
-  def addPayments(paymentId: Array[Byte], payments: Array[Byte])
+  def addPayments(contractId: Array[Byte], paymentId: Array[Byte], payments: Array[Byte])
 
   /**
     * @param contractId ID of a contract (possible contractId called this function). Base58 bytes

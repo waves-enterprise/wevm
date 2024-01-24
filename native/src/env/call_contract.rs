@@ -98,9 +98,9 @@ env_runtime! {
                 None => return RuntimeError::MemoryNotFound as i32,
             };
 
-            let contract_id = &memory[offset_contract_id as usize..offset_contract_id as usize + length_contract_id as usize];
+            let callable_contract_id = &memory[offset_contract_id as usize..offset_contract_id as usize + length_contract_id as usize];
 
-            let bytecode = match ctx.vm.get_bytecode(contract_id) {
+            let bytecode = match ctx.vm.get_bytecode(callable_contract_id) {
                 Ok(bytecode) => bytecode,
                 Err(error) => return error.as_i32(),
             };
@@ -117,14 +117,15 @@ env_runtime! {
             // Since a single contract can be invoked multiple times during execution,
             // it is necessary to have a unique identifier to distinguish each unique execution
             let nonce = ctx.vm.get_nonce();
-            let payment_id = create_payment_id(contract_id.to_vec(), nonce);
+            let payment_id = create_payment_id(callable_contract_id.to_vec(), nonce);
 
-            match ctx.vm.add_payments(payment_id.as_slice(), &payments) {
+            let self_contract_id = ctx.vm.top_frame().contract_id();
+            match ctx.vm.add_payments(self_contract_id.as_slice(), payment_id.as_slice(), &payments) {
                 Ok(()) => (),
                 Err(error) => return error.as_i32(),
             }
 
-            match ctx.vm.call(contract_id.to_vec(), bytecode, nonce, func_name, input_data) {
+            match ctx.vm.call(callable_contract_id.to_vec(), bytecode, nonce, func_name, input_data) {
                 Ok(result) => {
                     // TODO: Functions cannot return any values, they can only return an error code
                     if result.len() != 1 {

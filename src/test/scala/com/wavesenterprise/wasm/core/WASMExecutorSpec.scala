@@ -122,6 +122,9 @@ class WASMExecutorSpec extends AnyFreeSpec with Matchers {
 
       service.payments(service.paymentIdMock).apply(0) shouldBe ("null", 4200000000L)
       service.payments(service.paymentIdMock).apply(1) shouldBe (service.asset, 2400000000L)
+
+      service.balances("null")(service.contract) shouldBe 5800000000L
+      service.balances(service.asset)(service.contract) shouldBe 7600000000L
     }
 
     "base58" in {

@@ -77,17 +77,19 @@ impl Node for Vm {
         Ok(bytes.to_vec())
     }
 
-    fn add_payments(&self, payment_id: &[u8], payments: &[u8]) -> Result<()> {
+    fn add_payments(&self, contract_id: &[u8], payment_id: &[u8], payments: &[u8]) -> Result<()> {
         let mut env = env!(self);
 
+        let contract_id = byte_array!(env, contract_id);
         let payment_id = byte_array!(env, payment_id);
         let payments = byte_array!(env, payments);
 
         env.call_method(
             jvm_callback!(&self.jvm_callback),
             "addPayments",
-            "([B[B)V",
+            "([B[B[B)V",
             &[
+                JValue::Object(&contract_id.into()),
                 JValue::Object(&payment_id.into()),
                 JValue::Object(&payments.into()),
             ],
