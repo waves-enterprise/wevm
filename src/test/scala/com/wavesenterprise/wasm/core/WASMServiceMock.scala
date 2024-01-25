@@ -58,16 +58,18 @@ class WASMServiceMock extends WASMService {
     getClass.getResourceAsStream("/storage.wasm").readAllBytes()
   }
 
-  override def addPayments(paymentId: Array[Byte], payments: Array[Byte]) = {
+  override def addPayments(contractId: Array[Byte], paymentId: Array[Byte], payments: Array[Byte]) = {
     val assetLength = 32
     var start       = 2
 
+    val callableContractId = paymentId.slice(0, 32)
+
     var count: Int = ((payments(0) & 0xff) << 8) | (payments(1) & 0xff)
     while (count > 0) {
-      var assetId = "null"
+      var assetIdBytes = Array.empty[Byte]
 
       if (payments(start) == 1) {
-        assetId = Base58.encode(payments.slice(start + 1, start + 1 + assetLength))
+        assetIdBytes = payments.slice(start + 1, start + 1 + assetLength)
         start += 1 + assetLength
       } else if (payments(start) == 0) {
         start += 1
@@ -78,6 +80,9 @@ class WASMServiceMock extends WASMService {
       val amount = Longs.fromByteArray(payments.slice(start, start + Longs.BYTES))
       start += Longs.BYTES
 
+      transfer(contractId, assetIdBytes, callableContractId, amount)
+
+      val assetId = if (assetIdBytes.isEmpty) "null" else Base58.encode(assetIdBytes)
       val payment: (String, Long) = (assetId, amount)
       this.payments(Base58.encode(paymentId)) = this.payments(Base58.encode(paymentId)) :+ payment
 
