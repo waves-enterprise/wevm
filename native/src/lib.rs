@@ -3,6 +3,7 @@ mod env;
 mod error;
 mod exec;
 mod macros;
+mod modules;
 mod node;
 mod runtime;
 mod vm;
@@ -57,7 +58,7 @@ pub extern "system" fn Java_com_wavesenterprise_wasm_core_WASMExecutor_runContra
         Err(_) => return JvmError::ByteArrayConversion as jint,
     };
 
-    let envs = env::envs();
+    let modules = modules::all();
 
     let jvm = match env.get_java_vm() {
         Ok(jvm) => jvm,
@@ -73,7 +74,7 @@ pub extern "system" fn Java_com_wavesenterprise_wasm_core_WASMExecutor_runContra
         contract_id,
         bytecode,
         MEMORY,
-        envs,
+        modules,
         Some(jvm),
         Some(callback),
     ) {

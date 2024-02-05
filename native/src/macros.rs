@@ -1,31 +1,33 @@
 /// Macro allows you to wrap imported functions into convenient constructs for linking with `wasmi`.
 #[macro_export]
-macro_rules! env_runtime {
-    ( #[version = $version:literal]
-      pub fn $name:ident ( $($args:tt)* ) $(-> $return_values:ty)? { $func:expr }
+macro_rules! module {
+    ( $(
+        #[version = $version:literal]
+        pub fn $name:ident ( $($args:tt)* ) $(-> $return_values:ty)? { $func:expr }
+      )+
     ) => {
-        #[derive(Clone)]
-        pub struct $name;
+        pub fn modules() -> Vec<Module> {
+            let mut vec: Vec<Module> = vec![];
 
-        impl Environment for $name {
-            fn module(&self) -> String {
-                let version = stringify!($version);
-                String::from("env".to_owned() + version)
-            }
+            $(
+                fn $name(store: &mut Store<Runtime>) -> (String, String, Func) {
+                    let version = stringify!($version);
+                    let module = String::from("env".to_owned() + version);
 
-            fn name(&self) -> String {
-                let name = stringify!($name);
-                name.from_case(Case::Pascal).to_case(Case::Snake)
-            }
+                    let name = stringify!($name);
 
-            fn func(&self, store: &mut Store<Runtime>) -> Func {
-                Func::wrap(
-                    store,
-                    |caller: Caller<Runtime>, $($args)*| $(-> $return_values)? {
-                        $func(caller)
-                    }
-                )
-            }
+                    (module, name.to_string(), Func::wrap(
+                        store,
+                        |caller: Caller<Runtime>, $($args)*| $(-> $return_values)? {
+                            $func(caller)
+                        }
+                    ))
+                }
+
+                vec.push($name);
+            )+
+
+            vec
         }
     }
 }
