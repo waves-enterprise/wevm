@@ -8,9 +8,10 @@ use crate::{
 use wasmi::{Caller, Func, Store};
 
 module! {
-    // Asset
     #[version = 0]
-    pub fn get_balance(
+
+    // Asset
+    fn get_balance(
         offset_asset_id: u32,
         length_asset_id: u32,
         offset_address: u32,
@@ -25,8 +26,7 @@ module! {
         }
     }
 
-    #[version = 0]
-    pub fn transfer(
+    fn transfer(
         offset_asset_id: u32,
         length_asset_id: u32,
         offset_recipient: u32,
@@ -43,8 +43,7 @@ module! {
         }
     }
 
-    #[version = 0]
-    pub fn issue(
+    fn issue(
         offset_name: u32,
         length_name: u32,
         offset_description: u32,
@@ -65,8 +64,7 @@ module! {
         }
     }
 
-    #[version = 0]
-    pub fn burn(
+    fn burn(
         offset_asset_id: u32,
         length_asset_id: u32,
         amount: i64,
@@ -79,8 +77,7 @@ module! {
         }
     }
 
-    #[version = 0]
-    pub fn reissue(
+    fn reissue(
         offset_asset_id: u32,
         length_asset_id: u32,
         amount: i64,
@@ -96,37 +93,32 @@ module! {
     }
 
     // Block
-    #[version = 0]
-    pub fn get_block_timestamp() -> (i32, i64) {
+    fn get_block_timestamp() -> (i32, i64) {
         |caller: Caller<Runtime>| {
             env::block::get_block_timestamp(caller)
         }
     }
 
-    #[version = 0]
-    pub fn get_block_height() -> (i32, i64) {
+    fn get_block_height() -> (i32, i64) {
         |caller: Caller<Runtime>| {
             env::block::get_block_height(caller)
         }
     }
 
     // Call contract
-    #[version = 0]
-    pub fn call_arg_int(value: i64) {
+    fn call_arg_int(value: i64) {
         |caller: Caller<Runtime>| {
             env::call_contract::call_arg_int(value, caller)
         }
     }
 
-    #[version = 0]
-    pub fn call_arg_bool(value: i32) {
+    fn call_arg_bool(value: i32) {
         |caller: Caller<Runtime>| {
             env::call_contract::call_arg_bool(value, caller)
         }
     }
 
-    #[version = 0]
-    pub fn call_arg_binary(offset_value: u32, length_value: u32) -> i32 {
+    fn call_arg_binary(offset_value: u32, length_value: u32) -> i32 {
         |caller: Caller<Runtime>| {
             env::call_contract::call_arg_binary(offset_value,
                                                 length_value,
@@ -134,8 +126,7 @@ module! {
         }
     }
 
-    #[version = 0]
-    pub fn call_arg_string(offset_value: u32, length_value: u32) -> i32 {
+    fn call_arg_string(offset_value: u32, length_value: u32) -> i32 {
         |caller: Caller<Runtime>| {
             env::call_contract::call_arg_string(offset_value,
                                                 length_value,
@@ -143,8 +134,7 @@ module! {
         }
     }
 
-    #[version = 0]
-    pub fn call_payment(offset_asset_id: u32, length_asset_id: u32, amount: i64) -> i32 {
+    fn call_payment(offset_asset_id: u32, length_asset_id: u32, amount: i64) -> i32 {
         |caller: Caller<Runtime>| {
             env::call_contract::call_payment(offset_asset_id,
                                              length_asset_id,
@@ -153,8 +143,7 @@ module! {
         }
     }
 
-    #[version = 0]
-    pub fn call_contract(
+    fn call_contract(
         offset_contract_id: u32,
         length_contract_id: u32,
         offset_func_name: u32,
@@ -170,8 +159,7 @@ module! {
     }
 
     // Lease
-    #[version = 0]
-    pub fn lease_address(
+    fn lease_address(
         offset_address: u32,
         length_address: u32,
         amount: i64,
@@ -185,8 +173,7 @@ module! {
         }
     }
 
-    #[version = 0]
-    pub fn lease_alias(
+    fn lease_alias(
         offset_alias: u32,
         length_alias: u32,
         amount: i64,
@@ -200,8 +187,7 @@ module! {
         }
     }
 
-    #[version = 0]
-    pub fn cancel_lease(
+    fn cancel_lease(
         offset_lease_id: u32,
         length_lease_id: u32,
     ) -> i32 {
@@ -213,8 +199,7 @@ module! {
     }
 
     // Payments
-    #[version = 0]
-    pub fn get_payments() -> (i32, i32) {
+    fn get_payments() -> (i32, i32) {
         |caller: Caller<Runtime>| {
             let (err, num) = env::payments::get_payments(caller);
             match i32::try_from(num) {
@@ -224,23 +209,20 @@ module! {
         }
     }
 
-    #[version = 0]
-    pub fn get_payment_asset_id(number: i32) -> (i32, i32, i32) {
+    fn get_payment_asset_id(number: i32) -> (i32, i32, i32) {
         |caller: Caller<Runtime>| {
             env::payments::get_payment_asset_id(number as i64, caller)
         }
     }
 
-    #[version = 0]
-    pub fn get_payment_amount(number: i32) -> (i32, i64) {
+    fn get_payment_amount(number: i32) -> (i32, i64) {
         |caller: Caller<Runtime>| {
             env::payments::get_payment_amount(number as i64, caller)
         }
     }
 
     // Storage
-    #[version = 0]
-    pub fn get_storage_int(
+    fn get_storage_int(
         offset_address: u32,
         length_address: u32,
         offset_key: u32,
@@ -255,8 +237,7 @@ module! {
         }
     }
 
-    #[version = 0]
-    pub fn get_storage_bool(
+    fn get_storage_bool(
         offset_address: u32,
         length_address: u32,
         offset_key: u32,
@@ -271,8 +252,7 @@ module! {
         }
     }
 
-    #[version = 0]
-    pub fn get_storage_binary(
+    fn get_storage_binary(
         offset_address: u32,
         length_address: u32,
         offset_key: u32,
@@ -287,8 +267,7 @@ module! {
         }
     }
 
-    #[version = 0]
-    pub fn get_storage_string(
+    fn get_storage_string(
         offset_address: u32,
         length_address: u32,
         offset_key: u32,
@@ -303,8 +282,7 @@ module! {
         }
     }
 
-    #[version = 0]
-    pub fn set_storage_int(
+    fn set_storage_int(
         offset_key: u32,
         length_key: u32,
         value: i64,
@@ -317,8 +295,7 @@ module! {
         }
     }
 
-    #[version = 0]
-    pub fn set_storage_bool(
+    fn set_storage_bool(
         offset_key: u32,
         length_key: u32,
         value: i32,
@@ -331,8 +308,7 @@ module! {
         }
     }
 
-    #[version = 0]
-    pub fn set_storage_binary(
+    fn set_storage_binary(
         offset_key: u32,
         length_key: u32,
         offset_value: u32,
@@ -347,8 +323,7 @@ module! {
         }
     }
 
-    #[version = 0]
-    pub fn set_storage_string(
+    fn set_storage_string(
         offset_key: u32,
         length_key: u32,
         offset_value: u32,
@@ -364,16 +339,14 @@ module! {
     }
 
     // Tx
-    #[version = 0]
-    pub fn get_tx_sender() -> (i32, i32, i32) {
+    fn get_tx_sender() -> (i32, i32, i32) {
         |caller: Caller<Runtime>| {
             env::tx::get_tx_sender(caller)
         }
     }
 
     // Utils
-    #[version = 0]
-    pub fn base_58(
+    fn base_58(
         offset_bytes: u32,
         length_bytes: u32,
     ) -> (i32, i32, i32) {
@@ -384,8 +357,7 @@ module! {
         }
     }
 
-    #[version = 0]
-    pub fn to_base_58_string(
+    fn to_base_58_string(
         offset_bytes: u32,
         length_bytes: u32,
     ) -> (i32, i32, i32) {
@@ -396,8 +368,7 @@ module! {
         }
     }
 
-    #[version = 0]
-    pub fn binary_equals(
+    fn binary_equals(
         offset_left: u32,
         length_left: u32,
         offset_right: u32,
@@ -412,8 +383,7 @@ module! {
         }
     }
 
-    #[version = 0]
-    pub fn string_equals(
+    fn string_equals(
         offset_left: u32,
         length_left: u32,
         offset_right: u32,
@@ -428,8 +398,7 @@ module! {
         }
     }
 
-    #[version = 0]
-    pub fn join(
+    fn join(
         offset_left: u32,
         length_left: u32,
         offset_right: u32,

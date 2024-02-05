@@ -2,9 +2,10 @@ use crate::{env, module, modules::Module, runtime::Runtime};
 use wasmi::{Caller, Func, Store};
 
 module! {
-    // Asset
     #[version = 1]
-    pub fn issue(
+
+    // Asset
+    fn issue(
         offset_name: u32,
         length_name: u32,
         offset_description: u32,
@@ -26,22 +27,19 @@ module! {
     }
 
     // Payments
-    #[version = 1]
-    pub fn get_payments() -> (i32, i64) {
+    fn get_payments() -> (i32, i64) {
         |caller: Caller<Runtime>| {
             env::payments::get_payments(caller)
         }
     }
 
-    #[version = 1]
-    pub fn get_payment_asset_id(number: i64) -> (i32, i32, i32) {
+    fn get_payment_asset_id(number: i64) -> (i32, i32, i32) {
         |caller: Caller<Runtime>| {
             env::payments::get_payment_asset_id(number, caller)
         }
     }
 
-    #[version = 1]
-    pub fn get_payment_amount(number: i64) -> (i32, i64) {
+    fn get_payment_amount(number: i64) -> (i32, i64) {
         |caller: Caller<Runtime>| {
             env::payments::get_payment_amount(number, caller)
         }

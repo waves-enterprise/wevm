@@ -1,11 +1,10 @@
 use crate::{
-    env::Environment,
-    env_runtime,
     error::{Error, ExecutableError, Result},
+    module,
+    modules::Module,
     runtime::Runtime,
     vm::Vm,
 };
-use convert_case::{Case, Casing};
 use jni::{InitArgsBuilder, JNIVersion, JavaVM};
 use std::str;
 use wasmi::{core::Value, Caller, Func, Store};
@@ -15,27 +14,22 @@ pub fn wat2wasm(wat: &str) -> Result<Vec<u8>, wat::Error> {
     wat::parse_str(wat)
 }
 
-env_runtime! {
+module! {
     #[version = 0]
-    pub fn TestSetValue(value: u32) {
+
+    fn test_set_value(value: u32) {
         |mut _caller: Caller<Runtime>| {
             assert_eq!(42, value);
         }
     }
-}
 
-env_runtime! {
-    #[version = 0]
-    pub fn TestGetValue() -> u32 {
+    fn test_get_value() -> u32 {
         |mut _caller: Caller<Runtime>| {
             42
         }
     }
-}
 
-env_runtime! {
-    #[version = 0]
-    pub fn TestMemory(offset: u32, length: u32) {
+    fn test_memory(offset: u32, length: u32) {
         |mut caller: Caller<Runtime>| {
             let (memory, _ctx) = caller
                 .data()
@@ -95,18 +89,15 @@ impl TestRunner {
             None => (1, 1),
         };
 
-        let test_set_value = TestSetValue;
-        let test_get_value = TestGetValue;
-        let test_memory = TestMemory;
-
-        let envs: Vec<Box<dyn Environment>> = vec![
-            Box::new(test_set_value),
-            Box::new(test_get_value),
-            Box::new(test_memory),
-        ];
-
-        let mut stack = Vm::new(vec![], bytecode, memory, envs, Some(jvm), Some(global_ref))
-            .expect("Call stack creation failed");
+        let mut stack = Vm::new(
+            vec![],
+            bytecode,
+            memory,
+            modules(),
+            Some(jvm),
+            Some(global_ref),
+        )
+        .expect("Call stack creation failed");
 
         stack.run("_constructor", input_data)
     }

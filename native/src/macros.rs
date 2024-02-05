@@ -1,10 +1,9 @@
 /// Macro allows you to wrap imported functions into convenient constructs for linking with `wasmi`.
 #[macro_export]
 macro_rules! module {
-    ( $(
+    (
         #[version = $version:literal]
-        pub fn $name:ident ( $($args:tt)* ) $(-> $return_values:ty)? { $func:expr }
-      )+
+        $( fn $name:ident ( $($args:tt)* ) $(-> $return_values:ty)? { $func:expr } )+
     ) => {
         pub fn modules() -> Vec<Module> {
             let mut vec: Vec<Module> = vec![];
