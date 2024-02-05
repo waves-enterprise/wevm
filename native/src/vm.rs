@@ -1,7 +1,7 @@
 use crate::{
-    env::Environment,
     error::{Error, ExecutableError, Result},
     exec::{Executable, LoadableFunction},
+    modules::Module,
 };
 use jni::{objects::GlobalRef, JavaVM};
 use std::str::FromStr;
@@ -35,7 +35,7 @@ pub struct Vm {
     frames: Vec<Frame>,
     first_frame: Frame,
     memory: (u32, u32),
-    envs: Vec<Box<dyn Environment>>,
+    modules: Vec<Module>,
     pub jvm: Option<JavaVM>,
     pub jvm_callback: Option<GlobalRef>,
     nonce: u64,
@@ -48,7 +48,7 @@ impl Vm {
         contract_id: Vec<u8>,
         bytecode: Vec<u8>,
         memory: (u32, u32),
-        envs: Vec<Box<dyn Environment>>,
+        modules: Vec<Module>,
         jvm: Option<JavaVM>,
         jvm_callback: Option<GlobalRef>,
     ) -> Result<Self> {
@@ -62,7 +62,7 @@ impl Vm {
             frames: Default::default(),
             first_frame,
             memory,
-            envs,
+            modules,
             jvm,
             jvm_callback,
             nonce: 0,
@@ -96,7 +96,7 @@ impl Vm {
         let func_name = LoadableFunction::from_str(func_name)?;
 
         let exec = Executable::new(frame.bytecode.clone(), self.memory.0, self.memory.1)?;
-        let result = exec.execute(&func_name, input_data, self.envs.clone(), self);
+        let result = exec.execute(&func_name, input_data, self.modules.clone(), self);
 
         self.frames.pop();
 
