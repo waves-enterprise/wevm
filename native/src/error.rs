@@ -109,6 +109,8 @@ pub enum RuntimeError {
     InvalidResult = 303,
     /// Error converting Base58 string to bytes.
     Base58Error = 304,
+    /// Error when converting numeric types.
+    ConvertingNumericTypes = 305,
 }
 
 /// Enumeration of errors that may occur in the simulator.
