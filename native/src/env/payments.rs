@@ -1,4 +1,4 @@
-use crate::{error::RuntimeError, node::Node, runtime::Runtime, write_memory};
+use crate::{error::RuntimeError, node::Node, runtime::Runtime};
 use wasmi::Caller;
 
 pub fn get_payments(caller: Caller<Runtime>) -> (i32, i64) {
@@ -23,7 +23,7 @@ pub fn get_payment_asset_id(number: i64, mut caller: Caller<Runtime>) -> (i32, i
         .vm
         .get_tx_payment_asset_id(payment_id.as_slice(), number)
     {
-        Ok(result) => write_memory!(ctx, memory, offset_memory, result),
+        Ok(result) => crate::env::write_memory(ctx, memory, offset_memory, result),
         Err(error) => (error.as_i32(), 0, 0),
     }
 }

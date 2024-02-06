@@ -1,11 +1,13 @@
-use crate::{error::RuntimeError, node::Node, runtime::Runtime, write_memory};
+use crate::{error::RuntimeError, node::Node, runtime::Runtime};
 use wasmi::Caller;
 
 pub fn get_balance(
     offset_asset_id: u32,
     length_asset_id: u32,
-    offset_address: u32,
-    length_address: u32,
+    offset_asset_holder: u32,
+    length_asset_holder: u32,
+    type_: u32,
+    version: u32,
     mut caller: Caller<Runtime>,
 ) -> (i32, i64) {
     let (memory, ctx) = match caller.data().memory() {
@@ -15,13 +17,21 @@ pub fn get_balance(
 
     let asset_id =
         &memory[offset_asset_id as usize..offset_asset_id as usize + length_asset_id as usize];
-    let address = if length_address != 0 {
-        memory[offset_address as usize..offset_address as usize + length_address as usize].to_vec()
+
+    let (type_, bytes) = if length_asset_holder != 0 {
+        let bytes = &memory[offset_asset_holder as usize
+            ..offset_asset_holder as usize + length_asset_holder as usize];
+        (type_, bytes.to_vec())
     } else {
-        ctx.vm.top_frame().contract_id()
+        (1, ctx.vm.top_frame().contract_id())
     };
 
-    match ctx.vm.get_balance(asset_id, address.as_slice()) {
+    let asset_holder = match crate::env::get_asset_holder(ctx, type_, version, bytes) {
+        Ok(bytes) => bytes,
+        Err(error) => return (error.as_i32(), 0),
+    };
+
+    match ctx.vm.get_balance(asset_id, asset_holder.as_slice()) {
         Ok(result) => (0, result),
         Err(error) => (error.as_i32(), 0),
     }
@@ -32,6 +42,8 @@ pub fn transfer(
     length_asset_id: u32,
     offset_recipient: u32,
     length_recipient: u32,
+    type_: u32,
+    version: u32,
     amount: i64,
     mut caller: Caller<Runtime>,
 ) -> i32 {
@@ -43,13 +55,20 @@ pub fn transfer(
     let contract_id = ctx.vm.top_frame().contract_id();
     let asset_id =
         &memory[offset_asset_id as usize..offset_asset_id as usize + length_asset_id as usize];
+
     let recipient =
         &memory[offset_recipient as usize..offset_recipient as usize + length_recipient as usize];
+    let asset_holder = match crate::env::get_asset_holder(ctx, type_, version, recipient.to_vec()) {
+        Ok(bytes) => bytes,
+        Err(error) => return error.as_i32(),
+    };
 
-    match ctx
-        .vm
-        .transfer(contract_id.as_slice(), asset_id, recipient, amount)
-    {
+    match ctx.vm.transfer(
+        contract_id.as_slice(),
+        asset_id,
+        asset_holder.as_slice(),
+        amount,
+    ) {
         Ok(_) => 0,
         Err(error) => error.as_i32(),
     }
@@ -84,7 +103,7 @@ pub fn issue(
         decimals,
         is_reissuable != 0,
     ) {
-        Ok(result) => write_memory!(ctx, memory, offset_memory, result),
+        Ok(result) => crate::env::write_memory(ctx, memory, offset_memory, result),
         Err(error) => (error.as_i32(), 0, 0),
     }
 }

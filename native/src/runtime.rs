@@ -1,3 +1,5 @@
+pub mod asset_holder;
+
 use crate::{data_entry::DataEntry, vm::Vm};
 use wasmi::Memory;
 

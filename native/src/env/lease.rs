@@ -1,10 +1,10 @@
-use crate::{error::RuntimeError, node::Node, runtime::Runtime, write_memory};
+use crate::{error::RuntimeError, node::Node, runtime::Runtime};
 use wasmi::Caller;
 
 pub fn lease(
+    offset_recipient: u32,
+    length_recipient: u32,
     version: u32,
-    offset: u32,
-    length: u32,
     amount: i64,
     mut caller: Caller<Runtime>,
 ) -> (i32, i32, i32) {
@@ -15,25 +15,19 @@ pub fn lease(
     let offset_memory = ctx.heap_base() as usize;
 
     let contract_id = ctx.vm.top_frame().contract_id();
-    let value = &memory[offset as usize..offset as usize + length as usize];
+    let bytes =
+        &memory[offset_recipient as usize..offset_recipient as usize + length_recipient as usize];
 
-    let bytes = if version == 1 {
-        value.to_vec()
-    } else {
-        let mut result: Vec<u8> = vec![2];
-        match ctx.vm.get_chain_id() {
-            Ok(chain_id) => result.push(chain_id as u8),
-            Err(error) => return (error.as_i32(), 0, 0),
-        }
-        result.extend_from_slice(value);
-        result
+    let asset_holder = match crate::env::get_asset_holder(ctx, 0, version, bytes.to_vec()) {
+        Ok(bytes) => bytes,
+        Err(error) => return (error.as_i32(), 0, 0),
     };
 
     match ctx
         .vm
-        .lease(contract_id.as_slice(), bytes.as_slice(), amount)
+        .lease(contract_id.as_slice(), asset_holder.as_slice(), amount)
     {
-        Ok(result) => write_memory!(ctx, memory, offset_memory, result),
+        Ok(result) => crate::env::write_memory(ctx, memory, offset_memory, result),
         Err(error) => (error.as_i32(), 0, 0),
     }
 }

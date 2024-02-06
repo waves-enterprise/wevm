@@ -111,6 +111,10 @@ pub enum RuntimeError {
     Base58Error = 304,
     /// Error when converting numeric types.
     ConvertingNumericTypes = 305,
+    /// AssetHolder type not found.
+    AssetHolderTypeNotFound = 306,
+    /// Address version not found.
+    AddressVersionNotFound = 307,
 }
 
 /// Enumeration of errors that may occur in the simulator.

@@ -35,15 +35,15 @@ trait WASMService {
 
   /**
     * @param assetId ID of a token (optional field, array can be empty). Base58 bytes
-    * @param address Address or ContractId of the token holder (possible contractId called this function). Base58 bytes
+    * @param assetHolder AssetHolder of the token holder (possible contractId called this function). Base58 bytes
     * @return Amount of tokens
     */
-  def getBalance(assetId: Array[Byte], address: Array[Byte]): Long
+  def getBalance(assetId: Array[Byte], assetHolder: Array[Byte]): Long
 
   /**
     * @param contractId ID of a contract called this function. Base58 bytes
     * @param assetId ID of a token to be transferred (optional field, array can be empty). Base58 bytes
-    * @param recipient Address of recipient of tokens. Base58 bytes
+    * @param recipient AssetHolder of recipient of tokens. Base58 bytes
     * @param amount Amount of tokens
     */
   def transfer(contractId: Array[Byte], assetId: Array[Byte], recipient: Array[Byte], amount: Long)
@@ -76,7 +76,7 @@ trait WASMService {
 
   /**
     * @param contractId ID of a contract called this function. Base58 bytes
-    * @param recipient Address of recipient of tokens. Base58 bytes
+    * @param recipient AssetHolder of recipient of tokens. Base58 bytes
     * @param amount Number of tokens for leasing
     * @return leaseId of a leasing transaction. Base58 bytes
     */

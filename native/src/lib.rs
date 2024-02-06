@@ -2,7 +2,6 @@ mod data_entry;
 mod env;
 mod error;
 mod exec;
-mod macros;
 mod modules;
 mod node;
 mod runtime;

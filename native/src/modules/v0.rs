@@ -22,6 +22,8 @@ module! {
                                     length_asset_id,
                                     offset_address,
                                     length_address,
+                                    0,
+                                    1,
                                     caller)
         }
     }
@@ -38,6 +40,8 @@ module! {
                                  length_asset_id,
                                  offset_recipient,
                                  length_recipient,
+                                 0,
+                                 1,
                                  amount,
                                  caller)
         }
@@ -165,9 +169,9 @@ module! {
         amount: i64,
     ) -> (i32, i32, i32) {
         |caller: Caller<Runtime>| {
-            env::lease::lease(1,
-                              offset_address,
+            env::lease::lease(offset_address,
                               length_address,
+                              1,
                               amount,
                               caller)
         }
@@ -179,9 +183,9 @@ module! {
         amount: i64,
     ) -> (i32, i32, i32) {
         |caller: Caller<Runtime>| {
-            env::lease::lease(2,
-                              offset_alias,
+            env::lease::lease(offset_alias,
                               length_alias,
+                              2,
                               amount,
                               caller)
         }

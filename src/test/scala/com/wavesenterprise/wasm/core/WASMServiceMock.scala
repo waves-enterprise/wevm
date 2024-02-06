@@ -51,6 +51,28 @@ class WASMServiceMock extends WASMService {
     paymentIdMock -> Seq.empty[(String, Long)],
   )
 
+  private def parseAssetHolder(bytes: Array[Byte]): (Int, Int, String) = {
+    val _type = bytes(0)
+    val version = bytes(1)
+    val chainId = bytes(2)
+
+    val assetHolder = _type match {
+      case 0 => version match {
+        case 1 => if (checkChainId(chainId)) Base58.encode(bytes.drop(1)) else throw new Exception
+        case 2 => if (checkChainId(chainId)) new String(bytes.drop(3), UTF_8) else throw new Exception
+        case _: Byte => throw new Exception
+      }
+      case 1 => Base58.encode(bytes.drop(1))
+      case _: Byte => throw new Exception
+    }
+
+    (_type, version, assetHolder)
+  }
+
+  private def checkChainId(byte: Byte): Boolean = {
+    byte == getChainId()
+  }
+
   override def getChainId(): Byte = 'V'.toByte
 
   override def getBytecode(contractId: Array[Byte]): Array[Byte] = {
@@ -62,7 +84,7 @@ class WASMServiceMock extends WASMService {
     val assetLength = 32
     var start       = 2
 
-    val callableContractId = paymentId.slice(0, 32)
+    val callableContractId: Array[Byte] = Array[Byte](1) ++ paymentId.slice(0, 32)
 
     var count: Int = ((payments(0) & 0xff) << 8) | (payments(1) & 0xff)
     while (count > 0) {
@@ -106,11 +128,12 @@ class WASMServiceMock extends WASMService {
     this.storage(Base58.encode(contractId))(dataEntry.key) = dataEntry
   }
 
-  override def getBalance(assetId: Array[Byte], address: Array[Byte]): Long = {
-    val as = if (assetId.isEmpty) "null" else Base58.encode(assetId)
-    val ad = if (address.isEmpty) throw new Exception else Base58.encode(address)
-    this.balances.get(as) match {
-      case Some(balances) => balances.get(ad) match {
+  override def getBalance(assetId: Array[Byte], assetHolder: Array[Byte]): Long = {
+    val a = if (assetId.isEmpty) "null" else Base58.encode(assetId)
+    val (_, _, holder) = parseAssetHolder(assetHolder)
+
+    this.balances.get(a) match {
+      case Some(balances) => balances.get(holder) match {
         case Some(balance) => balance
         case None => 0
       }
@@ -120,7 +143,7 @@ class WASMServiceMock extends WASMService {
 
   override def transfer(contractId: Array[Byte], assetId: Array[Byte], recipient: Array[Byte], amount: Long) = {
     val a = if (assetId.isEmpty) "null" else Base58.encode(assetId)
-    val r = if (recipient.isEmpty) throw new Exception else Base58.encode(recipient)
+    val (_, _, holder) = parseAssetHolder(recipient)
 
     val balance = this.balances.get(a) match {
       case Some(balances) => balances.get(Base58.encode(contractId)) match {
@@ -132,7 +155,7 @@ class WASMServiceMock extends WASMService {
     if (balance < amount) throw new Exception
 
     this.balances(a)(Base58.encode(contractId)) -= amount
-    this.balances(a)(r) += amount
+    this.balances(a)(holder) += amount
   }
 
   override def issue(contractId: Array[Byte], name: Array[Byte], description: Array[Byte], quantity: Long, decimals: Long, isReissuable: Boolean): Array[Byte] =
@@ -155,9 +178,12 @@ class WASMServiceMock extends WASMService {
     this.balances(Base58.encode(assetId))(Base58.encode(contractId)) += amount
 
   override def lease(contractId: Array[Byte], recipient: Array[Byte], amount: Long): Array[Byte] = {
-    recipient(0) match {
-      case 1 => if (Base58.encode(recipient) != this.recipient) throw new Exception
-      case 2 => if (new String(recipient.drop(2), UTF_8) != this.alias) throw new Exception
+    val (_type, version, holder) = parseAssetHolder(recipient)
+    if (_type == 1) throw new Exception
+
+    version match {
+      case 1 => if (holder != this.recipient) throw new Exception
+      case 2 => if (holder != this.alias) throw new Exception
       case _ => throw new Exception
     }
 

@@ -1,4 +1,4 @@
-use crate::{error::RuntimeError, runtime::Runtime, write_memory};
+use crate::{error::RuntimeError, runtime::Runtime};
 use base58::{FromBase58, ToBase58};
 use std::str;
 use wasmi::Caller;
@@ -22,7 +22,7 @@ pub fn base58(
     };
 
     match value.from_base58() {
-        Ok(result) => write_memory!(ctx, memory, offset_memory, result),
+        Ok(result) => crate::env::write_memory(ctx, memory, offset_memory, result),
         Err(_) => (RuntimeError::Base58Error as i32, 0, 0),
     }
 }
@@ -41,7 +41,7 @@ pub fn to_base58_string(
     let value = &memory[offset_bytes as usize..offset_bytes as usize + length_bytes as usize];
 
     let result = value.to_base58().as_bytes().to_vec();
-    write_memory!(ctx, memory, offset_memory, result)
+    crate::env::write_memory(ctx, memory, offset_memory, result)
 }
 
 pub fn binary_equals(
@@ -111,5 +111,5 @@ pub fn join(
     result.extend_from_slice(left);
     result.extend_from_slice(right);
 
-    write_memory!(ctx, memory, offset_memory, result)
+    crate::env::write_memory(ctx, memory, offset_memory, result)
 }

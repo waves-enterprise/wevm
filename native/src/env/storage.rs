@@ -3,7 +3,6 @@ use crate::{
     error::{ExecutableError, RuntimeError},
     node::Node,
     runtime::Runtime,
-    write_memory,
 };
 use wasmi::Caller;
 
@@ -92,7 +91,7 @@ pub fn get_storage_binary(
                 Ok(DataEntry::Binary(bytes)) => bytes,
                 _ => return (ExecutableError::FailedDeserializeDataEntry as i32, 0, 0),
             };
-            write_memory!(ctx, memory, offset_memory, result)
+            crate::env::write_memory(ctx, memory, offset_memory, result)
         }
         Err(error) => (error.as_i32(), 0, 0),
     }
@@ -125,7 +124,7 @@ pub fn get_storage_string(
                 Ok(DataEntry::String(bytes)) => bytes,
                 _ => return (ExecutableError::FailedDeserializeDataEntry as i32, 0, 0),
             };
-            write_memory!(ctx, memory, offset_memory, result)
+            crate::env::write_memory(ctx, memory, offset_memory, result)
         }
         Err(error) => (error.as_i32(), 0, 0),
     }

@@ -1,4 +1,4 @@
-use crate::{error::RuntimeError, node::Node, runtime::Runtime, write_memory};
+use crate::{error::RuntimeError, node::Node, runtime::Runtime};
 use wasmi::Caller;
 
 pub fn get_tx_sender(mut caller: Caller<Runtime>) -> (i32, i32, i32) {
@@ -9,7 +9,7 @@ pub fn get_tx_sender(mut caller: Caller<Runtime>) -> (i32, i32, i32) {
     let offset_memory = ctx.heap_base() as usize;
 
     match ctx.vm.get_tx_sender() {
-        Ok(result) => write_memory!(ctx, memory, offset_memory, result),
+        Ok(result) => crate::env::write_memory(ctx, memory, offset_memory, result),
         Err(error) => (error.as_i32(), 0, 0),
     }
 }
