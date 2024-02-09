@@ -1,35 +1,46 @@
-mod asset;
-mod block;
-mod call_contract;
-mod lease;
-mod payments;
-mod storage;
-mod tx;
-mod utils;
+pub mod asset;
+pub mod block;
+pub mod call_contract;
+pub mod lease;
+pub mod payments;
+pub mod storage;
+pub mod tx;
+pub mod utils;
 
-use crate::runtime::Runtime;
-use dyn_clone::DynClone;
-use wasmi::{Func, Store};
+use crate::{
+    error::Result,
+    node::Node,
+    runtime::{
+        asset_holder::{AddressVersion, AssetHolder, Type},
+        Runtime,
+    },
+};
 
-pub trait Environment: DynClone {
-    fn module(&self) -> String;
-    fn name(&self) -> String;
-    fn func(&self, store: &mut Store<Runtime>) -> Func;
+pub(in crate::env) fn get_asset_holder(
+    ctx: &mut Runtime,
+    type_: u32,
+    version: u32,
+    bytes: Vec<u8>,
+) -> Result<Vec<u8>> {
+    let type_ = Type::try_from(type_)?;
+    let version = AddressVersion::try_from(version)?;
+    let chain_id = ctx.vm.get_chain_id()? as u8;
+    Ok(AssetHolder::from_bytes(type_, version, chain_id, bytes).as_bytes())
 }
 
-dyn_clone::clone_trait_object!(Environment);
-
-pub fn envs() -> Vec<Box<dyn Environment>> {
-    let mut result: Vec<Box<dyn Environment>> = vec![];
-
-    result.extend(asset::to_vec());
-    result.extend(block::to_vec());
-    result.extend(call_contract::to_vec());
-    result.extend(lease::to_vec());
-    result.extend(payments::to_vec());
-    result.extend(storage::to_vec());
-    result.extend(tx::to_vec());
-    result.extend(utils::to_vec());
-
-    result
+/// Wrapper over writing to WASM linear memory.
+/// Functions using this wrapper return (i32, i32, i32):
+/// * First value - error code
+/// * Second value - memory offset
+/// * Third value - length of data in memory
+pub(in crate::env) fn write_memory(
+    ctx: &mut Runtime,
+    memory: &mut [u8],
+    offset_memory: usize,
+    result: Vec<u8>,
+) -> (i32, i32, i32) {
+    let length = result.len();
+    memory[offset_memory..offset_memory + length].copy_from_slice(result.as_slice());
+    ctx.set_heap_base((offset_memory + length) as i32);
+    (0, offset_memory as i32, length as i32)
 }

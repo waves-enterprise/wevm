@@ -1,89 +1,53 @@
-use crate::{
-    env::Environment, env_items, env_runtime, error::RuntimeError, node::Node, runtime::Runtime,
-    write_memory,
-};
-use convert_case::{Case, Casing};
-use wasmi::{Caller, Func, Store};
+use crate::{error::RuntimeError, node::Node, runtime::Runtime};
+use wasmi::Caller;
 
-env_items!(LeaseAddress, LeaseAlias, CancelLease);
+pub fn lease(
+    offset_recipient: u32,
+    length_recipient: u32,
+    version: u32,
+    amount: i64,
+    mut caller: Caller<Runtime>,
+) -> (i32, i32, i32) {
+    let (memory, ctx) = match caller.data().memory() {
+        Some(memory) => memory.data_and_store_mut(&mut caller),
+        None => return (RuntimeError::MemoryNotFound as i32, 0, 0),
+    };
+    let offset_memory = ctx.heap_base() as usize;
 
-env_runtime! {
-    #[version = 0]
-    pub fn LeaseAddress(
-        offset_address: u32,
-        length_address: u32,
-        amount: i64,
-    ) -> (i32, i32, i32) {
-        |mut caller: Caller<Runtime>| {
-            let (memory, ctx) = match caller.data().memory() {
-                Some(memory) => memory.data_and_store_mut(&mut caller),
-                None => return (RuntimeError::MemoryNotFound as i32, 0, 0),
-            };
-            let offset_memory = ctx.heap_base() as usize;
+    let contract_id = ctx.vm.top_frame().contract_id();
+    let bytes =
+        &memory[offset_recipient as usize..offset_recipient as usize + length_recipient as usize];
 
-            let contract_id = ctx.vm.top_frame().contract_id();
-            let address = &memory[offset_address as usize..offset_address as usize + length_address as usize];
+    let asset_holder = match crate::env::get_asset_holder(ctx, 0, version, bytes.to_vec()) {
+        Ok(bytes) => bytes,
+        Err(error) => return (error.as_i32(), 0, 0),
+    };
 
-            match ctx.vm.lease(contract_id.as_slice(), address, amount) {
-                Ok(result) => write_memory!(ctx, memory, offset_memory, result),
-                Err(error) => (error.as_i32(), 0, 0),
-            }
-        }
+    match ctx
+        .vm
+        .lease(contract_id.as_slice(), asset_holder.as_slice(), amount)
+    {
+        Ok(result) => crate::env::write_memory(ctx, memory, offset_memory, result),
+        Err(error) => (error.as_i32(), 0, 0),
     }
 }
 
-env_runtime! {
-    #[version = 0]
-    pub fn LeaseAlias(
-        offset_alias: u32,
-        length_alias: u32,
-        amount: i64,
-    ) -> (i32, i32, i32) {
-        |mut caller: Caller<Runtime>| {
-            let (memory, ctx) = match caller.data().memory() {
-                Some(memory) => memory.data_and_store_mut(&mut caller),
-                None => return (RuntimeError::MemoryNotFound as i32, 0, 0),
-            };
-            let offset_memory = ctx.heap_base() as usize;
+pub fn cancel_lease(
+    offset_lease_id: u32,
+    length_lease_id: u32,
+    mut caller: Caller<Runtime>,
+) -> i32 {
+    let (memory, ctx) = match caller.data().memory() {
+        Some(memory) => memory.data_and_store_mut(&mut caller),
+        None => return RuntimeError::MemoryNotFound as i32,
+    };
 
-            let contract_id = ctx.vm.top_frame().contract_id();
-            let alias = &memory[offset_alias as usize..offset_alias as usize + length_alias as usize];
+    let contract_id = ctx.vm.top_frame().contract_id();
+    let lease_id =
+        &memory[offset_lease_id as usize..offset_lease_id as usize + length_lease_id as usize];
 
-            let mut bytes: Vec<u8> = vec![];
-            bytes.push(2);
-            match ctx.vm.get_chain_id() {
-                Ok(chain_id) => bytes.push(chain_id as u8),
-                Err(error) => return (error.as_i32(), 0, 0),
-            }
-            bytes.extend_from_slice(alias);
-
-            match ctx.vm.lease(contract_id.as_slice(), bytes.as_slice(), amount) {
-                Ok(result) => write_memory!(ctx, memory, offset_memory, result),
-                Err(error) => (error.as_i32(), 0, 0),
-            }
-        }
-    }
-}
-
-env_runtime! {
-    #[version = 0]
-    pub fn CancelLease(
-        offset_lease_id: u32,
-        length_lease_id: u32,
-    ) -> i32 {
-        |mut caller: Caller<Runtime>| {
-            let (memory, ctx) = match caller.data().memory() {
-                Some(memory) => memory.data_and_store_mut(&mut caller),
-                None => return RuntimeError::MemoryNotFound as i32,
-            };
-
-            let contract_id = ctx.vm.top_frame().contract_id();
-            let lease_id = &memory[offset_lease_id as usize..offset_lease_id as usize + length_lease_id as usize];
-
-            match ctx.vm.cancel_lease(contract_id.as_slice(), lease_id) {
-                Ok(_) => 0,
-                Err(error) => error.as_i32(),
-            }
-        }
+    match ctx.vm.cancel_lease(contract_id.as_slice(), lease_id) {
+        Ok(_) => 0,
+        Err(error) => error.as_i32(),
     }
 }

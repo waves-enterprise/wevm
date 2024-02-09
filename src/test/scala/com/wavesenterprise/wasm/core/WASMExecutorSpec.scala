@@ -33,7 +33,7 @@ class WASMExecutorSpec extends AnyFreeSpec with Matchers {
       val service = new WASMServiceMock
 
       val contractId = Base58.decode(service.contract).get
-      val bytecode = getClass.getResourceAsStream("/storage.wasm").readAllBytes()
+      val bytecode   = getClass.getResourceAsStream("/storage.wasm").readAllBytes()
 
       val entry1 = IntegerDataEntry("integer_key", 42)
       val entry2 = BooleanDataEntry("boolean_key", true)
@@ -55,7 +55,7 @@ class WASMExecutorSpec extends AnyFreeSpec with Matchers {
       val service = new WASMServiceMock
 
       val contractId = Base58.decode(service.contract).get
-      val bytecode = getClass.getResourceAsStream("/transfer.wasm").readAllBytes()
+      val bytecode   = getClass.getResourceAsStream("/transfer.wasm").readAllBytes()
 
       executor.runContract(contractId, bytecode, "_constructor", Array[Byte](), service) shouldBe 0
 
@@ -67,18 +67,34 @@ class WASMExecutorSpec extends AnyFreeSpec with Matchers {
       val service = new WASMServiceMock
 
       val contractId = Base58.decode(service.contract).get
-      val bytecode = getClass.getResourceAsStream("/asset.wasm").readAllBytes()
+      val bytecode   = getClass.getResourceAsStream("/asset.wasm").readAllBytes()
 
       executor.runContract(contractId, bytecode, "_constructor", Array[Byte](), service) shouldBe 0
 
       service.balances(service.asset)(service.contract) shouldBe 9999999982L
     }
 
+    "check balance" in {
+      val service = new WASMServiceMock
+
+      val contractId = Base58.decode(service.contract).get
+      val bytecode   = getClass.getResourceAsStream("/asset.wasm").readAllBytes()
+
+      val address = BinaryDataEntry("address", ByteStr(Base58.decode(service.txSender).get))
+
+      var args: ByteArrayDataOutput = ByteStreams.newDataOutput()
+      writeDataEntryList(List(address), args)
+
+      executor.runContract(contractId, bytecode, "check_balance", args.toByteArray(), service) shouldBe 0
+
+      service.storage(service.contract)("balance").value shouldBe service.balances("null")(service.txSender)
+    }
+
     "lease" in {
       val service = new WASMServiceMock
 
       val contractId = Base58.decode(service.contract).get
-      val bytecode = getClass.getResourceAsStream("/lease.wasm").readAllBytes()
+      val bytecode   = getClass.getResourceAsStream("/lease.wasm").readAllBytes()
 
       executor.runContract(contractId, bytecode, "_constructor", Array[Byte](), service) shouldBe 0
     }
@@ -87,11 +103,11 @@ class WASMExecutorSpec extends AnyFreeSpec with Matchers {
       val service = new WASMServiceMock
 
       val contractId = Base58.decode(service.contract).get
-      val bytecode = getClass.getResourceAsStream("/block_and_tx.wasm").readAllBytes()
+      val bytecode   = getClass.getResourceAsStream("/block_and_tx.wasm").readAllBytes()
 
       executor.runContract(contractId, bytecode, "_constructor", Array[Byte](), service) shouldBe 0
 
-      val txSender = BinaryDataEntry("tx_sender", ByteStr.decodeBase58(service.txSender).get)
+      val txSender         = BinaryDataEntry("tx_sender", ByteStr.decodeBase58(service.txSender).get)
       val txPaymentAssetId = BinaryDataEntry("tx_payment_asset_id", ByteStr.decodeBase58(service.asset).get)
 
       service.storage(service.contract)("block_timestamp").value shouldBe 1690202857485L
@@ -106,7 +122,7 @@ class WASMExecutorSpec extends AnyFreeSpec with Matchers {
       val service = new WASMServiceMock
 
       val contractId = Base58.decode(service.contract).get
-      val bytecode = getClass.getResourceAsStream("/call_contract.wasm").readAllBytes()
+      val bytecode   = getClass.getResourceAsStream("/call_contract.wasm").readAllBytes()
 
       executor.runContract(contractId, bytecode, "_constructor", Array[Byte](), service) shouldBe 0
 
@@ -131,7 +147,7 @@ class WASMExecutorSpec extends AnyFreeSpec with Matchers {
       val service = new WASMServiceMock
 
       val contractId = Base58.decode(service.contract).get
-      val bytecode = getClass.getResourceAsStream("/base58.wasm").readAllBytes()
+      val bytecode   = getClass.getResourceAsStream("/base58.wasm").readAllBytes()
 
       val entry = StringDataEntry("address", "3NqEjAkFVzem9CGa3bEPhakQc1Sm2G8gAFU")
 
@@ -147,7 +163,7 @@ class WASMExecutorSpec extends AnyFreeSpec with Matchers {
       val service = new WASMServiceMock
 
       val contractId = Base58.decode(service.contract).get
-      val bytecode = getClass.getResourceAsStream("/utils.wasm").readAllBytes()
+      val bytecode   = getClass.getResourceAsStream("/utils.wasm").readAllBytes()
 
       executor.runContract(contractId, bytecode, "_constructor", Array[Byte](), service) shouldBe 0
     }

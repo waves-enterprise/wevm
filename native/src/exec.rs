@@ -1,7 +1,7 @@
 use crate::{
     data_entry::DataEntry,
-    env::Environment,
     error::{Error, ExecutableError, Result, RuntimeError},
+    modules::Module as M,
     runtime::Runtime,
     vm::Vm,
 };
@@ -84,7 +84,7 @@ impl Executable {
         &self,
         func_name: &LoadableFunction,
         input_data: Vec<u8>,
-        envs: Vec<Box<dyn Environment>>,
+        modules: Vec<M>,
         vm: &mut Vm,
     ) -> Result<Vec<Value>> {
         let runtime = Runtime::new(vm);
@@ -94,7 +94,7 @@ impl Executable {
             runtime,
             &func_name.to_string(),
             (self.initial, self.maximum),
-            envs,
+            modules,
         )?;
 
         let memory = match store.data().memory() {
@@ -134,15 +134,16 @@ impl Executable {
         runtime: Runtime<'a>,
         func_name: &str,
         memory: (u32, u32),
-        envs: Vec<Box<dyn Environment>>,
+        modules: Vec<M>,
     ) -> Result<(Func, Store<Runtime<'a>>)> {
         let engine = module.engine();
         let mut linker = <wasmi::Linker<()>>::new();
         let mut store = wasmi::Store::new(engine, runtime);
 
-        for env in envs {
+        for item in modules {
+            let (module, name, func) = item(&mut store);
             linker
-                .define(&env.module(), &env.name(), env.func(&mut store))
+                .define(&module, &name, func)
                 .map_err(|_| Error::Executable(ExecutableError::LinkerError))?;
         }
 
