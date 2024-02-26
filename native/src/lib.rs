@@ -1,4 +1,3 @@
-mod data_entry;
 mod env;
 mod error;
 mod exec;
@@ -44,7 +43,7 @@ pub extern "system" fn Java_com_wavesenterprise_wasm_core_WASMExecutor_runContra
     contract_id: JByteArray<'local>,
     bytecode: JByteArray<'local>,
     func_name: JString<'local>,
-    func_args: JByteArray<'local>,
+    params: JByteArray<'local>,
     callback: JObject<'local>,
 ) -> jint {
     let contract_id = match env.convert_byte_array(contract_id) {
@@ -86,12 +85,12 @@ pub extern "system" fn Java_com_wavesenterprise_wasm_core_WASMExecutor_runContra
         Err(_) => return JvmError::NewString as jint,
     };
 
-    let input_data = match env.convert_byte_array(func_args) {
+    let params = match env.convert_byte_array(params) {
         Ok(bytes) => bytes,
         Err(_) => return JvmError::ByteArrayConversion as jint,
     };
 
-    let result = match vm.run(&func_name, input_data) {
+    let result = match vm.run(&func_name, &params) {
         Ok(result) => result,
         Err(error) => return error.as_jint(),
     };
@@ -114,7 +113,7 @@ pub extern "system" fn Java_com_wavesenterprise_wasm_core_WASMExecutor_validateB
         Err(_) => return JvmError::ByteArrayConversion as jint,
     };
 
-    match Executable::new(bytecode, MEMORY.0, MEMORY.1) {
+    match Executable::new(&bytecode, MEMORY.0, MEMORY.1) {
         Ok(_) => 0,
         Err(error) => error.as_jint(),
     }

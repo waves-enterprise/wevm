@@ -143,6 +143,33 @@ class WASMExecutorSpec extends AnyFreeSpec with Matchers {
       service.balances(service.asset)(service.contract) shouldBe 7600000000L
     }
 
+    "call contract params" in {
+      val service = new WASMServiceMock
+
+      val contractId = Base58.decode(service.contract).get
+      val bytecode   = getClass.getResourceAsStream("/call_contract.wasm").readAllBytes()
+
+      val entry1 = IntegerDataEntry("integer_key", 42)
+      val entry2 = BooleanDataEntry("boolean_key", true)
+      val entry3 = BinaryDataEntry("binary_key", ByteStr(Array[Byte](0, 1)))
+      val entry4 = StringDataEntry("string_key", "test")
+
+      var args: ByteArrayDataOutput = ByteStreams.newDataOutput()
+      writeDataEntryList(List(entry1, entry2, entry3, entry4), args)
+
+      val binaryParam = BinaryDataEntry("binary_param", ByteStr(args.toByteArray()))
+
+      var params: ByteArrayDataOutput = ByteStreams.newDataOutput()
+      writeDataEntryList(List(binaryParam), params)
+
+      executor.runContract(contractId, bytecode, "call_contract_params", params.toByteArray(), service) shouldBe 0
+
+      service.storage(service.contractMock)("integer_key") shouldBe entry1
+      service.storage(service.contractMock)("boolean_key") shouldBe entry2
+      service.storage(service.contractMock)("binary_key") shouldBe entry3
+      service.storage(service.contractMock)("string_key") shouldBe entry4
+    }
+
     "base58" in {
       val service = new WASMServiceMock
 

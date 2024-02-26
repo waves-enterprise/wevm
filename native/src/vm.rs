@@ -77,7 +77,7 @@ impl Vm {
         bytecode: Vec<u8>,
         nonce: u64,
         func_name: &str,
-        input_data: Vec<u8>,
+        params: &Vec<u8>,
     ) -> Result<Vec<Value>> {
         let frame = Frame {
             contract_id,
@@ -86,17 +86,17 @@ impl Vm {
         };
 
         self.push_frame(frame)?;
-        self.run(func_name, input_data)
+        self.run(func_name, params)
     }
 
     /// Run contract. The contract is taken from the top of the call stack.
-    pub fn run(&mut self, func_name: &str, input_data: Vec<u8>) -> Result<Vec<Value>> {
+    pub fn run(&mut self, func_name: &str, params: &Vec<u8>) -> Result<Vec<Value>> {
         let frame = self.top_frame();
 
         let func_name = LoadableFunction::from_str(func_name)?;
 
-        let exec = Executable::new(frame.bytecode.clone(), self.memory.0, self.memory.1)?;
-        let result = exec.execute(&func_name, input_data, self.modules.clone(), self);
+        let exec = Executable::new(&frame.bytecode, self.memory.0, self.memory.1)?;
+        let result = exec.execute(&func_name, params, self.modules.clone(), self);
 
         self.frames.pop();
 

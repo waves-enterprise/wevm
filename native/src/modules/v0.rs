@@ -158,9 +158,31 @@ module! {
                                               length_contract_id,
                                               offset_func_name,
                                               length_func_name,
+                                              None,
+                                              None,
                                               caller)
         }
     }
+
+    fn call_contract_params(
+        offset_contract_id: u32,
+        length_contract_id: u32,
+        offset_func_name: u32,
+        length_func_name: u32,
+        offset_params: u32,
+        length_params: u32,
+    ) -> i32 {
+        |caller: Caller<Runtime>| {
+            env::call_contract::call_contract(offset_contract_id,
+                                              length_contract_id,
+                                              offset_func_name,
+                                              length_func_name,
+                                              Some(offset_params),
+                                              Some(length_params),
+                                              caller)
+        }
+    }
+
 
     // Lease
     fn lease_address(

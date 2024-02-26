@@ -1,8 +1,7 @@
 use crate::{
-    data_entry::DataEntry,
     error::{Error, ExecutableError, Result, RuntimeError},
     modules::Module as M,
-    runtime::Runtime,
+    runtime::{data_entry::DataEntry, Runtime},
     vm::Vm,
 };
 use std::{fmt, str::FromStr};
@@ -48,7 +47,7 @@ pub struct Executable {
 
 impl Executable {
     /// Initializing the WASM contract executable.
-    pub fn new(bytecode: Vec<u8>, initial: u32, maximum: u32) -> Result<Self> {
+    pub fn new(bytecode: &[u8], initial: u32, maximum: u32) -> Result<Self> {
         let stack_limits = StackLimits::default();
 
         let mut config = Config::default();
@@ -83,7 +82,7 @@ impl Executable {
     pub fn execute(
         &self,
         func_name: &LoadableFunction,
-        input_data: Vec<u8>,
+        params: &[u8],
         modules: Vec<M>,
         vm: &mut Vm,
     ) -> Result<Vec<Value>> {
@@ -105,7 +104,7 @@ impl Executable {
         let array_memory = memory.data_mut(&mut store);
 
         let func_args: Vec<String> =
-            DataEntry::deserialize_args(input_data.as_slice(), array_memory, &mut offset_memory)?;
+            DataEntry::deserialize_params(params, array_memory, &mut offset_memory)?;
 
         store.data_mut().set_heap_base(offset_memory as i32);
 
@@ -251,7 +250,7 @@ mod tests {
         let bytecode = wat2wasm(wat).expect("WAT code parsing failed");
         let memory: (u32, u32) = (1, 1);
 
-        let exec = Executable::new(bytecode, memory.0, memory.1);
+        let exec = Executable::new(&bytecode, memory.0, memory.1);
         assert!(exec.is_ok());
     }
 
@@ -272,7 +271,7 @@ mod tests {
         let bytecode = wat2wasm(wat).expect("WAT code parsing failed");
         let memory: (u32, u32) = (1, 1);
 
-        let exec = Executable::new(bytecode, memory.0, memory.1);
+        let exec = Executable::new(&bytecode, memory.0, memory.1);
         assert!(exec.is_err());
         assert_eq!(
             exec.unwrap_err(),

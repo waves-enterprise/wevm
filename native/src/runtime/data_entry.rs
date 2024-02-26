@@ -1,4 +1,7 @@
-use crate::error::{Error, ExecutableError, Result};
+use crate::{
+    error::{Error, ExecutableError, Result, RuntimeError},
+    runtime::utils,
+};
 
 #[derive(Debug, Eq, PartialEq)]
 pub enum DataEntry {
@@ -44,151 +47,112 @@ impl DataEntry {
         result
     }
 
-    pub fn serialize_vec(data_entry: Vec<DataEntry>) -> Vec<u8> {
+    pub fn serialize_slice(data_entry: &[DataEntry]) -> Vec<u8> {
         let mut result: Vec<u8> = vec![];
 
-        result.extend_from_slice(&(data_entry.len() as u16).to_be_bytes());
+        if !data_entry.is_empty() {
+            result.extend_from_slice(&(data_entry.len() as u16).to_be_bytes());
 
-        for item in data_entry {
-            result.extend(item.serialize(None));
+            for item in data_entry {
+                result.extend(item.serialize(None));
+            }
         }
 
         result
     }
 
-    pub fn deserialize_storage(input: &[u8]) -> Result<Self> {
+    pub fn deserialize(input: &[u8]) -> Result<Self> {
         let mut offset_input: usize = 0;
 
         Self::skip_key(input, &mut offset_input)?;
         Self::get_value(input, &mut offset_input)
     }
 
-    pub fn deserialize_args(
+    pub fn deserialize_with_key(input: &[u8]) -> Result<(String, Self)> {
+        let mut offset_input: usize = 0;
+
+        let key = Self::get_key(input, &mut offset_input)?;
+        let value = Self::get_value(input, &mut offset_input)?;
+        Ok((key, value))
+    }
+
+    pub fn deserialize_params(
         input: &[u8],
         output: &mut [u8],
         offset_output: &mut usize,
     ) -> Result<Vec<String>> {
         let mut offset_input: usize = 0;
 
-        let mut args: Vec<String> = vec![];
+        let mut params: Vec<String> = vec![];
 
         if input.is_empty() {
-            return Ok(args);
+            return Ok(params);
         }
 
-        let mut count = Self::get_u16(input, &mut offset_input)?;
+        let mut count = utils::get_u16(input, &mut offset_input)?;
         while count > 0 {
             Self::skip_key(input, &mut offset_input)?;
             match Self::get_value(input, &mut offset_input)? {
-                Self::Integer(value) => args.push(format!("{}", value)),
-                Self::Boolean(value) => args.push(format!("{}", value)),
+                Self::Integer(value) => params.push(format!("{}", value)),
+                Self::Boolean(value) => params.push(format!("{}", value)),
                 Self::Binary(value) => {
                     let length = value.len();
                     let offset_o = *offset_output;
                     output[offset_o..offset_o + length].copy_from_slice(value.as_slice());
-                    args.push(format!("{}", *offset_output));
-                    args.push(format!("{}", length));
+                    params.push(format!("{}", *offset_output));
+                    params.push(format!("{}", length));
                     *offset_output += length;
                 }
                 Self::String(value) => {
                     let length = value.len();
                     let offset_o = *offset_output;
                     output[offset_o..offset_o + length].copy_from_slice(value.as_slice());
-                    args.push(format!("{}", *offset_output));
-                    args.push(format!("{}", length));
+                    params.push(format!("{}", *offset_output));
+                    params.push(format!("{}", length));
                     *offset_output += length;
                 }
             }
             count -= 1;
         }
 
-        Ok(args)
+        Ok(params)
+    }
+
+    fn get_key(input: &[u8], offset: &mut usize) -> Result<String> {
+        let length = utils::get_u16(input, offset)?;
+        let key = utils::get_bytes(input, offset, length as usize)?;
+        String::from_utf8(key).map_err(|_| Error::Runtime(RuntimeError::Utf8Error))
     }
 
     fn skip_key(input: &[u8], offset: &mut usize) -> Result<()> {
-        let length = Self::get_u16(input, offset)?;
+        let length = utils::get_u16(input, offset)?;
         *offset += length as usize;
         Ok(())
     }
 
     fn get_value(input: &[u8], offset: &mut usize) -> Result<Self> {
-        let byte = Self::get_u8(input, offset)?;
+        let byte = utils::get_u8(input, offset)?;
 
         match byte {
             0u8 => {
-                let integer = Self::get_u64(input, offset)?;
+                let integer = utils::get_u64(input, offset)?;
                 Ok(Self::Integer(integer as i64))
             }
             1u8 => {
-                let boolean = Self::get_u8(input, offset)?;
+                let boolean = utils::get_u8(input, offset)?;
                 Ok(Self::Boolean(boolean as i32))
             }
             2u8 => {
-                let length = Self::get_u32(input, offset)?;
-                let binary = Self::get_bytes(input, offset, length as usize)?;
+                let length = utils::get_u32(input, offset)?;
+                let binary = utils::get_bytes(input, offset, length as usize)?;
                 Ok(Self::Binary(binary))
             }
             3u8 => {
-                let length = Self::get_u32(input, offset)?;
-                let string = Self::get_bytes(input, offset, length as usize)?;
+                let length = utils::get_u32(input, offset)?;
+                let string = utils::get_bytes(input, offset, length as usize)?;
                 Ok(Self::String(string))
             }
-            _ => Err(Error::Executable(
-                ExecutableError::FailedDeserializeDataEntry,
-            )),
-        }
-    }
-
-    fn get_u8(input: &[u8], offset: &mut usize) -> Result<u8> {
-        let bytes = Self::get_bytes(input, offset, 1)?;
-        let result = u8::from_be_bytes(
-            bytes[0..1]
-                .try_into()
-                .map_err(|_| Error::Executable(ExecutableError::FailedDeserializeDataEntry))?,
-        );
-        Ok(result)
-    }
-
-    fn get_u16(input: &[u8], offset: &mut usize) -> Result<u16> {
-        let bytes = Self::get_bytes(input, offset, 2)?;
-        let result = u16::from_be_bytes(
-            bytes[0..2]
-                .try_into()
-                .map_err(|_| Error::Executable(ExecutableError::FailedDeserializeDataEntry))?,
-        );
-        Ok(result)
-    }
-
-    fn get_u32(input: &[u8], offset: &mut usize) -> Result<u32> {
-        let bytes = Self::get_bytes(input, offset, 4)?;
-        let result = u32::from_be_bytes(
-            bytes[0..4]
-                .try_into()
-                .map_err(|_| Error::Executable(ExecutableError::FailedDeserializeDataEntry))?,
-        );
-        Ok(result)
-    }
-
-    fn get_u64(input: &[u8], offset: &mut usize) -> Result<u64> {
-        let bytes = Self::get_bytes(input, offset, 8)?;
-        let result = u64::from_be_bytes(
-            bytes[0..8]
-                .try_into()
-                .map_err(|_| Error::Executable(ExecutableError::FailedDeserializeDataEntry))?,
-        );
-        Ok(result)
-    }
-
-    fn get_bytes(input: &[u8], offset: &mut usize, length: usize) -> Result<Vec<u8>> {
-        let offset_input = *offset;
-        match input.get(offset_input..offset_input + length) {
-            Some(bytes) => {
-                *offset += length;
-                Ok(bytes.to_vec())
-            }
-            None => Err(Error::Executable(
-                ExecutableError::FailedDeserializeDataEntry,
-            )),
+            _ => Err(Error::Executable(ExecutableError::FailedDeserialize)),
         }
     }
 }
@@ -199,15 +163,15 @@ mod tests {
     use std::str::FromStr;
 
     #[test]
-    fn test_deserialize_storage() {
+    fn test_deserialize() {
         let input = [
             0, 8, 116, 101, 115, 116, 95, 107, 101, 121, 0, 0, 0, 0, 0, 0, 0, 0, 1,
         ];
-        let result = DataEntry::deserialize_storage(&input).expect("Error deserialize DataEntry");
+        let result = DataEntry::deserialize(&input).expect("Error deserialize DataEntry");
         assert_eq!(result, DataEntry::Integer(1));
 
         let input = [0, 8, 116, 101, 115, 116, 95, 107, 101, 121, 1, 1];
-        let result = DataEntry::deserialize_storage(&input).expect("Error deserialize DataEntry");
+        let result = DataEntry::deserialize(&input).expect("Error deserialize DataEntry");
         assert_eq!(result, DataEntry::Boolean(1));
 
         let vec: Vec<u8> = vec![116, 101, 115, 116, 95, 118, 97, 108, 117, 101];
@@ -216,19 +180,31 @@ mod tests {
             0, 8, 116, 101, 115, 116, 95, 107, 101, 121, 2, 0, 0, 0, 10, 116, 101, 115, 116, 95,
             118, 97, 108, 117, 101,
         ];
-        let result = DataEntry::deserialize_storage(&input).expect("Error deserialize DataEntry");
+        let result = DataEntry::deserialize(&input).expect("Error deserialize DataEntry");
         assert_eq!(result, DataEntry::Binary(vec.clone()));
 
         let input = [
             0, 8, 116, 101, 115, 116, 95, 107, 101, 121, 3, 0, 0, 0, 10, 116, 101, 115, 116, 95,
             118, 97, 108, 117, 101,
         ];
-        let result = DataEntry::deserialize_storage(&input).expect("Error deserialize DataEntry");
+        let result = DataEntry::deserialize(&input).expect("Error deserialize DataEntry");
         assert_eq!(result, DataEntry::String(vec.clone()));
     }
 
     #[test]
-    fn test_deserialize_args() {
+    fn test_deserialize_with_key() {
+        let input = [
+            0, 8, 116, 101, 115, 116, 95, 107, 101, 121, 0, 0, 0, 0, 0, 0, 0, 0, 1,
+        ];
+        let (key, value) =
+            DataEntry::deserialize_with_key(&input).expect("Error deserialize DataEntry");
+
+        assert_eq!(key, "test_key".to_string());
+        assert_eq!(value, DataEntry::Integer(1));
+    }
+
+    #[test]
+    fn test_deserialize_params() {
         let input = [
             0, 4, 0, 8, 116, 101, 115, 116, 95, 107, 101, 121, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 8,
             116, 101, 115, 116, 95, 107, 101, 121, 1, 1, 0, 8, 116, 101, 115, 116, 95, 107, 101,
@@ -240,7 +216,7 @@ mod tests {
         let mut memory = [0u8; 1000];
         let mut offset_memory = 100;
 
-        let result = DataEntry::deserialize_args(&input, &mut memory, &mut offset_memory)
+        let result = DataEntry::deserialize_params(&input, &mut memory, &mut offset_memory)
             .expect("Error deserialize DataEntry");
 
         assert_eq!(result.len(), 6);

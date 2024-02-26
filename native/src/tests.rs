@@ -66,7 +66,7 @@ impl TestRunner {
         &self,
         wat: &str,
         memory: Option<(u32, u32)>,
-        input_data: Vec<u8>,
+        params: Vec<u8>,
     ) -> Result<Vec<Value>> {
         // Preparing a fake jvm to initialize the call stack
         let env = self
@@ -99,7 +99,7 @@ impl TestRunner {
         )
         .expect("Call stack creation failed");
 
-        stack.run("_constructor", input_data)
+        stack.run("_constructor", &params)
     }
 }
 

@@ -11,6 +11,7 @@
     (import "env0" "call_payment" (func $call_payment (param i32 i32 i64) (result i32)))
 
     (import "env0" "call_contract" (func $call_contract (param i32 i32 i32 i32) (result i32)))
+    (import "env0" "call_contract_params" (func $call_contract_params (param i32 i32 i32 i32 i32 i32) (result i32)))
 
     (func (export "_constructor") (result i32)
         (local $offset i32) (local $length i32) (local $error i32)
@@ -93,6 +94,39 @@
                         (local.get $length)
                         (i32.const 94)
                         (i32.const 4)
+                    )
+                )
+            )
+        )
+
+        (local.get $error)
+    )
+
+    (func (export "call_contract_params") (param $offset_params i32) (param $length_params i32) (result i32)
+        (local $offset i32) (local $length i32) (local $error i32)
+
+        (block $code
+            (call $base_58
+                (i32.const 50) ;; Offset Contract Id
+                (i32.const 44) ;; Length Contract Id
+            )
+
+            (local.set $length)
+            (local.set $offset)
+
+            (br_if $code
+                (local.tee $error)
+            )
+
+            (br_if $code
+                (local.tee $error
+                    (call $call_contract_params
+                        (local.get $offset)
+                        (local.get $length)
+                        (i32.const 94)
+                        (i32.const 4)
+                        (local.get $offset_params)
+                        (local.get $length_params)
                     )
                 )
             )
