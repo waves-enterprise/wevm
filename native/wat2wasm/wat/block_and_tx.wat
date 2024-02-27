@@ -7,6 +7,7 @@
     (import "env0" "get_block_timestamp" (func $get_block_timestamp (result i32 i64)))
     (import "env0" "get_block_height" (func $get_block_height (result i32 i64)))
     (import "env0" "get_tx_sender" (func $get_tx_sender (result i32 i32 i32)))
+    (import "env1" "tx" (func $tx (param i32 i32) (result i32 i32 i32)))
     (import "env1" "get_payments" (func $get_payments (result i32 i64)))
     (import "env1" "get_payment_asset_id" (func $get_payment_asset_id (param i64) (result i32 i32 i32)))
     (import "env1" "get_payment_amount" (func $get_payment_amount (param i64) (result i32 i64)))
@@ -129,12 +130,35 @@
                     )
                 )
             )
+
+            (call $tx
+                (i32.const 86)
+                (i32.const 6)
+            )
+
+            (local.set $length)
+            (local.set $offset)
+
+            (br_if $code
+                (local.tee $error)
+            )
+
+            (br_if $code
+                (local.tee $error
+                    (call $set_storage_binary
+                        (i32.const 83)
+                        (i32.const 15)
+                        (local.get $offset)
+                        (local.get $length)
+                    )
+                )
+            )
         )
 
         (local.get $error)
     )
 
-    (global $__heap_base (export "__heap_base") i32 (i32.const 83))
+    (global $__heap_base (export "__heap_base") i32 (i32.const 98))
 
     ;; Keys
     (data (i32.const 0) "block_timestamp")
@@ -143,4 +167,6 @@
     (data (i32.const 36) "tx_payments")
     (data (i32.const 47) "tx_payment_asset_id")
     (data (i32.const 66) "tx_payment_amount")
+
+    (data (i32.const 83) "tx_sender_field")
 )

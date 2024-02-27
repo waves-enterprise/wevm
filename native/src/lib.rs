@@ -18,7 +18,7 @@ use jni::{
     sys::jint,
     JNIEnv,
 };
-use wasmi::core::Value;
+use wasmi::Value;
 
 /// Size of allocated linear memory.
 const MEMORY: (u32, u32) = (2, 16);

@@ -93,9 +93,10 @@ trait WASMService {
   def getBlockHeight: Long
 
   /**
-    * @return Address calling contract
+    * @param field UTF-8 string with transaction field name
+    * @return Requested field data
     */
-  def getTxSender: Array[Byte]
+  def tx(field: Array[Byte]): Array[Byte]
 
   /**
     * @param paymentId Unique payment identifier. Represents the concatenation of contractId bytes and unique 8 bytes

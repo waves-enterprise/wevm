@@ -36,7 +36,7 @@ pub trait Node {
     fn cancel_lease(&self, contract_id: &[u8], lease_id: &[u8]) -> Result<()>;
     fn get_block_timestamp(&self) -> Result<i64>;
     fn get_block_height(&self) -> Result<i64>;
-    fn get_tx_sender(&self) -> Result<Vec<u8>>;
+    fn tx(&self, field: &[u8]) -> Result<Vec<u8>>;
     fn get_tx_payments(&self, payment_id: &[u8]) -> Result<i64>;
     fn get_tx_payment_asset_id(&self, payment_id: &[u8], number: i64) -> Result<Vec<u8>>;
     fn get_tx_payment_amount(&self, payment_id: &[u8], number: i64) -> Result<i64>;

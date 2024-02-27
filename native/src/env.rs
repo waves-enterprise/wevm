@@ -16,6 +16,11 @@ use crate::{
     },
 };
 
+pub enum Field {
+    String(String),
+    Binary(u32, u32),
+}
+
 pub(in crate::env) fn get_asset_holder(
     ctx: &mut Runtime,
     type_: u32,

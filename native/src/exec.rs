@@ -6,8 +6,8 @@ use crate::{
 };
 use std::{fmt, str::FromStr};
 use wasmi::{
-    core::{Value, ValueType},
-    Config, Engine, Func, FuncType, Memory, MemoryType, Module, StackLimits, Store,
+    core::ValueType, Config, Engine, Func, FuncType, Memory, MemoryType, Module, StackLimits,
+    Store, Value,
 };
 
 /// Enumeration of possible executable functions of a WASM contract.
@@ -56,7 +56,8 @@ impl Executable {
             .wasm_mutable_global(false)
             .wasm_sign_extension(false)
             .wasm_saturating_float_to_int(false)
-            .wasm_multi_value(true);
+            .wasm_multi_value(true)
+            .floats(false);
 
         let engine = Engine::new(&config);
         let module = Module::new(&engine, &mut &bytecode[..])
@@ -136,7 +137,7 @@ impl Executable {
         modules: Vec<M>,
     ) -> Result<(Func, Store<Runtime<'a>>)> {
         let engine = module.engine();
-        let mut linker = <wasmi::Linker<()>>::new();
+        let mut linker = <wasmi::Linker<Runtime>>::new(engine);
         let mut store = wasmi::Store::new(engine, runtime);
 
         for item in modules {
@@ -208,8 +209,7 @@ impl Executable {
                 match param_type {
                     ValueType::I32 => arg.parse::<i32>().map(Value::from).map_err(make_err!()),
                     ValueType::I64 => arg.parse::<i64>().map(Value::from).map_err(make_err!()),
-                    ValueType::F32 => Err(Error::Executable(ExecutableError::FailedParseFuncArgs)),
-                    ValueType::F64 => Err(Error::Executable(ExecutableError::FailedParseFuncArgs)),
+                    _ => Err(Error::Executable(ExecutableError::FailedParseFuncArgs)),
                 }
             })
             .collect::<Result<Vec<_>, _>>()?;

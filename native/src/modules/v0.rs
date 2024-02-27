@@ -367,7 +367,7 @@ module! {
     // Tx
     fn get_tx_sender() -> (i32, i32, i32) {
         |caller: Caller<Runtime>| {
-            env::tx::get_tx_sender(caller)
+            env::tx::tx(env::Field::String("sender".to_string()), caller)
         }
     }
 
@@ -436,6 +436,18 @@ module! {
                              offset_right,
                              length_right,
                              caller)
+        }
+    }
+
+    fn to_le_bytes(offset_bytes: u32, length_bytes: u32) -> (i32, i32, i32) {
+        |caller: Caller<Runtime>| {
+            env::utils::to_le_bytes(offset_bytes, length_bytes, caller)
+        }
+    }
+
+    fn caller() -> (i32, i32, i32) {
+        |caller: Caller<Runtime>| {
+            env::utils::caller(caller)
         }
     }
 }

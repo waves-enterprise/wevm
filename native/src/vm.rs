@@ -5,7 +5,7 @@ use crate::{
 };
 use jni::{objects::GlobalRef, JavaVM};
 use std::str::FromStr;
-use wasmi::core::Value;
+use wasmi::Value;
 
 const MAX_FRAMES: usize = 64;
 
@@ -77,7 +77,7 @@ impl Vm {
         bytecode: Vec<u8>,
         nonce: u64,
         func_name: &str,
-        params: &Vec<u8>,
+        params: &[u8],
     ) -> Result<Vec<Value>> {
         let frame = Frame {
             contract_id,
@@ -90,7 +90,7 @@ impl Vm {
     }
 
     /// Run contract. The contract is taken from the top of the call stack.
-    pub fn run(&mut self, func_name: &str, params: &Vec<u8>) -> Result<Vec<Value>> {
+    pub fn run(&mut self, func_name: &str, params: &[u8]) -> Result<Vec<Value>> {
         let frame = self.top_frame();
 
         let func_name = LoadableFunction::from_str(func_name)?;
@@ -111,6 +111,20 @@ impl Vm {
     pub fn get_nonce(&mut self) -> u64 {
         self.nonce += 1;
         self.nonce
+    }
+
+    /// Get the caller of the current frame.
+    pub fn get_caller_current_frame(&self) -> Vec<u8> {
+        if self.frames.is_empty() {
+            vec![]
+        } else {
+            let len = self.frames.len();
+
+            match self.frames.get(len - 2) {
+                Some(frame) => frame.contract_id(),
+                None => self.first_frame.contract_id(),
+            }
+        }
     }
 
     fn push_frame(&mut self, frame: Frame) -> Result<()> {

@@ -9,12 +9,14 @@
     (import "env0" "get_storage_int" (func $get_storage_int (param i32 i32 i32 i32) (result i32 i64)))
     (import "env0" "get_storage_bool" (func $get_storage_bool (param i32 i32 i32 i32) (result i32 i32)))
 
+    (import "env0" "caller" (func $caller (result i32 i32 i32)))
+
     (func (export "_constructor") (result i32)
         (i32.const 0)
     )
 
     (func (export "save") (param $p_int i64) (param $p_bool i32) (param $p_binary_offset i32) (param $p_binary_length i32) (param $p_string_offset i32) (param $p_string_length i32) (result i32)
-        (local $error i32)
+        (local $offset i32) (local $length i32) (local $error i32)
 
         (block $code
             (br_if $code
@@ -55,6 +57,26 @@
                         (i32.const 10) ;; Key length
                         (local.get $p_string_offset)
                         (local.get $p_string_length)
+                    )
+                )
+            )
+
+            (call $caller)
+
+            (local.set $length)
+            (local.set $offset)
+
+            (br_if $code
+                (local.tee $error)
+            )
+
+            (br_if $code
+                (local.tee $error
+                    (call $set_storage_binary
+                        (i32.const 42) ;; Key offset
+                        (i32.const 6)  ;; Key length
+                        (local.get $offset)
+                        (local.get $length)
                     )
                 )
             )
@@ -111,11 +133,13 @@
         (local.get $error)
     )
 
-    (global $__heap_base (export "__heap_base") i32 (i32.const 42))
+    (global $__heap_base (export "__heap_base") i32 (i32.const 48))
 
     ;; Keys
     (data (i32.const 0) "integer_key")
     (data (i32.const 11) "boolean_key")
     (data (i32.const 22) "binary_key")
     (data (i32.const 32) "string_key")
+
+    (data (i32.const 42) "caller")
 )

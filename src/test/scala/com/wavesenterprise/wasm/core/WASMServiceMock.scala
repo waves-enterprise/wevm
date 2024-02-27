@@ -207,8 +207,14 @@ class WASMServiceMock extends WASMService {
 
   override def getBlockHeight: Long = 3745592L
 
-  override def getTxSender: Array[Byte] =
-    Base58.decode(this.txSender).get
+  override def tx(field: Array[Byte]): Array[Byte] = {
+    val string = new String(field, UTF_8)
+    if (string == "sender") {
+      Base58.decode(this.txSender).get
+    } else {
+      throw new Exception
+    }
+  }
 
   override def getTxPayments(paymentId: Array[Byte]): Long =
     this.payments(Base58.encode(paymentId)).size

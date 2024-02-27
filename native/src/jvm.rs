@@ -366,15 +366,17 @@ impl Node for Vm {
         Ok(result)
     }
 
-    fn get_tx_sender(&self) -> Result<Vec<u8>> {
+    fn tx(&self, field: &[u8]) -> Result<Vec<u8>> {
         let mut env = env!(self);
+
+        let field = byte_array!(env, field);
 
         let result = env
             .call_method(
                 jvm_callback!(&self.jvm_callback),
-                "getTxSender",
-                "()[B",
-                &[],
+                "tx",
+                "([B)[B",
+                &[JValue::Object(&field.into())],
             )
             .map_err(|_| Error::Jvm(JvmError::MethodCall))?
             .l()

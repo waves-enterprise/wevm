@@ -113,3 +113,33 @@ pub fn join(
 
     crate::env::write_memory(ctx, memory, offset_memory, result)
 }
+
+pub fn to_le_bytes(
+    offset_bytes: u32,
+    length_bytes: u32,
+    mut caller: Caller<Runtime>,
+) -> (i32, i32, i32) {
+    let (memory, ctx) = match caller.data().memory() {
+        Some(memory) => memory.data_and_store_mut(&mut caller),
+        None => return (RuntimeError::MemoryNotFound as i32, 0, 0),
+    };
+    let offset_memory = ctx.heap_base() as usize;
+
+    let mut result =
+        memory[offset_bytes as usize..offset_bytes as usize + length_bytes as usize].to_vec();
+    result.reverse();
+
+    crate::env::write_memory(ctx, memory, offset_memory, result)
+}
+
+pub fn caller(mut caller: Caller<Runtime>) -> (i32, i32, i32) {
+    let (memory, ctx) = match caller.data().memory() {
+        Some(memory) => memory.data_and_store_mut(&mut caller),
+        None => return (RuntimeError::MemoryNotFound as i32, 0, 0),
+    };
+    let offset_memory = ctx.heap_base() as usize;
+
+    let result = ctx.vm.get_caller_current_frame();
+
+    crate::env::write_memory(ctx, memory, offset_memory, result)
+}

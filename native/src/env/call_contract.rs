@@ -5,7 +5,7 @@ use crate::{
     vm::create_payment_id,
 };
 use std::str;
-use wasmi::{core::Value, Caller};
+use wasmi::{Caller, Value};
 
 pub fn call_arg_int(value: i64, mut caller: Caller<Runtime>) {
     caller.data_mut().params.push(DataEntry::Integer(value));

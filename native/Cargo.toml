@@ -14,7 +14,7 @@ repository = "https://github.com/waves-enterprise/wevm"
 [dependencies]
 base58 = "0.2.0"
 jni = "0.21.0"
-wasmi = "0.23.0"
+wasmi = "0.31.2"
 
 [dev-dependencies]
 jni = { version = "0.21.0", features = ["invocation"] }
