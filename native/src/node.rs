@@ -32,6 +32,9 @@ pub trait Node {
         amount: i64,
         is_reissuable: bool,
     ) -> Result<()>;
+    fn fast_hash(&self, bytes: &[u8]) -> Result<Vec<u8>>;
+    fn secure_hash(&self, bytes: &[u8]) -> Result<Vec<u8>>;
+    fn sig_verify(&self, message: &[u8], signature: &[u8], public_key: &[u8]) -> Result<bool>;
     fn lease(&self, contract_id: &[u8], recipient: &[u8], amount: i64) -> Result<Vec<u8>>;
     fn cancel_lease(&self, contract_id: &[u8], lease_id: &[u8]) -> Result<()>;
     fn get_block_timestamp(&self) -> Result<i64>;

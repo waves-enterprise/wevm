@@ -284,6 +284,77 @@ impl Node for Vm {
         Ok(())
     }
 
+    fn fast_hash(&self, bytes: &[u8]) -> Result<Vec<u8>> {
+        let mut env = env!(self);
+
+        let bytes = byte_array!(env, bytes);
+
+        let result = env
+            .call_method(
+                jvm_callback!(&self.jvm_callback),
+                "fastHash",
+                "([B)[B",
+                &[JValue::Object(&bytes.into())],
+            )
+            .map_err(|_| Error::Jvm(JvmError::MethodCall))?
+            .l()
+            .map_err(|_| Error::Jvm(JvmError::ReceiveObject))?;
+
+        let bytes = env
+            .convert_byte_array(<JObject<'_> as Into<JByteArray>>::into(result))
+            .map_err(|_| Error::Jvm(JvmError::ByteArrayConversion))?;
+
+        Ok(bytes.to_vec())
+    }
+
+    fn secure_hash(&self, bytes: &[u8]) -> Result<Vec<u8>> {
+        let mut env = env!(self);
+
+        let bytes = byte_array!(env, bytes);
+
+        let result = env
+            .call_method(
+                jvm_callback!(&self.jvm_callback),
+                "secureHash",
+                "([B)[B",
+                &[JValue::Object(&bytes.into())],
+            )
+            .map_err(|_| Error::Jvm(JvmError::MethodCall))?
+            .l()
+            .map_err(|_| Error::Jvm(JvmError::ReceiveObject))?;
+
+        let bytes = env
+            .convert_byte_array(<JObject<'_> as Into<JByteArray>>::into(result))
+            .map_err(|_| Error::Jvm(JvmError::ByteArrayConversion))?;
+
+        Ok(bytes.to_vec())
+    }
+
+    fn sig_verify(&self, message: &[u8], signature: &[u8], public_key: &[u8]) -> Result<bool> {
+        let mut env = env!(self);
+
+        let message = byte_array!(env, message);
+        let signature = byte_array!(env, signature);
+        let public_key = byte_array!(env, public_key);
+
+        // let result = env
+        env.call_method(
+            jvm_callback!(&self.jvm_callback),
+            "sigVerify",
+            "([B[B[B)Z",
+            &[
+                JValue::Object(&message.into()),
+                JValue::Object(&signature.into()),
+                JValue::Object(&public_key.into()),
+            ],
+        )
+        .map_err(|_| Error::Jvm(JvmError::MethodCall))?
+        .z()
+        .map_err(|_| Error::Jvm(JvmError::ReceiveObject))
+
+        // Ok(result)
+    }
+
     fn lease(&self, contract_id: &[u8], recipient: &[u8], amount: i64) -> Result<Vec<u8>> {
         let mut env = env!(self);
 

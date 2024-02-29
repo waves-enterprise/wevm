@@ -75,6 +75,26 @@ trait WASMService {
   def reissue(contractId: Array[Byte], assetId: Array[Byte], amount: Long, isReissuable: Boolean)
 
   /**
+    * @param bytes Raw data
+    * @return Cryptographic hash
+    */
+  def fastHash(bytes: Array[Byte]): Array[Byte]
+
+  /**
+    * @param bytes Raw data
+    * @return Cryptographic hash
+    */
+  def secureHash(bytes: Array[Byte]): Array[Byte]
+
+  /**
+    * @param message Raw message
+    * @param signature Cryptographic signature
+    * @param publicKey Cryptographic Public Key
+    * @return True if the signature was a valid signature
+    */
+  def sigVerify(message: Array[Byte], signature: Array[Byte], publicKey: Array[Byte]): Boolean
+
+  /**
     * @param contractId ID of a contract called this function. Base58 bytes
     * @param recipient AssetHolder of recipient of tokens
     * @param amount Number of tokens for leasing

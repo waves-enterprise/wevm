@@ -183,6 +183,38 @@ module! {
         }
     }
 
+    // Crypto
+    fn fast_hash(offset_bytes: u32, length_bytes: u32) -> (i32, i32, i32) {
+        |caller: Caller<Runtime>| {
+            env::crypto::fast_hash(offset_bytes, length_bytes, caller)
+        }
+    }
+
+    fn secure_hash(offset_bytes: u32, length_bytes: u32) -> (i32, i32, i32) {
+        |caller: Caller<Runtime>| {
+            env::crypto::secure_hash(offset_bytes, length_bytes, caller)
+        }
+    }
+
+    fn sig_verify(
+        offset_message: u32,
+        length_message: u32,
+        offset_signature: u32,
+        length_signature: u32,
+        offset_public_key: u32,
+        length_public_key: u32,
+    ) -> (i32, i32) {
+        |caller: Caller<Runtime>| {
+            env::crypto::sig_verify(offset_message,
+                                    length_message,
+                                    offset_signature,
+                                    length_signature,
+                                    offset_public_key,
+                                    length_public_key,
+                                    caller)
+        }
+    }
+
 
     // Lease
     fn lease_address(

@@ -2,20 +2,12 @@ package com.wavesenterprise.wasm.core
 
 import com.google.common.io.{ByteArrayDataOutput, ByteStreams}
 import com.wavesenterprise.state.{ByteStr, DataEntry, IntegerDataEntry, BooleanDataEntry, BinaryDataEntry, StringDataEntry}
-import com.wavesenterprise.serialization.BinarySerializer
-import com.wavesenterprise.transaction.docker.ContractTransactionEntryOps.toBytes
 import com.wavesenterprise.utils.Base58
 import org.scalatest.freespec.AnyFreeSpec
 import org.scalatest.matchers.should.Matchers
 
 class WASMExecutorSpec extends AnyFreeSpec with Matchers {
   val executor = new WASMExecutor
-
-  def writeDataEntryList(dataEntryList: List[DataEntry[_]], output: ByteArrayDataOutput): Unit =
-    BinarySerializer.writeShortIterable(dataEntryList, dataEntryWrite, output)
-
-  def dataEntryWrite(value: DataEntry[_], output: ByteArrayDataOutput): Unit =
-    output.write(toBytes(value))
 
   "WASMExecutor" - {
     "validate bytecode" in {

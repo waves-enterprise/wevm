@@ -2,6 +2,7 @@ package com.wavesenterprise.wasm.core
 
 import com.google.common.primitives.Longs
 
+import com.wavesenterprise.crypto.internals.WavesAlgorithms
 import com.wavesenterprise.state.DataEntry
 import com.wavesenterprise.transaction.docker.ContractTransactionEntryOps.{parse, toBytes}
 import com.wavesenterprise.utils.Base58
@@ -181,6 +182,13 @@ class WASMServiceMock extends WASMService {
 
   override def reissue(contractId: Array[Byte], assetId: Array[Byte], amount: Long, isReissuable: Boolean) =
     this.balances(Base58.encode(assetId))(Base58.encode(contractId)) += amount
+
+  override def fastHash(bytes: Array[Byte]): Array[Byte] = WavesAlgorithms.fastHash(bytes)
+
+  override def secureHash(bytes: Array[Byte]): Array[Byte] = WavesAlgorithms.secureHash(bytes)
+
+  override def sigVerify(message: Array[Byte], signature: Array[Byte], publicKey: Array[Byte]): Boolean =
+    WavesAlgorithms.verify(signature, message, publicKey)
 
   override def lease(contractId: Array[Byte], recipient: Array[Byte], amount: Long): Array[Byte] = {
     val assetHolder = parseAssetHolder(recipient)
