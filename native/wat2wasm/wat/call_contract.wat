@@ -14,6 +14,10 @@
     (import "env0" "call_contract_params" (func $call_contract_params (param i32 i32 i32 i32 i32 i32) (result i32)))
 
     (func (export "_constructor") (result i32)
+        (i32.const 0)
+    )
+
+    (func (export "call_contract") (result i32)
         (local $offset i32) (local $length i32) (local $error i32)
 
         (block $code
@@ -93,7 +97,7 @@
                         (local.get $offset)
                         (local.get $length)
                         (i32.const 94)
-                        (i32.const 4)
+                        (i32.const 11)
                     )
                 )
             )
@@ -102,7 +106,7 @@
         (local.get $error)
     )
 
-    (func (export "call_contract_params") (param $offset_params i32) (param $length_params i32) (result i32)
+    (func (export "call_contract_params") (param $p0 i32) (param $p1 i32) (result i32)
         (local $offset i32) (local $length i32) (local $error i32)
 
         (block $code
@@ -124,9 +128,9 @@
                         (local.get $offset)
                         (local.get $length)
                         (i32.const 94)
-                        (i32.const 4)
-                        (local.get $offset_params)
-                        (local.get $length_params)
+                        (i32.const 11)
+                        (local.get $p0)
+                        (local.get $p1)
                     )
                 )
             )
@@ -135,7 +139,7 @@
         (local.get $error)
     )
 
-    (global $__heap_base (export "__heap_base") i32 (i32.const 98))
+    (global $__heap_base (export "__heap_base") i32 (i32.const 105))
 
     ;; Args
     (data (i32.const 0) "\00\01")
@@ -145,7 +149,7 @@
     (data (i32.const 6) "DnK5Xfi2wXUJx9BjK9X6ZpFdTLdq2GtWH9pWrcxcmrhB")
 
     ;; Contract Id
-    (data (i32.const 50) "2sqPS2VAKmK77FoNakw1VtDTCbDSa7nqh5wTXvJeYGo2")
+    (data (i32.const 50) "757aQzJiQZRfVRuJNnP3L1d369H2oTjUEazwtYxGngCd")
     ;; Func name
-    (data (i32.const 94) "save")
+    (data (i32.const 94) "set_storage")
 )

@@ -256,29 +256,6 @@ module! {
         }
     }
 
-    // Payments
-    fn get_payments() -> (i32, i32) {
-        |caller: Caller<Runtime>| {
-            let (err, num) = env::payments::get_payments(caller);
-            match i32::try_from(num) {
-                Ok(value) => (err, value),
-                Err(_) => (Error::Runtime(RuntimeError::ConvertingNumericTypes).as_i32(), 0),
-            }
-        }
-    }
-
-    fn get_payment_asset_id(number: i32) -> (i32, i32, i32) {
-        |caller: Caller<Runtime>| {
-            env::payments::get_payment_asset_id(number as i64, caller)
-        }
-    }
-
-    fn get_payment_amount(number: i32) -> (i32, i64) {
-        |caller: Caller<Runtime>| {
-            env::payments::get_payment_amount(number as i64, caller)
-        }
-    }
-
     // Storage
     fn get_storage_int(
         offset_address: u32,
@@ -400,6 +377,28 @@ module! {
     fn get_tx_sender() -> (i32, i32, i32) {
         |caller: Caller<Runtime>| {
             env::tx::tx(env::Field::String("sender".to_string()), caller)
+        }
+    }
+
+    fn get_payments() -> (i32, i32) {
+        |caller: Caller<Runtime>| {
+            let (err, num) = env::tx::get_payments(caller);
+            match i32::try_from(num) {
+                Ok(value) => (err, value),
+                Err(_) => (Error::Runtime(RuntimeError::ConvertingNumericTypes).as_i32(), 0),
+            }
+        }
+    }
+
+    fn get_payment_asset_id(number: i32) -> (i32, i32, i32) {
+        |caller: Caller<Runtime>| {
+            env::tx::get_payment_asset_id(number as i64, caller)
+        }
+    }
+
+    fn get_payment_amount(number: i32) -> (i32, i64) {
+        |caller: Caller<Runtime>| {
+            env::tx::get_payment_amount(number as i64, caller)
         }
     }
 

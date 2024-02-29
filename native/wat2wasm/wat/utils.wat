@@ -1,21 +1,70 @@
 (module
     (import "env" "memory" (memory 2 16))
 
+    (import "env0" "base_58" (func $base_58 (param i32 i32) (result i32 i32 i32)))
+    (import "env0" "to_base_58_string" (func $to_base_58_string (param i32 i32) (result i32 i32 i32)))
     (import "env0" "binary_equals" (func $binary_equals (param i32 i32 i32 i32) (result i32 i32)))
     (import "env0" "string_equals" (func $string_equals (param i32 i32 i32 i32) (result i32 i32)))
     (import "env0" "join" (func $join (param i32 i32 i32 i32) (result i32 i32 i32)))
-
     (import "env0" "to_le_bytes" (func $to_le_bytes (param i32 i32) (result i32 i32 i32)))
+
     (import "env0" "set_storage_int" (func $set_storage_int (param i32 i32 i64) (result i32)))
+    (import "env0" "set_storage_string" (func $set_storage_string (param i32 i32 i32 i32) (result i32)))
+    (import "env0" "call_contract" (func $call_contract (param i32 i32 i32 i32) (result i32)))
 
     (func (export "_constructor") (result i32)
+        (i32.const 0)
+    )
+
+    (func (export "base58") (param $p0 i32) (param $p1 i32) (result i32)
+        (local $offset i32) (local $length i32) (local $error i32)
+        (block $code
+            (call $base_58
+                (local.get $p0)
+                (local.get $p1)
+            )
+
+            (local.set $length)
+            (local.set $offset)
+
+            (br_if $code
+                (local.tee $error)
+            )
+
+            (call $to_base_58_string
+                (local.get $offset)
+                (local.get $length)
+            )
+
+            (local.set $length)
+            (local.set $offset)
+
+            (br_if $code
+                (local.tee $error)
+            )
+
+            (br_if $code
+                (local.tee $error
+                    (call $set_storage_string
+                        (i32.const 0) ;; Key offset
+                        (i32.const 6) ;; Key length
+                        (local.get $offset)
+                        (local.get $length)
+                    )
+                )
+            )
+        )
+
+        (local.get $error)
+    )
+
+    (func (export "binary_equals") (result i32)
         (local $offset i32) (local $length i32) (local $result i32) (local $error i32)
         (block $code
-            ;; Binary concatenation
             (call $join
-                (i32.const 0)
+                (i32.const 6)
                 (i32.const 2)
-                (i32.const 2)
+                (i32.const 8)
                 (i32.const 2)
             )
 
@@ -27,7 +76,7 @@
             )
 
             (call $binary_equals
-                (i32.const 0)
+                (i32.const 6)
                 (i32.const 4)
                 (local.get $offset)
                 (local.get $length)
@@ -47,12 +96,18 @@
                     (i32.const 300)
                 )
             )
+        )
 
-            ;; String concatenation
+        (local.get $error)
+    )
+
+    (func (export "string_equals") (result i32)
+        (local $offset i32) (local $length i32) (local $result i32) (local $error i32)
+        (block $code
             (call $join
-                (i32.const 4)
+                (i32.const 10)
                 (i32.const 3)
-                (i32.const 7)
+                (i32.const 13)
                 (i32.const 3)
             )
 
@@ -64,7 +119,7 @@
             )
 
             (call $string_equals
-                (i32.const 4)
+                (i32.const 10)
                 (i32.const 6)
                 (local.get $offset)
                 (local.get $length)
@@ -108,8 +163,8 @@
             (br_if $code
                 (local.tee $error
                     (call $set_storage_int
-                        (i32.const 10)
-                        (i32.const 7)
+                        (i32.const 0)
+                        (i32.const 6)
                         (local.get $result)
                     )
                 )
@@ -119,14 +174,48 @@
         (local.get $error)
     )
 
-    (global $__heap_base (export "__heap_base") i32 (i32.const 17))
+    (func (export "caller") (result i32)
+        (local $offset i32) (local $length i32) (local $error i32)
+        (block $code
+            (call $base_58
+                (i32.const 16) ;; Offset Contract Id
+                (i32.const 44) ;; Length Contract Id
+            )
 
-    ;; Binary
-    (data (i32.const 0) "\01\02")
-    (data (i32.const 2) "\03\04")
-    ;; String
-    (data (i32.const 4) "one")
-    (data (i32.const 7) "two")
+            (local.set $length)
+            (local.set $offset)
+
+            (br_if $code
+                (local.tee $error)
+            )
+
+            (br_if $code
+                (local.tee $error
+                    (call $call_contract
+                        (local.get $offset)
+                        (local.get $length)
+                        (i32.const 60)
+                        (i32.const 6)
+                    )
+                )
+            )
+        )
+
+        (local.get $error)
+    )
+
+    (global $__heap_base (export "__heap_base") i32 (i32.const 66))
+
     ;; Key
-    (data (i32.const 10) "integer")
+    (data (i32.const 0) "result")
+    ;; Binary
+    (data (i32.const 6) "\01\02")
+    (data (i32.const 8) "\03\04")
+    ;; String
+    (data (i32.const 10) "one")
+    (data (i32.const 13) "two")
+    ;; Contract Id
+    (data (i32.const 16) "2sqPS2VAKmK77FoNakw1VtDTCbDSa7nqh5wTXvJeYGo2")
+    ;; Func name
+    (data (i32.const 60) "caller")
 )
