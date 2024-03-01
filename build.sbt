@@ -158,7 +158,7 @@ lazy val wevmNative = (project in file("native"))
 
 lazy val buildWAT = taskKey[Unit]("build WAT contract")
 buildWAT := {
-  val wat2wasm = baseDirectory.value / "native" / "wat2wasm"
+  val wat2wasm = baseDirectory.value / "wat2wasm"
 
   val input = baseDirectory.value / "wat"
   val output = baseDirectory.value / "src" / "test" / "resources"
