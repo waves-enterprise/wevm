@@ -40,6 +40,16 @@ pub fn get_u64(input: &[u8], offset: &mut usize) -> Result<u64> {
     Ok(result)
 }
 
+pub fn get_i64(input: &[u8], offset: &mut usize) -> Result<i64> {
+    let bytes = get_bytes(input, offset, 8)?;
+    let result = i64::from_be_bytes(
+        bytes[0..8]
+            .try_into()
+            .map_err(|_| Error::Executable(ExecutableError::FailedDeserialize))?,
+    );
+    Ok(result)
+}
+
 pub fn get_bytes(input: &[u8], offset: &mut usize, length: usize) -> Result<Vec<u8>> {
     let offset_input = *offset;
     match input.get(offset_input..offset_input + length) {

@@ -2,6 +2,7 @@ use crate::{
     error::{Error, ExecutableError, Result},
     exec::{Executable, LoadableFunction},
     modules::Module,
+    runtime::payment_id::PaymentId,
 };
 use jni::{objects::GlobalRef, JavaVM};
 use std::str::FromStr;
@@ -22,7 +23,7 @@ impl Frame {
     }
 
     pub fn payment_id(&self) -> Vec<u8> {
-        create_payment_id(self.contract_id.clone(), self.nonce)
+        PaymentId::new(self.contract_id.clone(), self.nonce).as_bytes()
     }
 }
 
@@ -136,10 +137,4 @@ impl Vm {
 
         Ok(())
     }
-}
-
-pub fn create_payment_id(contract_id: Vec<u8>, nonce: u64) -> Vec<u8> {
-    let mut result = contract_id;
-    result.extend_from_slice(&nonce.to_be_bytes());
-    result
 }

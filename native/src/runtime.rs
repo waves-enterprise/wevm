@@ -1,6 +1,7 @@
 pub mod asset_holder;
 pub mod data_entry;
 pub mod params;
+pub mod payment_id;
 pub mod payments;
 pub mod utils;
 

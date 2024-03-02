@@ -89,6 +89,8 @@ class WASMServiceMock extends WASMService {
   }
 
   override def addPayments(contractId: Array[Byte], paymentId: Array[Byte], payments: Array[Byte]) = {
+    if (payments.isEmpty) throw new Exception
+
     val assetLength = 32
     var start       = 2
 

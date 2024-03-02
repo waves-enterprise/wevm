@@ -1,8 +1,7 @@
 use crate::{
     error::RuntimeError,
     node::Node,
-    runtime::{data_entry::DataEntry, Runtime},
-    vm::create_payment_id,
+    runtime::{data_entry::DataEntry, payment_id::PaymentId, Runtime},
 };
 use std::str;
 use wasmi::{Caller, Value};
@@ -97,22 +96,25 @@ pub fn call_contract(
         }
     };
 
-    let payments = ctx.payments.as_bytes();
-    ctx.payments.reset();
-
     // Since a single contract can be invoked multiple times during execution,
     // it is necessary to have a unique identifier to distinguish each unique execution
     let nonce = ctx.vm.get_nonce();
-    let payment_id = create_payment_id(callable_contract_id.to_vec(), nonce);
+    let payment_id = PaymentId::new(callable_contract_id.to_vec(), nonce);
 
     let self_contract_id = ctx.vm.top_frame().contract_id();
-    match ctx.vm.add_payments(
-        self_contract_id.as_slice(),
-        payment_id.as_slice(),
-        &payments,
-    ) {
-        Ok(()) => (),
-        Err(error) => return error.as_i32(),
+
+    if !ctx.payments.is_empty() {
+        let payments = ctx.payments.as_bytes();
+        ctx.payments.reset();
+
+        match ctx.vm.add_payments(
+            self_contract_id.as_slice(),
+            payment_id.as_bytes().as_slice(),
+            &payments,
+        ) {
+            Ok(()) => (),
+            Err(error) => return error.as_i32(),
+        }
     }
 
     match ctx.vm.call(
