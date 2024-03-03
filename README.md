@@ -8,7 +8,7 @@ WEVM represents:
 * A mechanism for controlling the execution of smart contracts
 
 WEVM uses:
-* Crate [wasmi](https://docs.rs/wasmi/0.23.0/wasmi/index.html) is used as the WebAssembly interpreter
+* Crate [wasmi](https://docs.rs/wasmi/0.31.2/wasmi/index.html) is used as the WebAssembly interpreter
 * Java Native Interface (JNI) and crate [jni](https://docs.rs/jni/0.21.0/jni/struct.JavaVM.html) are used as a way for WEVM to communicate with Waves Enterprise Node
 
 ## Development
