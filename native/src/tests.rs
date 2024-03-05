@@ -7,7 +7,7 @@ use crate::{
 };
 use jni::{InitArgsBuilder, JNIVersion, JavaVM};
 use std::str;
-use wasmi::{core::Value, Caller, Func, Store};
+use wasmi::{Caller, Func, Store, Value};
 
 /// Converts the given `.wat` into `.wasm`.
 pub fn wat2wasm(wat: &str) -> Result<Vec<u8>, wat::Error> {
@@ -66,7 +66,7 @@ impl TestRunner {
         &self,
         wat: &str,
         memory: Option<(u32, u32)>,
-        input_data: Vec<u8>,
+        params: Vec<u8>,
     ) -> Result<Vec<Value>> {
         // Preparing a fake jvm to initialize the call stack
         let env = self
@@ -99,7 +99,7 @@ impl TestRunner {
         )
         .expect("Call stack creation failed");
 
-        stack.run("_constructor", input_data)
+        stack.run("_constructor", &params)
     }
 }
 
@@ -126,7 +126,7 @@ fn test_vm() {
 
         let values = result.unwrap();
         assert_eq!(values.len(), 1);
-        assert_eq!(values[0], Value::I32(4));
+        assert_eq!(values[0].i32(), Some(4));
     }
 
     // Import test
@@ -152,7 +152,7 @@ fn test_vm() {
 
         let values = result.unwrap();
         assert_eq!(values.len(), 1);
-        assert_eq!(values[0], Value::I32(0));
+        assert_eq!(values[0].i32(), Some(0));
     }
 
     // Memory test
@@ -183,7 +183,7 @@ fn test_vm() {
 
         let values = result.unwrap();
         assert_eq!(values.len(), 1);
-        assert_eq!(values[0], Value::I32(0));
+        assert_eq!(values[0].i32(), Some(0));
     }
 
     // Args test
@@ -212,7 +212,7 @@ fn test_vm() {
 
         let values = result.unwrap();
         assert_eq!(values.len(), 1);
-        assert_eq!(values[0], Value::I32(3));
+        assert_eq!(values[0].i32(), Some(3));
     }
 
     // Negative test
@@ -240,7 +240,7 @@ fn test_vm() {
         assert!(result.is_err());
         assert_eq!(
             result.unwrap_err(),
-            Error::Executable(ExecutableError::FailedParseFuncArgs)
+            Error::Executable(ExecutableError::InvalidBytecode)
         );
     }
 }

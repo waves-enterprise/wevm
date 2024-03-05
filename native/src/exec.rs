@@ -1,14 +1,13 @@
 use crate::{
-    data_entry::DataEntry,
     error::{Error, ExecutableError, Result, RuntimeError},
     modules::Module as M,
-    runtime::Runtime,
+    runtime::{data_entry::DataEntry, Runtime},
     vm::Vm,
 };
 use std::{fmt, str::FromStr};
 use wasmi::{
-    core::{Value, ValueType},
-    Config, Engine, Func, FuncType, Memory, MemoryType, Module, StackLimits, Store,
+    core::ValueType, Config, Engine, Func, FuncType, Memory, MemoryType, Module, StackLimits,
+    Store, Value,
 };
 
 /// Enumeration of possible executable functions of a WASM contract.
@@ -48,7 +47,7 @@ pub struct Executable {
 
 impl Executable {
     /// Initializing the WASM contract executable.
-    pub fn new(bytecode: Vec<u8>, initial: u32, maximum: u32) -> Result<Self> {
+    pub fn new(bytecode: &[u8], initial: u32, maximum: u32) -> Result<Self> {
         let stack_limits = StackLimits::default();
 
         let mut config = Config::default();
@@ -57,7 +56,8 @@ impl Executable {
             .wasm_mutable_global(false)
             .wasm_sign_extension(false)
             .wasm_saturating_float_to_int(false)
-            .wasm_multi_value(true);
+            .wasm_multi_value(true)
+            .floats(false);
 
         let engine = Engine::new(&config);
         let module = Module::new(&engine, &mut &bytecode[..])
@@ -83,7 +83,7 @@ impl Executable {
     pub fn execute(
         &self,
         func_name: &LoadableFunction,
-        input_data: Vec<u8>,
+        params: &[u8],
         modules: Vec<M>,
         vm: &mut Vm,
     ) -> Result<Vec<Value>> {
@@ -105,7 +105,7 @@ impl Executable {
         let array_memory = memory.data_mut(&mut store);
 
         let func_args: Vec<String> =
-            DataEntry::deserialize_args(input_data.as_slice(), array_memory, &mut offset_memory)?;
+            DataEntry::deserialize_params(params, array_memory, &mut offset_memory)?;
 
         store.data_mut().set_heap_base(offset_memory as i32);
 
@@ -137,7 +137,7 @@ impl Executable {
         modules: Vec<M>,
     ) -> Result<(Func, Store<Runtime<'a>>)> {
         let engine = module.engine();
-        let mut linker = <wasmi::Linker<()>>::new();
+        let mut linker = <wasmi::Linker<Runtime>>::new(engine);
         let mut store = wasmi::Store::new(engine, runtime);
 
         for item in modules {
@@ -209,8 +209,7 @@ impl Executable {
                 match param_type {
                     ValueType::I32 => arg.parse::<i32>().map(Value::from).map_err(make_err!()),
                     ValueType::I64 => arg.parse::<i64>().map(Value::from).map_err(make_err!()),
-                    ValueType::F32 => Err(Error::Executable(ExecutableError::FailedParseFuncArgs)),
-                    ValueType::F64 => Err(Error::Executable(ExecutableError::FailedParseFuncArgs)),
+                    _ => Err(Error::Executable(ExecutableError::FailedParseFuncArgs)),
                 }
             })
             .collect::<Result<Vec<_>, _>>()?;
@@ -251,7 +250,7 @@ mod tests {
         let bytecode = wat2wasm(wat).expect("WAT code parsing failed");
         let memory: (u32, u32) = (1, 1);
 
-        let exec = Executable::new(bytecode, memory.0, memory.1);
+        let exec = Executable::new(&bytecode, memory.0, memory.1);
         assert!(exec.is_ok());
     }
 
@@ -272,7 +271,7 @@ mod tests {
         let bytecode = wat2wasm(wat).expect("WAT code parsing failed");
         let memory: (u32, u32) = (1, 1);
 
-        let exec = Executable::new(bytecode, memory.0, memory.1);
+        let exec = Executable::new(&bytecode, memory.0, memory.1);
         assert!(exec.is_err());
         assert_eq!(
             exec.unwrap_err(),

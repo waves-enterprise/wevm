@@ -5,17 +5,83 @@ services:
     alias: docker
 
 variables:
-  DOCKER_TLS_CERTDIR: "/certs"
   GIT_STRATEGY: "clone"
 
 stages:
-  - ci
+  - compile
+  - test
+  - publish
 
-ci:
-  stage: ci
+.create-environment: &create-environment
+  image: ${REGISTRY}/it/hseeberger/scala-sbt:11.0.14.1_1.6.2_2.12.15
+  tags:
+    - wavesenterprise
+  before_script:
+    - echo "$SBT_CREDENTIALS" > /root/.sbt/.credentials
+    - apt update && apt install build-essential -y
+    - curl https://sh.rustup.rs -sSf | sh -s -- --default-toolchain stable --default-host x86_64-unknown-linux-gnu --profile default -y
+    - export PATH="/root/.cargo/bin:${PATH}"
+
+compile-wevm:
+  <<: *create-environment
+  stage: compile
   script:
-    - docker build -t wevm-ci-image --no-cache .
-    - docker run -e "SBT_CREDENTIALS=${SBT_CREDENTIALS}" wevm-ci-image
+    - cd native
+    - cargo build -F jvm -r
+    - cargo fmt --check
+  artifacts:
+    paths:
+      - "native/target"
+    expire_in: 3 day
+
+compile-jvm-bindings:
+  <<: *create-environment
+  stage: compile
+  script:
+    - sbt 'version; scalafmtCheckAll; compile; Test / compile'
+  artifacts:
+    paths:
+      - "target"
+      - "project/target"
+      - "project/project/target"
+    expire_in: 3 day
+  dependencies:
+    - compile-wevm
+
+test-wevm:
+  <<: *create-environment
+  stage: test
+  needs:
+    - compile-wevm
+    - compile-jvm-bindings
+  script:
+    - cd native && cargo test -F jvm
+  dependencies:
+    - compile-jvm-bindings
+
+test-jvm-bindings:
+  <<: *create-environment
+  stage: test
+  needs:
+    - compile-wevm
+    - compile-jvm-bindings
+  script:
+    - sbt -mem 2048 "buildWAT; test"
+  dependencies:
+    - compile-jvm-bindings
+
+publish:
+  <<: *create-environment
+  stage: publish
+  needs:
+    - compile-wevm
+    - compile-jvm-bindings
+    - test-wevm
+    - test-jvm-bindings
+  script:
+    - sbt -mem 2048 "assembly; publish"
   only:
     - tags
     - branches
+  dependencies:
+    - compile-jvm-bindings

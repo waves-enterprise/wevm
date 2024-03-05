@@ -57,8 +57,8 @@ pub enum ExecutableError {
     InvalidNumArgs = 108,
     /// Failed to parse function argument.
     FailedParseFuncArgs = 109,
-    /// Failed to parse DataEntry arguments.
-    FailedDeserializeDataEntry = 110,
+    /// Failed to parse (DataEntry arguments or Payments).
+    FailedDeserialize = 110,
     /// Failed during execution.
     FailedExec = 111,
     /// Call stack overflow error

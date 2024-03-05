@@ -21,19 +21,6 @@ trait WASMService {
   def addPayments(contractId: Array[Byte], paymentId: Array[Byte], payments: Array[Byte])
 
   /**
-    * @param contractId ID of a contract (possible contractId called this function). Base58 bytes
-    * @param key Record key. UTF-8 bytes
-    * @return Record value
-    */
-  def getStorage(contractId: Array[Byte], key: Array[Byte]): Array[Byte]
-
-  /**
-    * @param contractId ID of a contract called this function. Base58 bytes
-    * @param value Serialized DataEntry record value
-    */
-  def setStorage(contractId: Array[Byte], value: Array[Byte])
-
-  /**
     * @param assetId ID of a token (optional field, array can be empty). Base58 bytes
     * @param assetHolder AssetHolder of the token holder (possible contractId called this function)
     * @return Amount of tokens
@@ -75,6 +62,36 @@ trait WASMService {
   def reissue(contractId: Array[Byte], assetId: Array[Byte], amount: Long, isReissuable: Boolean)
 
   /**
+    * @return Block timestamp
+    */
+  def getBlockTimestamp: Long
+
+  /**
+    * @return Block height
+    */
+  def getBlockHeight: Long
+
+  /**
+    * @param bytes Raw data
+    * @return Cryptographic hash
+    */
+  def fastHash(bytes: Array[Byte]): Array[Byte]
+
+  /**
+    * @param bytes Raw data
+    * @return Cryptographic hash
+    */
+  def secureHash(bytes: Array[Byte]): Array[Byte]
+
+  /**
+    * @param message Raw message
+    * @param signature Cryptographic signature
+    * @param publicKey Cryptographic Public Key
+    * @return True if the signature was a valid signature
+    */
+  def sigVerify(message: Array[Byte], signature: Array[Byte], publicKey: Array[Byte]): Boolean
+
+  /**
     * @param contractId ID of a contract called this function. Base58 bytes
     * @param recipient AssetHolder of recipient of tokens
     * @param amount Number of tokens for leasing
@@ -88,14 +105,18 @@ trait WASMService {
     */
   def cancelLease(contractId: Array[Byte], leaseId: Array[Byte])
 
-  def getBlockTimestamp: Long
-
-  def getBlockHeight: Long
+  /**
+    * @param contractId ID of a contract (possible contractId called this function). Base58 bytes
+    * @param key Record key. UTF-8 bytes
+    * @return Record value
+    */
+  def getStorage(contractId: Array[Byte], key: Array[Byte]): Array[Byte]
 
   /**
-    * @return Address calling contract
+    * @param contractId ID of a contract called this function. Base58 bytes
+    * @param value Serialized DataEntry record value
     */
-  def getTxSender: Array[Byte]
+  def setStorage(contractId: Array[Byte], value: Array[Byte])
 
   /**
     * @param paymentId Unique payment identifier. Represents the concatenation of contractId bytes and unique 8 bytes
@@ -116,4 +137,10 @@ trait WASMService {
     * @return Amount of tokens
     */
   def getTxPaymentAmount(paymentId: Array[Byte], number: Long): Long
+
+  /**
+    * @param field UTF-8 string with transaction field name
+    * @return Requested field data
+    */
+  def tx(field: Array[Byte]): Array[Byte]
 }

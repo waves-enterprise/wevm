@@ -158,9 +158,63 @@ module! {
                                               length_contract_id,
                                               offset_func_name,
                                               length_func_name,
+                                              None,
+                                              None,
                                               caller)
         }
     }
+
+    fn call_contract_params(
+        offset_contract_id: u32,
+        length_contract_id: u32,
+        offset_func_name: u32,
+        length_func_name: u32,
+        offset_params: u32,
+        length_params: u32,
+    ) -> i32 {
+        |caller: Caller<Runtime>| {
+            env::call_contract::call_contract(offset_contract_id,
+                                              length_contract_id,
+                                              offset_func_name,
+                                              length_func_name,
+                                              Some(offset_params),
+                                              Some(length_params),
+                                              caller)
+        }
+    }
+
+    // Crypto
+    fn fast_hash(offset_bytes: u32, length_bytes: u32) -> (i32, i32, i32) {
+        |caller: Caller<Runtime>| {
+            env::crypto::fast_hash(offset_bytes, length_bytes, caller)
+        }
+    }
+
+    fn secure_hash(offset_bytes: u32, length_bytes: u32) -> (i32, i32, i32) {
+        |caller: Caller<Runtime>| {
+            env::crypto::secure_hash(offset_bytes, length_bytes, caller)
+        }
+    }
+
+    fn sig_verify(
+        offset_message: u32,
+        length_message: u32,
+        offset_signature: u32,
+        length_signature: u32,
+        offset_public_key: u32,
+        length_public_key: u32,
+    ) -> (i32, i32) {
+        |caller: Caller<Runtime>| {
+            env::crypto::sig_verify(offset_message,
+                                    length_message,
+                                    offset_signature,
+                                    length_signature,
+                                    offset_public_key,
+                                    length_public_key,
+                                    caller)
+        }
+    }
+
 
     // Lease
     fn lease_address(
@@ -199,29 +253,6 @@ module! {
             env::lease::cancel_lease(offset_lease_id,
                                      length_lease_id,
                                      caller)
-        }
-    }
-
-    // Payments
-    fn get_payments() -> (i32, i32) {
-        |caller: Caller<Runtime>| {
-            let (err, num) = env::payments::get_payments(caller);
-            match i32::try_from(num) {
-                Ok(value) => (err, value),
-                Err(_) => (Error::Runtime(RuntimeError::ConvertingNumericTypes).as_i32(), 0),
-            }
-        }
-    }
-
-    fn get_payment_asset_id(number: i32) -> (i32, i32, i32) {
-        |caller: Caller<Runtime>| {
-            env::payments::get_payment_asset_id(number as i64, caller)
-        }
-    }
-
-    fn get_payment_amount(number: i32) -> (i32, i64) {
-        |caller: Caller<Runtime>| {
-            env::payments::get_payment_amount(number as i64, caller)
         }
     }
 
@@ -345,7 +376,29 @@ module! {
     // Tx
     fn get_tx_sender() -> (i32, i32, i32) {
         |caller: Caller<Runtime>| {
-            env::tx::get_tx_sender(caller)
+            env::tx::tx(env::Field::String("sender".to_string()), caller)
+        }
+    }
+
+    fn get_payments() -> (i32, i32) {
+        |caller: Caller<Runtime>| {
+            let (err, num) = env::tx::get_payments(caller);
+            match i32::try_from(num) {
+                Ok(value) => (err, value),
+                Err(_) => (Error::Runtime(RuntimeError::ConvertingNumericTypes).as_i32(), 0),
+            }
+        }
+    }
+
+    fn get_payment_asset_id(number: i32) -> (i32, i32, i32) {
+        |caller: Caller<Runtime>| {
+            env::tx::get_payment_asset_id(number as i64, caller)
+        }
+    }
+
+    fn get_payment_amount(number: i32) -> (i32, i64) {
+        |caller: Caller<Runtime>| {
+            env::tx::get_payment_amount(number as i64, caller)
         }
     }
 
@@ -414,6 +467,18 @@ module! {
                              offset_right,
                              length_right,
                              caller)
+        }
+    }
+
+    fn to_le_bytes(offset_bytes: u32, length_bytes: u32) -> (i32, i32, i32) {
+        |caller: Caller<Runtime>| {
+            env::utils::to_le_bytes(offset_bytes, length_bytes, caller)
+        }
+    }
+
+    fn caller() -> (i32, i32, i32) {
+        |caller: Caller<Runtime>| {
+            env::utils::caller(caller)
         }
     }
 }

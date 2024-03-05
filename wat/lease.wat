@@ -7,6 +7,10 @@
     (import "env0" "cancel_lease" (func $cancel_lease (param i32 i32) (result i32)))
 
     (func (export "_constructor") (result i32)
+        (i32.const 0)
+    )
+
+    (func (export "lease_address") (result i32)
         (local $address_offset i32) (local $address_length i32) (local $lease_offset i32) (local $lease_length i32) (local $error i32)
         (block $code
             (call $base_58
@@ -34,23 +38,28 @@
                 (local.tee $error)
             )
 
-            (call $cancel_lease
-                (local.get $lease_offset)
-                (local.get $lease_length)
+            (local.set $error
+                (call $cancel_lease
+                    (local.get $lease_offset)
+                    (local.get $lease_length)
+                )
             )
+        )
 
-            (br_if $code
-                (local.tee $error)
-            )
+        (local.get $error)
+    )
 
+    (func (export "lease_alias") (result i32)
+        (local $offset i32) (local $length i32) (local $error i32)
+        (block $code
             (call $lease_alias
                 (i32.const 35) ;; Offset alias
                 (i32.const 5)  ;; Length alias
                 (i64.const 24)
             )
 
-            (local.set $lease_length)
-            (local.set $lease_offset)
+            (local.set $length)
+            (local.set $offset)
 
             (br_if $code
                 (local.tee $error)
@@ -58,8 +67,8 @@
 
             (local.set $error
                 (call $cancel_lease
-                    (local.get $lease_offset)
-                    (local.get $lease_length)
+                    (local.get $offset)
+                    (local.get $length)
                 )
             )
         )

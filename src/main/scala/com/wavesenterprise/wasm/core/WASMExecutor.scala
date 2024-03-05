@@ -7,7 +7,7 @@ class WASMExecutor extends NativeLoader("wevm") {
       contractId: Array[Byte],
       bytecode: Array[Byte],
       funcName: String,
-      funcArgs: Array[Byte],
+      params: Array[Byte],
       callback: WASMService
   ): Int
 

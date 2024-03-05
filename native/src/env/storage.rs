@@ -1,8 +1,7 @@
 use crate::{
-    data_entry::DataEntry,
     error::{ExecutableError, RuntimeError},
     node::Node,
-    runtime::Runtime,
+    runtime::{data_entry::DataEntry, Runtime},
 };
 use wasmi::Caller;
 
@@ -27,9 +26,9 @@ pub fn get_storage_int(
     let key = &memory[offset_key as usize..offset_key as usize + length_key as usize];
 
     match ctx.vm.get_storage(address.as_slice(), key) {
-        Ok(bytes) => match DataEntry::deserialize_storage(bytes.as_slice()) {
+        Ok(bytes) => match DataEntry::deserialize(bytes.as_slice()) {
             Ok(DataEntry::Integer(integer)) => (0, integer),
-            _ => (ExecutableError::FailedDeserializeDataEntry as i32, 0),
+            _ => (ExecutableError::FailedDeserialize as i32, 0),
         },
         Err(error) => (error.as_i32(), 0),
     }
@@ -56,9 +55,9 @@ pub fn get_storage_bool(
     let key = &memory[offset_key as usize..offset_key as usize + length_key as usize];
 
     match ctx.vm.get_storage(address.as_slice(), key) {
-        Ok(bytes) => match DataEntry::deserialize_storage(bytes.as_slice()) {
+        Ok(bytes) => match DataEntry::deserialize(bytes.as_slice()) {
             Ok(DataEntry::Boolean(boolean)) => (0, boolean),
-            _ => (ExecutableError::FailedDeserializeDataEntry as i32, 0),
+            _ => (ExecutableError::FailedDeserialize as i32, 0),
         },
         Err(error) => (error.as_i32(), 0),
     }
@@ -87,9 +86,9 @@ pub fn get_storage_binary(
 
     match ctx.vm.get_storage(address.as_slice(), key) {
         Ok(bytes) => {
-            let result = match DataEntry::deserialize_storage(bytes.as_slice()) {
+            let result = match DataEntry::deserialize(bytes.as_slice()) {
                 Ok(DataEntry::Binary(bytes)) => bytes,
-                _ => return (ExecutableError::FailedDeserializeDataEntry as i32, 0, 0),
+                _ => return (ExecutableError::FailedDeserialize as i32, 0, 0),
             };
             crate::env::write_memory(ctx, memory, offset_memory, result)
         }
@@ -120,9 +119,9 @@ pub fn get_storage_string(
 
     match ctx.vm.get_storage(address.as_slice(), key) {
         Ok(bytes) => {
-            let result = match DataEntry::deserialize_storage(bytes.as_slice()) {
+            let result = match DataEntry::deserialize(bytes.as_slice()) {
                 Ok(DataEntry::String(bytes)) => bytes,
-                _ => return (ExecutableError::FailedDeserializeDataEntry as i32, 0, 0),
+                _ => return (ExecutableError::FailedDeserialize as i32, 0, 0),
             };
             crate::env::write_memory(ctx, memory, offset_memory, result)
         }

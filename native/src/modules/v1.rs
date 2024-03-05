@@ -66,22 +66,28 @@ module! {
         }
     }
 
-    // Payments
+    // Tx
     fn get_payments() -> (i32, i64) {
         |caller: Caller<Runtime>| {
-            env::payments::get_payments(caller)
+            env::tx::get_payments(caller)
         }
     }
 
     fn get_payment_asset_id(number: i64) -> (i32, i32, i32) {
         |caller: Caller<Runtime>| {
-            env::payments::get_payment_asset_id(number, caller)
+            env::tx::get_payment_asset_id(number, caller)
         }
     }
 
     fn get_payment_amount(number: i64) -> (i32, i64) {
         |caller: Caller<Runtime>| {
-            env::payments::get_payment_amount(number, caller)
+            env::tx::get_payment_amount(number, caller)
+        }
+    }
+
+    fn tx(offset_field: u32, length_field: u32) -> (i32, i32, i32) {
+        |caller: Caller<Runtime>| {
+            env::tx::tx(env::Field::Binary(offset_field, length_field), caller)
         }
     }
 }
