@@ -15,13 +15,13 @@ mod tests;
 use crate::{error::JvmError, exec::Executable, vm::Vm};
 use jni::{
     objects::{JByteArray, JClass, JObject, JString},
-    sys::jint,
+    sys::{jint, jlong},
     JNIEnv,
 };
 use wasmi::Value;
 
 /// Size of allocated linear memory.
-const MEMORY: (u32, u32) = (2, 16);
+pub const MEMORY: (u32, u32) = (2, 16);
 
 // This `#[no_mangle]` keeps rust from "mangling" the name and making it unique
 // for this crate. The name follow a strict naming convention so that the
@@ -44,6 +44,7 @@ pub extern "system" fn Java_com_wavesenterprise_wasm_core_WASMExecutor_runContra
     bytecode: JByteArray<'local>,
     func_name: JString<'local>,
     params: JByteArray<'local>,
+    fuel_limit: jlong,
     callback: JObject<'local>,
 ) -> jint {
     let contract_id = match env.convert_byte_array(contract_id) {
@@ -72,6 +73,7 @@ pub extern "system" fn Java_com_wavesenterprise_wasm_core_WASMExecutor_runContra
         contract_id,
         bytecode,
         MEMORY,
+        fuel_limit as u64,
         modules,
         Some(jvm),
         Some(callback),
@@ -113,7 +115,7 @@ pub extern "system" fn Java_com_wavesenterprise_wasm_core_WASMExecutor_validateB
         Err(_) => return JvmError::ByteArrayConversion as jint,
     };
 
-    match Executable::new(&bytecode, MEMORY.0, MEMORY.1) {
+    match Executable::validate_bytecode(&bytecode) {
         Ok(_) => 0,
         Err(error) => error.as_jint(),
     }

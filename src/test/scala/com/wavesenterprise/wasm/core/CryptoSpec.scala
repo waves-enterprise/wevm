@@ -22,7 +22,7 @@ class CryptoSpec extends AnyFreeSpec with Matchers {
     var params: ByteArrayDataOutput = ByteStreams.newDataOutput()
     writeDataEntryList(List(binary), params)
 
-    executor.runContract(contractId, bytecode, "fast_hash", params.toByteArray(), service) shouldBe 0
+    executor.runContract(contractId, bytecode, "fast_hash", params.toByteArray(), fuelLimit, service) shouldBe 0
 
     val hash   = WavesAlgorithms.fastHash(bytes)
     val result = BinaryDataEntry("result", ByteStr(hash))
@@ -41,7 +41,7 @@ class CryptoSpec extends AnyFreeSpec with Matchers {
     var params: ByteArrayDataOutput = ByteStreams.newDataOutput()
     writeDataEntryList(List(binary), params)
 
-    executor.runContract(contractId, bytecode, "secure_hash", params.toByteArray(), service) shouldBe 0
+    executor.runContract(contractId, bytecode, "secure_hash", params.toByteArray(), fuelLimit, service) shouldBe 0
 
     val hash   = WavesAlgorithms.secureHash(bytes)
     val result = BinaryDataEntry("result", ByteStr(hash))
@@ -67,7 +67,7 @@ class CryptoSpec extends AnyFreeSpec with Matchers {
     var params: ByteArrayDataOutput = ByteStreams.newDataOutput()
     writeDataEntryList(List(messageEntry, signatureEntry, publicKeyEntry), params)
 
-    executor.runContract(contractId, bytecode, "sig_verify", params.toByteArray(), service) shouldBe 0
+    executor.runContract(contractId, bytecode, "sig_verify", params.toByteArray(), fuelLimit, service) shouldBe 0
 
     val result = BooleanDataEntry("result", true)
     service.storage(service.contract)("result") shouldBe result

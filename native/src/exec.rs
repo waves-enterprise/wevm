@@ -38,16 +38,39 @@ impl fmt::Display for LoadableFunction {
 
 #[derive(Debug)]
 pub struct Executable {
-    module: Module,
+    module: Option<Module>,
     /// Initial memory size of a contract's sandbox.
     initial: u32,
     /// The maximum memory size of a contract's sandbox.
     maximum: u32,
+    /// Fuel limit for contract execution.
+    fuel_limit: u64,
 }
 
 impl Executable {
     /// Initializing the WASM contract executable.
-    pub fn new(bytecode: &[u8], initial: u32, maximum: u32) -> Result<Self> {
+    pub fn new(initial: u32, maximum: u32, fuel_limit: u64) -> Self {
+        Self {
+            module: None,
+            initial,
+            maximum,
+            fuel_limit,
+        }
+    }
+
+    /// Load bytecode for execution.
+    pub fn load_bytecode(&mut self, bytecode: &[u8]) -> Result<()> {
+        self.module = Some(Self::create_module(bytecode)?);
+        Ok(())
+    }
+
+    /// Validate bytecode contract.
+    pub fn validate_bytecode(bytecode: &[u8]) -> Result<Module> {
+        Self::create_module(bytecode)
+    }
+
+    /// Initializing `Engine` and `Module`.
+    fn create_module(bytecode: &[u8]) -> Result<Module> {
         let stack_limits = StackLimits::default();
 
         let mut config = Config::default();
@@ -57,7 +80,8 @@ impl Executable {
             .wasm_sign_extension(false)
             .wasm_saturating_float_to_int(false)
             .wasm_multi_value(true)
-            .floats(false);
+            .floats(false)
+            .consume_fuel(true);
 
         let engine = Engine::new(&config);
         let module = Module::new(&engine, &mut &bytecode[..])
@@ -72,11 +96,7 @@ impl Executable {
             return Err(Error::Executable(ExecutableError::ConstructorNotFound));
         }
 
-        Ok(Self {
-            module,
-            initial,
-            maximum,
-        })
+        Ok(module)
     }
 
     /// Execution of the WASM contract function.
@@ -90,10 +110,13 @@ impl Executable {
         let runtime = Runtime::new(vm);
 
         let (func, mut store) = Self::load_wasm_func(
-            &self.module,
+            self.module
+                .as_ref()
+                .ok_or(Error::Executable(ExecutableError::ModuleNotFound))?,
             runtime,
             &func_name.to_string(),
             (self.initial, self.maximum),
+            self.fuel_limit,
             modules,
         )?;
 
@@ -134,6 +157,7 @@ impl Executable {
         runtime: Runtime<'a>,
         func_name: &str,
         memory: (u32, u32),
+        fuel_limit: u64,
         modules: Vec<M>,
     ) -> Result<(Func, Store<Runtime<'a>>)> {
         let engine = module.engine();
@@ -164,6 +188,9 @@ impl Executable {
             .map_err(|_| Error::Executable(ExecutableError::InstantiateFailed))?;
 
         store.data_mut().set_memory(memory);
+        store
+            .add_fuel(fuel_limit)
+            .map_err(|_| Error::Executable(ExecutableError::FuelMeteringDisabled))?;
 
         let heap_base = match instance.get_global(&mut store, "__heap_base") {
             Some(global) => match global.get(&mut store) {
@@ -248,9 +275,8 @@ mod tests {
         "#;
 
         let bytecode = wat2wasm(wat).expect("WAT code parsing failed");
-        let memory: (u32, u32) = (1, 1);
+        let exec = Executable::validate_bytecode(&bytecode);
 
-        let exec = Executable::new(&bytecode, memory.0, memory.1);
         assert!(exec.is_ok());
     }
 
@@ -269,9 +295,8 @@ mod tests {
         "#;
 
         let bytecode = wat2wasm(wat).expect("WAT code parsing failed");
-        let memory: (u32, u32) = (1, 1);
+        let exec = Executable::validate_bytecode(&bytecode);
 
-        let exec = Executable::new(&bytecode, memory.0, memory.1);
         assert!(exec.is_err());
         assert_eq!(
             exec.unwrap_err(),

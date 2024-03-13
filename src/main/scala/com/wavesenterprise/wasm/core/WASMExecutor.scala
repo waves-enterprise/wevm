@@ -8,6 +8,7 @@ class WASMExecutor extends NativeLoader("wevm") {
       bytecode: Array[Byte],
       funcName: String,
       params: Array[Byte],
+      fuelLimit: Long,
       callback: WASMService
   ): Int
 

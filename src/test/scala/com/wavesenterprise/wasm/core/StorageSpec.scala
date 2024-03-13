@@ -24,7 +24,7 @@ class StorageSpec extends AnyFreeSpec with Matchers {
     var params: ByteArrayDataOutput = ByteStreams.newDataOutput()
     writeDataEntryList(List(integer, boolean, binary, string), params)
 
-    executor.runContract(contractId, bytecode, "set_storage", params.toByteArray(), service) shouldBe 0
+    executor.runContract(contractId, bytecode, "set_storage", params.toByteArray(), fuelLimit, service) shouldBe 0
 
     service.storage(service.contract)("integer") shouldBe integer
     service.storage(service.contract)("boolean") shouldBe boolean
@@ -46,7 +46,7 @@ class StorageSpec extends AnyFreeSpec with Matchers {
     var params: ByteArrayDataOutput = ByteStreams.newDataOutput()
     writeDataEntryList(List(key), params)
 
-    executor.runContract(contractId, bytecode, "get_storage_int", params.toByteArray(), service) shouldBe 0
+    executor.runContract(contractId, bytecode, "get_storage_int", params.toByteArray(), fuelLimit, service) shouldBe 0
 
     val result = IntegerDataEntry("result", 42)
     service.storage(service.contract)("result") shouldBe result
@@ -66,7 +66,7 @@ class StorageSpec extends AnyFreeSpec with Matchers {
     var params: ByteArrayDataOutput = ByteStreams.newDataOutput()
     writeDataEntryList(List(key), params)
 
-    executor.runContract(contractId, bytecode, "get_storage_bool", params.toByteArray(), service) shouldBe 0
+    executor.runContract(contractId, bytecode, "get_storage_bool", params.toByteArray(), fuelLimit, service) shouldBe 0
 
     val result = BooleanDataEntry("result", true)
     service.storage(service.contract)("result") shouldBe result
@@ -86,7 +86,7 @@ class StorageSpec extends AnyFreeSpec with Matchers {
     var params: ByteArrayDataOutput = ByteStreams.newDataOutput()
     writeDataEntryList(List(key), params)
 
-    executor.runContract(contractId, bytecode, "get_storage_binary", params.toByteArray(), service) shouldBe 0
+    executor.runContract(contractId, bytecode, "get_storage_binary", params.toByteArray(), fuelLimit, service) shouldBe 0
 
     val result = BinaryDataEntry("result", ByteStr(Array[Byte](0, 1)))
     service.storage(service.contract)("result") shouldBe result
@@ -106,7 +106,7 @@ class StorageSpec extends AnyFreeSpec with Matchers {
     var params: ByteArrayDataOutput = ByteStreams.newDataOutput()
     writeDataEntryList(List(key), params)
 
-    executor.runContract(contractId, bytecode, "get_storage_string", params.toByteArray(), service) shouldBe 0
+    executor.runContract(contractId, bytecode, "get_storage_string", params.toByteArray(), fuelLimit, service) shouldBe 0
 
     val result = StringDataEntry("result", "test")
     service.storage(service.contract)("result") shouldBe result

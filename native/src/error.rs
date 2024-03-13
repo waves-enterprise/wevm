@@ -61,8 +61,12 @@ pub enum ExecutableError {
     FailedDeserialize = 110,
     /// Failed during execution.
     FailedExec = 111,
-    /// Call stack overflow error
+    /// Call stack overflow error.
     StackOverflow = 112,
+    /// Failed receiving Module.
+    ModuleNotFound = 113,
+    /// Fuel metering is disabled.
+    FuelMeteringDisabled = 114,
 }
 
 /// Enumeration of errors that can occur while accessing the JVM.

@@ -20,7 +20,7 @@ class UtilsSpec extends AnyFreeSpec with Matchers {
     var params: ByteArrayDataOutput = ByteStreams.newDataOutput()
     writeDataEntryList(List(address), params)
 
-    executor.runContract(contractId, bytecode, "base58", params.toByteArray(), service) shouldBe 0
+    executor.runContract(contractId, bytecode, "base58", params.toByteArray(), fuelLimit, service) shouldBe 0
 
     val result = StringDataEntry("result", "3NqEjAkFVzem9CGa3bEPhakQc1Sm2G8gAFU")
     service.storage(service.contract)("result") shouldBe result
@@ -32,7 +32,7 @@ class UtilsSpec extends AnyFreeSpec with Matchers {
     val contractId = Base58.decode(service.contract).get
     val bytecode   = getClass.getResourceAsStream("/utils.wasm").readAllBytes()
 
-    executor.runContract(contractId, bytecode, "binary_equals", Array[Byte](), service) shouldBe 0
+    executor.runContract(contractId, bytecode, "binary_equals", Array[Byte](), fuelLimit, service) shouldBe 0
   }
 
   "string_equals" in {
@@ -41,7 +41,7 @@ class UtilsSpec extends AnyFreeSpec with Matchers {
     val contractId = Base58.decode(service.contract).get
     val bytecode   = getClass.getResourceAsStream("/utils.wasm").readAllBytes()
 
-    executor.runContract(contractId, bytecode, "string_equals", Array[Byte](), service) shouldBe 0
+    executor.runContract(contractId, bytecode, "string_equals", Array[Byte](), fuelLimit, service) shouldBe 0
   }
 
   "to_le_bytes" in {
@@ -55,7 +55,7 @@ class UtilsSpec extends AnyFreeSpec with Matchers {
     var params: ByteArrayDataOutput = ByteStreams.newDataOutput()
     writeDataEntryList(List(bytes), params)
 
-    executor.runContract(contractId, bytecode, "to_le_bytes", params.toByteArray(), service) shouldBe 0
+    executor.runContract(contractId, bytecode, "to_le_bytes", params.toByteArray(), fuelLimit, service) shouldBe 0
 
     val result = IntegerDataEntry("result", 42)
     service.storage(service.contract)("result") shouldBe result
@@ -67,7 +67,7 @@ class UtilsSpec extends AnyFreeSpec with Matchers {
     val contractId = Base58.decode(service.contract).get
     val bytecode   = getClass.getResourceAsStream("/utils.wasm").readAllBytes()
 
-    executor.runContract(contractId, bytecode, "caller", Array[Byte](), service) shouldBe 0
+    executor.runContract(contractId, bytecode, "caller", Array[Byte](), fuelLimit, service) shouldBe 0
 
     val result = BinaryDataEntry("result", ByteStr.decodeBase58(service.contract).get)
     service.storage(service.contractMock)("result") shouldBe result
