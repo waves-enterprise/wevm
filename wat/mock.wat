@@ -35,6 +35,20 @@
         (local.get $error)
     )
 
+    (func (export "infinite_loop") (result i32)
+        (loop $loop (result i32)
+            (br $loop)
+        )
+    )
+
+    (func (export "recursion") (result i32)
+        (call $one)
+        (i32.const 0)
+    )
+
+    (func $one (call $two))
+    (func $two (call $one))
+
     (global $__heap_base (export "__heap_base") i32 (i32.const 6))
 
     ;; Key

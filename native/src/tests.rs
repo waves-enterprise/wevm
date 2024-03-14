@@ -62,12 +62,7 @@ impl TestRunner {
         Self { java_vm }
     }
 
-    pub fn run(
-        &self,
-        wat: &str,
-        memory: Option<(u32, u32)>,
-        params: Vec<u8>,
-    ) -> Result<Vec<Value>> {
+    pub fn run(&self, wat: &str, params: Vec<u8>) -> Result<Vec<Value>> {
         // Preparing a fake jvm to initialize the call stack
         let env = self
             .java_vm
@@ -83,16 +78,14 @@ impl TestRunner {
             .expect("Error callback new_global_ref");
 
         let bytecode = wat2wasm(wat).expect("WAT code parsing failed");
-        // If the size of the allocated memory is not specified, we output the minimum value
-        let memory = match memory {
-            Some(mem) => mem,
-            None => (1, 1),
-        };
+        let memory: (u32, u32) = (1, 1);
+        let fuel_limit = 1024;
 
         let mut stack = Vm::new(
             vec![],
             bytecode,
             memory,
+            fuel_limit,
             modules(),
             Some(jvm),
             Some(global_ref),
@@ -121,7 +114,7 @@ fn test_vm() {
         )
         "#;
 
-        let result = runner.run(wat, None, vec![]);
+        let result = runner.run(wat, vec![]);
         assert!(result.is_ok());
 
         let values = result.unwrap();
@@ -147,7 +140,7 @@ fn test_vm() {
         )
         "#;
 
-        let result = runner.run(wat, None, vec![]);
+        let result = runner.run(wat, vec![]);
         assert!(result.is_ok());
 
         let values = result.unwrap();
@@ -178,7 +171,7 @@ fn test_vm() {
         )
         "#;
 
-        let result = runner.run(wat, None, vec![]);
+        let result = runner.run(wat, vec![]);
         assert!(result.is_ok());
 
         let values = result.unwrap();
@@ -203,7 +196,6 @@ fn test_vm() {
 
         let result = runner.run(
             wat,
-            None,
             vec![
                 0, 1, 0, 8, 116, 101, 115, 116, 95, 107, 101, 121, 0, 0, 0, 0, 0, 0, 0, 0, 1,
             ],
@@ -232,7 +224,6 @@ fn test_vm() {
 
         let result = runner.run(
             wat,
-            None,
             vec![
                 0, 1, 0, 8, 116, 101, 115, 116, 95, 107, 101, 121, 0, 0, 0, 0, 0, 0, 0, 0, 1,
             ],

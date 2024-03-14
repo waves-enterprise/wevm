@@ -15,7 +15,7 @@ class AssetSpec extends AnyFreeSpec with Matchers {
     val contractId = Base58.decode(service.contract).get
     val bytecode   = getClass.getResourceAsStream("/asset.wasm").readAllBytes()
 
-    executor.runContract(contractId, bytecode, "asset", Array[Byte](), service) shouldBe 0
+    executor.runContract(contractId, bytecode, "asset", Array[Byte](), fuelLimit, service) shouldBe 0
 
     service.balances(service.asset)(service.contract) shouldBe 9999999982L
   }
@@ -31,7 +31,7 @@ class AssetSpec extends AnyFreeSpec with Matchers {
     var params: ByteArrayDataOutput = ByteStreams.newDataOutput()
     writeDataEntryList(List(address), params)
 
-    executor.runContract(contractId, bytecode, "get_balance", params.toByteArray(), service) shouldBe 0
+    executor.runContract(contractId, bytecode, "get_balance", params.toByteArray(), fuelLimit, service) shouldBe 0
 
     service.storage(service.contract)("result").value shouldBe service.balances("null")(service.txSender)
   }
@@ -42,7 +42,7 @@ class AssetSpec extends AnyFreeSpec with Matchers {
     val contractId = Base58.decode(service.contract).get
     val bytecode   = getClass.getResourceAsStream("/asset.wasm").readAllBytes()
 
-    executor.runContract(contractId, bytecode, "transfer", Array[Byte](), service) shouldBe 0
+    executor.runContract(contractId, bytecode, "transfer", Array[Byte](), fuelLimit, service) shouldBe 0
 
     service.balances("null")(service.contract) shouldBe 9999999958L
     service.balances("null")("3NqEjAkFVzem9CGa3bEPhakQc1Sm2G8gAFU") shouldBe 10000000042L

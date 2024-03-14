@@ -36,6 +36,7 @@ pub struct Vm {
     frames: Vec<Frame>,
     first_frame: Frame,
     memory: (u32, u32),
+    fuel_limit: u64,
     modules: Vec<Module>,
     pub jvm: Option<JavaVM>,
     pub jvm_callback: Option<GlobalRef>,
@@ -49,6 +50,7 @@ impl Vm {
         contract_id: Vec<u8>,
         bytecode: Vec<u8>,
         memory: (u32, u32),
+        fuel_limit: u64,
         modules: Vec<Module>,
         jvm: Option<JavaVM>,
         jvm_callback: Option<GlobalRef>,
@@ -63,6 +65,7 @@ impl Vm {
             frames: Default::default(),
             first_frame,
             memory,
+            fuel_limit,
             modules,
             jvm,
             jvm_callback,
@@ -96,7 +99,8 @@ impl Vm {
 
         let func_name = LoadableFunction::from_str(func_name)?;
 
-        let exec = Executable::new(&frame.bytecode, self.memory.0, self.memory.1)?;
+        let mut exec = Executable::new(self.memory.0, self.memory.1, self.fuel_limit);
+        exec.load_bytecode(&frame.bytecode)?;
         let result = exec.execute(&func_name, params, self.modules.clone(), self);
 
         self.frames.pop();

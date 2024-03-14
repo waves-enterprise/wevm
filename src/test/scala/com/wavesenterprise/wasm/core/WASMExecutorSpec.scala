@@ -20,5 +20,23 @@ class WASMExecutorSpec extends AnyFreeSpec with Matchers {
       executor.validateBytecode(bytecode) shouldBe 0
       executor.validateBytecode(wrongBytecode) shouldBe 100
     }
+
+    "infinite_loop" in {
+      val service = new WASMServiceMock
+
+      val contractId = Base58.decode(service.contract).get
+      val bytecode   = getClass.getResourceAsStream("/mock.wasm").readAllBytes()
+
+      executor.runContract(contractId, bytecode, "infinite_loop", Array[Byte](), fuelLimit, service) shouldBe 111
+    }
+
+    "recursion" in {
+      val service = new WASMServiceMock
+
+      val contractId = Base58.decode(service.contract).get
+      val bytecode   = getClass.getResourceAsStream("/mock.wasm").readAllBytes()
+
+      executor.runContract(contractId, bytecode, "recursion", Array[Byte](), fuelLimit, service) shouldBe 111
+    }
   }
 }

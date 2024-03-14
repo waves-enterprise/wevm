@@ -15,7 +15,7 @@ class TxSpec extends AnyFreeSpec with Matchers {
     val contractId = Base58.decode(service.contract).get
     val bytecode   = getClass.getResourceAsStream("/tx.wasm").readAllBytes()
 
-    executor.runContract(contractId, bytecode, "get_tx_sender", Array[Byte](), service) shouldBe 0
+    executor.runContract(contractId, bytecode, "get_tx_sender", Array[Byte](), fuelLimit, service) shouldBe 0
 
     val result = BinaryDataEntry("result", ByteStr.decodeBase58(service.txSender).get)
     service.storage(service.contract)("result") shouldBe result
@@ -27,7 +27,7 @@ class TxSpec extends AnyFreeSpec with Matchers {
     val contractId = Base58.decode(service.contract).get
     val bytecode   = getClass.getResourceAsStream("/tx.wasm").readAllBytes()
 
-    executor.runContract(contractId, bytecode, "get_payments", Array[Byte](), service) shouldBe 0
+    executor.runContract(contractId, bytecode, "get_payments", Array[Byte](), fuelLimit, service) shouldBe 0
 
     service.storage(service.contract)("result").value shouldBe 2
   }
@@ -43,7 +43,7 @@ class TxSpec extends AnyFreeSpec with Matchers {
     var params: ByteArrayDataOutput = ByteStreams.newDataOutput()
     writeDataEntryList(List(integer), params)
 
-    executor.runContract(contractId, bytecode, "get_payment_asset_id", params.toByteArray(), service) shouldBe 0
+    executor.runContract(contractId, bytecode, "get_payment_asset_id", params.toByteArray(), fuelLimit, service) shouldBe 0
 
     val result = BinaryDataEntry("result", ByteStr.decodeBase58(service.asset).get)
     service.storage(service.contract)("result") shouldBe result
@@ -60,7 +60,7 @@ class TxSpec extends AnyFreeSpec with Matchers {
     var params: ByteArrayDataOutput = ByteStreams.newDataOutput()
     writeDataEntryList(List(integer), params)
 
-    executor.runContract(contractId, bytecode, "get_payment_amount", params.toByteArray(), service) shouldBe 0
+    executor.runContract(contractId, bytecode, "get_payment_amount", params.toByteArray(), fuelLimit, service) shouldBe 0
 
     service.storage(service.contract)("result").value shouldBe 2400000000L
   }
@@ -76,7 +76,7 @@ class TxSpec extends AnyFreeSpec with Matchers {
     var params: ByteArrayDataOutput = ByteStreams.newDataOutput()
     writeDataEntryList(List(string), params)
 
-    executor.runContract(contractId, bytecode, "tx", params.toByteArray(), service) shouldBe 0
+    executor.runContract(contractId, bytecode, "tx", params.toByteArray(), fuelLimit, service) shouldBe 0
 
     val result = BinaryDataEntry("result", ByteStr.decodeBase58(service.txSender).get)
     service.storage(service.contract)("result") shouldBe result

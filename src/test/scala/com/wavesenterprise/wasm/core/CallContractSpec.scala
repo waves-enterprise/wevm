@@ -15,7 +15,7 @@ class CallContractSpec extends AnyFreeSpec with Matchers {
     val contractId = Base58.decode(service.contract).get
     val bytecode   = getClass.getResourceAsStream("/call_contract.wasm").readAllBytes()
 
-    executor.runContract(contractId, bytecode, "call_contract", Array[Byte](), service) shouldBe 0
+    executor.runContract(contractId, bytecode, "call_contract", Array[Byte](), fuelLimit, service) shouldBe 0
 
     val integer = IntegerDataEntry("integer", 42)
     val boolean = BooleanDataEntry("boolean", true)
@@ -53,7 +53,7 @@ class CallContractSpec extends AnyFreeSpec with Matchers {
     var params: ByteArrayDataOutput = ByteStreams.newDataOutput()
     writeDataEntryList(List(bytes), params)
 
-    executor.runContract(contractId, bytecode, "call_contract_params", params.toByteArray(), service) shouldBe 0
+    executor.runContract(contractId, bytecode, "call_contract_params", params.toByteArray(), fuelLimit, service) shouldBe 0
 
     service.storage(service.contractStorage)("integer") shouldBe integer
     service.storage(service.contractStorage)("boolean") shouldBe boolean
