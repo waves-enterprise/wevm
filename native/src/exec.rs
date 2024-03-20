@@ -77,9 +77,13 @@ impl Executable {
         config
             .set_stack_limits(stack_limits)
             .wasm_mutable_global(false)
-            .wasm_sign_extension(false)
+            .wasm_sign_extension(true)
             .wasm_saturating_float_to_int(false)
             .wasm_multi_value(true)
+            .wasm_bulk_memory(true)
+            .wasm_reference_types(false)
+            .wasm_tail_call(false)
+            .wasm_extended_const(false)
             .floats(false)
             .consume_fuel(true);
 
