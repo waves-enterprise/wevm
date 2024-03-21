@@ -183,6 +183,43 @@ module! {
         }
     }
 
+    // Converts
+    fn parse_int(offset: u32, length: u32) -> (i32, i64) {
+        |caller: Caller<Runtime>| {
+            env::converts::parse_int(offset, length, caller)
+        }
+    }
+
+    fn parse_bool(offset_string: u32, length_string: u32) -> (i32, i32) {
+        |caller: Caller<Runtime>| {
+            env::converts::parse_bool(offset_string, length_string, caller)
+        }
+    }
+
+    fn to_bytes(value: i64) -> (i32, i32, i32) {
+        |caller: Caller<Runtime>| {
+            env::converts::to_bytes(value, caller)
+        }
+    }
+
+    fn to_int(offset: u32, length: u32) -> (i32, i64) {
+        |caller: Caller<Runtime>| {
+            env::converts::to_int(offset, length, caller)
+        }
+    }
+
+    fn to_string_bool(value: u32) -> (i32, i32, i32) {
+        |caller: Caller<Runtime>| {
+            env::converts::to_string(value != 0, caller)
+        }
+    }
+
+    fn to_string_int(value: i64) -> (i32, i32, i32) {
+        |caller: Caller<Runtime>| {
+            env::converts::to_string(value, caller)
+        }
+    }
+
     // Crypto
     fn fast_hash(offset_bytes: u32, length_bytes: u32) -> (i32, i32, i32) {
         |caller: Caller<Runtime>| {

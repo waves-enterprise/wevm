@@ -119,6 +119,8 @@ pub enum RuntimeError {
     AssetHolderTypeNotFound = 306,
     /// Address version not found.
     AddressVersionNotFound = 307,
+    /// Value parsing error.
+    ParseError = 308,
 }
 
 /// Enumeration of errors that may occur in the simulator.
