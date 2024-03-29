@@ -427,6 +427,21 @@ module! {
     }
 
     // Storage
+    fn contains_key(
+        offset_address: u32,
+        length_address: u32,
+        offset_key: u32,
+        length_key: u32,
+    ) -> (i32, i32) {
+        |caller: Caller<Runtime>| {
+            env::storage::contains_key(offset_address,
+                                          length_address,
+                                          offset_key,
+                                          length_key,
+                                          caller)
+        }
+    }
+
     fn get_storage_int(
         offset_address: u32,
         length_address: u32,

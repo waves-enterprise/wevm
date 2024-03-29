@@ -108,6 +108,13 @@ trait WASMService {
   /**
     * @param contractId ID of a contract (possible contractId called this function). Base58 bytes
     * @param key Record key. UTF-8 bytes
+    * @return Boolean value whether the key exists
+    */
+  def containsKey(contractId: Array[Byte], key: Array[Byte]): Boolean
+
+  /**
+    * @param contractId ID of a contract (possible contractId called this function). Base58 bytes
+    * @param key Record key. UTF-8 bytes
     * @return Record value
     */
   def getStorage(contractId: Array[Byte], key: Array[Byte]): Array[Byte]

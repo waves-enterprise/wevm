@@ -98,6 +98,8 @@ pub enum JvmError {
     ReceiveInt = 211,
     /// Failed to receive long.
     ReceiveLong = 212,
+    /// Failed to receive boolean
+    ReceiveBoolean = 213,
 }
 
 /// Enumeration of errors that may occur while working inside the interpreter.

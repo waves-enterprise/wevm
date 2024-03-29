@@ -208,6 +208,14 @@ class WASMServiceMock extends WASMService {
   override def cancelLease(contractId: Array[Byte], leaseId: Array[Byte]) =
     if (Base58.encode(leaseId) != this.lease) throw new Exception
 
+  override def containsKey(contractId: Array[Byte], key: Array[Byte]): Boolean = {
+    val k = if (key.isEmpty) throw new Exception else new String(key)
+    this.storage.get(Base58.encode(contractId)) match {
+      case Some(kv) => kv.contains(k)
+      case None     => throw new Exception
+    }
+  }
+
   override def getStorage(contractId: Array[Byte], key: Array[Byte]): Array[Byte] = {
     val k = if (key.isEmpty) throw new Exception else new String(key)
     this.storage.get(Base58.encode(contractId)) match {
