@@ -26,24 +26,6 @@ class UtilsSpec extends AnyFreeSpec with Matchers {
     service.storage(service.contract)("result") shouldBe result
   }
 
-  "binary_equals" in {
-    val service = new WASMServiceMock
-
-    val contractId = Base58.decode(service.contract).get
-    val bytecode   = getClass.getResourceAsStream("/utils.wasm").readAllBytes()
-
-    executor.runContract(contractId, bytecode, "binary_equals", Array[Byte](), fuelLimit, service) shouldBe 0
-  }
-
-  "string_equals" in {
-    val service = new WASMServiceMock
-
-    val contractId = Base58.decode(service.contract).get
-    val bytecode   = getClass.getResourceAsStream("/utils.wasm").readAllBytes()
-
-    executor.runContract(contractId, bytecode, "string_equals", Array[Byte](), fuelLimit, service) shouldBe 0
-  }
-
   "to_le_bytes" in {
     val service = new WASMServiceMock
 

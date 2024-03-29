@@ -4,6 +4,7 @@ pub mod call_contract;
 pub mod converts;
 pub mod crypto;
 pub mod lease;
+pub mod memory;
 pub mod storage;
 pub mod tx;
 pub mod utils;
