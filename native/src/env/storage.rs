@@ -5,6 +5,32 @@ use crate::{
 };
 use wasmi::Caller;
 
+pub fn contains_key(
+    offset_address: u32,
+    length_address: u32,
+    offset_key: u32,
+    length_key: u32,
+    mut caller: Caller<Runtime>,
+) -> (i32, i32) {
+    let (memory, ctx) = match caller.data().memory() {
+        Some(memory) => memory.data_and_store_mut(&mut caller),
+        None => return (RuntimeError::MemoryNotFound as i32, 0),
+    };
+
+    let address = if length_address != 0 {
+        memory[offset_address as usize..offset_address as usize + length_address as usize].to_vec()
+    } else {
+        ctx.vm.top_frame().contract_id()
+    };
+
+    let key = &memory[offset_key as usize..offset_key as usize + length_key as usize];
+
+    match ctx.vm.contains_key(address.as_slice(), key) {
+        Ok(result) => (0, result as i32),
+        Err(error) => (error.as_i32(), 0),
+    }
+}
+
 pub fn get_storage_int(
     offset_address: u32,
     length_address: u32,

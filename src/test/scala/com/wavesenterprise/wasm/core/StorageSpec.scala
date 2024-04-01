@@ -10,6 +10,26 @@ import org.scalatest.matchers.should.Matchers
 class StorageSpec extends AnyFreeSpec with Matchers {
   val executor = new WASMExecutor
 
+  "contains_key" in {
+    val service = new WASMServiceMock
+
+    val contractId = Base58.decode(service.contract).get
+    val bytecode   = getClass.getResourceAsStream("/storage.wasm").readAllBytes()
+
+    val integer = IntegerDataEntry("integer", 42)
+    service.setStorage(Base58.decode(service.contract).get, toBytes(integer))
+
+    val key = StringDataEntry("key", "integer")
+
+    var params: ByteArrayDataOutput = ByteStreams.newDataOutput()
+    writeDataEntryList(List(key), params)
+
+    executor.runContract(contractId, bytecode, "contains_key", params.toByteArray(), fuelLimit, service) shouldBe 0
+
+    val result = BooleanDataEntry("result", true)
+    service.storage(service.contract)("result") shouldBe result
+  }
+
   "set_storage" in {
     val service = new WASMServiceMock
 

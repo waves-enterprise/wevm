@@ -3,9 +3,6 @@
 
     (import "env0" "base_58" (func $base_58 (param i32 i32) (result i32 i32 i32)))
     (import "env0" "to_base_58_string" (func $to_base_58_string (param i32 i32) (result i32 i32 i32)))
-    (import "env0" "binary_equals" (func $binary_equals (param i32 i32 i32 i32) (result i32 i32)))
-    (import "env0" "string_equals" (func $string_equals (param i32 i32 i32 i32) (result i32 i32)))
-    (import "env0" "join" (func $join (param i32 i32 i32 i32) (result i32 i32 i32)))
     (import "env0" "to_le_bytes" (func $to_le_bytes (param i32 i32) (result i32 i32 i32)))
 
     (import "env0" "set_storage_int" (func $set_storage_int (param i32 i32 i64) (result i32)))
@@ -51,92 +48,6 @@
                         (local.get $offset)
                         (local.get $length)
                     )
-                )
-            )
-        )
-
-        (local.get $error)
-    )
-
-    (func (export "binary_equals") (result i32)
-        (local $offset i32) (local $length i32) (local $result i32) (local $error i32)
-        (block $code
-            (call $join
-                (i32.const 6)
-                (i32.const 2)
-                (i32.const 8)
-                (i32.const 2)
-            )
-
-            (local.set $length)
-            (local.set $offset)
-
-            (br_if $code
-                (local.tee $error)
-            )
-
-            (call $binary_equals
-                (i32.const 6)
-                (i32.const 4)
-                (local.get $offset)
-                (local.get $length)
-            )
-
-            (local.set $result)
-
-            (br_if $code
-                (local.tee $error)
-            )
-
-            (block $require
-                (br_if $require
-                    (local.get $result)
-                )
-                (return
-                    (i32.const 300)
-                )
-            )
-        )
-
-        (local.get $error)
-    )
-
-    (func (export "string_equals") (result i32)
-        (local $offset i32) (local $length i32) (local $result i32) (local $error i32)
-        (block $code
-            (call $join
-                (i32.const 10)
-                (i32.const 3)
-                (i32.const 13)
-                (i32.const 3)
-            )
-
-            (local.set $length)
-            (local.set $offset)
-
-            (br_if $code
-                (local.tee $error)
-            )
-
-            (call $string_equals
-                (i32.const 10)
-                (i32.const 6)
-                (local.get $offset)
-                (local.get $length)
-            )
-
-            (local.set $result)
-
-            (br_if $code
-                (local.tee $error)
-            )
-
-            (block $require
-                (br_if $require
-                    (local.get $result)
-                )
-                (return
-                    (i32.const 300)
                 )
             )
         )

@@ -98,6 +98,8 @@ pub enum JvmError {
     ReceiveInt = 211,
     /// Failed to receive long.
     ReceiveLong = 212,
+    /// Failed to receive boolean
+    ReceiveBoolean = 213,
 }
 
 /// Enumeration of errors that may occur while working inside the interpreter.
@@ -119,6 +121,8 @@ pub enum RuntimeError {
     AssetHolderTypeNotFound = 306,
     /// Address version not found.
     AddressVersionNotFound = 307,
+    /// Value parsing error.
+    ParseError = 308,
 }
 
 /// Enumeration of errors that may occur in the simulator.

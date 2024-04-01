@@ -99,13 +99,13 @@ module! {
     // Block
     fn get_block_timestamp() -> (i32, i64) {
         |caller: Caller<Runtime>| {
-            env::block::get_block_timestamp(caller)
+            env::block::get_block_field(env::Field::String("timestamp".to_string()), caller)
         }
     }
 
     fn get_block_height() -> (i32, i64) {
         |caller: Caller<Runtime>| {
-            env::block::get_block_height(caller)
+            env::block::get_block_field(env::Field::String("height".to_string()), caller)
         }
     }
 
@@ -183,6 +183,43 @@ module! {
         }
     }
 
+    // Converts
+    fn parse_int(offset: u32, length: u32) -> (i32, i64) {
+        |caller: Caller<Runtime>| {
+            env::converts::parse_int(offset, length, caller)
+        }
+    }
+
+    fn parse_bool(offset_string: u32, length_string: u32) -> (i32, i32) {
+        |caller: Caller<Runtime>| {
+            env::converts::parse_bool(offset_string, length_string, caller)
+        }
+    }
+
+    fn to_bytes(value: i64) -> (i32, i32, i32) {
+        |caller: Caller<Runtime>| {
+            env::converts::to_bytes(value, caller)
+        }
+    }
+
+    fn to_int(offset: u32, length: u32) -> (i32, i64) {
+        |caller: Caller<Runtime>| {
+            env::converts::to_int(offset, length, caller)
+        }
+    }
+
+    fn to_string_bool(value: u32) -> (i32, i32, i32) {
+        |caller: Caller<Runtime>| {
+            env::converts::to_string(value != 0, caller)
+        }
+    }
+
+    fn to_string_int(value: i64) -> (i32, i32, i32) {
+        |caller: Caller<Runtime>| {
+            env::converts::to_string(value, caller)
+        }
+    }
+
     // Crypto
     fn fast_hash(offset_bytes: u32, length_bytes: u32) -> (i32, i32, i32) {
         |caller: Caller<Runtime>| {
@@ -256,7 +293,155 @@ module! {
         }
     }
 
+    // Memory
+    fn binary_equals(
+        offset_left: u32,
+        length_left: u32,
+        offset_right: u32,
+        length_right: u32,
+    ) -> (i32, i32) {
+        |caller: Caller<Runtime>| {
+            env::memory::binary_equals(offset_left,
+                                      length_left,
+                                      offset_right,
+                                      length_right,
+                                      caller)
+        }
+    }
+
+    fn string_equals(
+        offset_left: u32,
+        length_left: u32,
+        offset_right: u32,
+        length_right: u32,
+    ) -> (i32, i32) {
+        |caller: Caller<Runtime>| {
+            env::memory::string_equals(offset_left,
+                                      length_left,
+                                      offset_right,
+                                      length_right,
+                                      caller)
+        }
+    }
+
+    fn join(
+        offset_left: u32,
+        length_left: u32,
+        offset_right: u32,
+        length_right: u32,
+    ) -> (i32, i32, i32) {
+        |caller: Caller<Runtime>| {
+            env::memory::join(offset_left,
+                             length_left,
+                             offset_right,
+                             length_right,
+                             caller)
+        }
+    }
+
+    fn contains(
+        offset_bytes: u32,
+        length_bytes: u32,
+        offset_subbytes: u32,
+        length_subbytes: u32,
+    ) -> (i32, i32) {
+        |caller: Caller<Runtime>| {
+            env::memory::contains(offset_bytes,
+                                  length_bytes,
+                                  offset_subbytes,
+                                  length_subbytes,
+                                  caller)
+        }
+    }
+
+    fn drop(
+        offset_bytes: u32,
+        length_bytes: u32,
+        n: i64,
+    ) -> (i32, i32, i32) {
+        |_caller: Caller<Runtime>| {
+            env::memory::drop(offset_bytes, length_bytes, n)
+        }
+    }
+
+    fn drop_right(
+        offset_bytes: u32,
+        length_bytes: u32,
+        n: i64,
+    ) -> (i32, i32, i32) {
+        |_caller: Caller<Runtime>| {
+            env::memory::drop_right(offset_bytes, length_bytes, n)
+        }
+    }
+
+    fn index_of(
+        offset_string: u32,
+        length_string: u32,
+        offset_substring: u32,
+        length_substring: u32,
+    ) -> (i32, i64) {
+        |caller: Caller<Runtime>| {
+            env::memory::index_of(false,
+                                  offset_string,
+                                  length_string,
+                                  offset_substring,
+                                  length_substring,
+                                  caller)
+        }
+    }
+
+    fn last_index_of(
+        offset_string: u32,
+        length_string: u32,
+        offset_substring: u32,
+        length_substring: u32,
+    ) -> (i32, i64) {
+        |caller: Caller<Runtime>| {
+            env::memory::index_of(true,
+                                  offset_string,
+                                  length_string,
+                                  offset_substring,
+                                  length_substring,
+                                  caller)
+        }
+    }
+
+    fn take(
+        offset_bytes: u32,
+        length_bytes: u32,
+        n: i64,
+    ) -> (i32, i32, i32) {
+        |_caller: Caller<Runtime>| {
+            env::memory::take(offset_bytes, length_bytes, n)
+        }
+    }
+
+    fn take_right(
+        offset_bytes: u32,
+        length_bytes: u32,
+        n: i64,
+    ) -> (i32, i32, i32) {
+        |_caller: Caller<Runtime>| {
+            env::memory::take_right(offset_bytes, length_bytes, n)
+        }
+    }
+
     // Storage
+    fn contains_key(
+        offset_address: u32,
+        length_address: u32,
+        offset_key: u32,
+        length_key: u32,
+    ) -> (i32, i32) {
+        |caller: Caller<Runtime>| {
+            env::storage::contains_key(offset_address,
+                                          length_address,
+                                          offset_key,
+                                          length_key,
+                                          caller)
+        }
+    }
+
     fn get_storage_int(
         offset_address: u32,
         length_address: u32,
@@ -422,51 +607,6 @@ module! {
             env::utils::to_base58_string(offset_bytes,
                                          length_bytes,
                                          caller)
-        }
-    }
-
-    fn binary_equals(
-        offset_left: u32,
-        length_left: u32,
-        offset_right: u32,
-        length_right: u32,
-    ) -> (i32, i32) {
-        |caller: Caller<Runtime>| {
-            env::utils::binary_equals(offset_left,
-                                      length_left,
-                                      offset_right,
-                                      length_right,
-                                      caller)
-        }
-    }
-
-    fn string_equals(
-        offset_left: u32,
-        length_left: u32,
-        offset_right: u32,
-        length_right: u32,
-    ) -> (i32, i32) {
-        |caller: Caller<Runtime>| {
-            env::utils::string_equals(offset_left,
-                                      length_left,
-                                      offset_right,
-                                      length_right,
-                                      caller)
-        }
-    }
-
-    fn join(
-        offset_left: u32,
-        length_left: u32,
-        offset_right: u32,
-        length_right: u32,
-    ) -> (i32, i32, i32) {
-        |caller: Caller<Runtime>| {
-            env::utils::join(offset_left,
-                             length_left,
-                             offset_right,
-                             length_right,
-                             caller)
         }
     }
 

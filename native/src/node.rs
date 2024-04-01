@@ -32,8 +32,7 @@ pub trait Node {
         is_reissuable: bool,
     ) -> Result<()>;
     // Block
-    fn get_block_timestamp(&self) -> Result<i64>;
-    fn get_block_height(&self) -> Result<i64>;
+    fn block(&self, field: &[u8]) -> Result<Vec<u8>>;
     // Crypto
     fn fast_hash(&self, bytes: &[u8]) -> Result<Vec<u8>>;
     fn secure_hash(&self, bytes: &[u8]) -> Result<Vec<u8>>;
@@ -42,6 +41,7 @@ pub trait Node {
     fn lease(&self, contract_id: &[u8], recipient: &[u8], amount: i64) -> Result<Vec<u8>>;
     fn cancel_lease(&self, contract_id: &[u8], lease_id: &[u8]) -> Result<()>;
     // Storage
+    fn contains_key(&self, address: &[u8], key: &[u8]) -> Result<bool>;
     fn get_storage(&self, address: &[u8], key: &[u8]) -> Result<Vec<u8>>;
     fn set_storage(&self, contract_id: &[u8], value: &[u8]) -> Result<()>;
     // Tx

@@ -7,6 +7,7 @@ import com.wavesenterprise.state.DataEntry
 import com.wavesenterprise.transaction.docker.ContractTransactionEntryOps.{parse, toBytes}
 import com.wavesenterprise.utils.Base58
 
+import java.nio.ByteBuffer
 import java.nio.charset.StandardCharsets.UTF_8
 
 import scala.collection.mutable.{Map, Seq}
@@ -176,9 +177,16 @@ class WASMServiceMock extends WASMService {
   override def reissue(contractId: Array[Byte], assetId: Array[Byte], amount: Long, isReissuable: Boolean) =
     this.balances(Base58.encode(assetId))(Base58.encode(contractId)) += amount
 
-  override def getBlockTimestamp: Long = 1690202857485L
-
-  override def getBlockHeight: Long = 3745592L
+  override def block(field: Array[Byte]): Array[Byte] = {
+    val string = new String(field, UTF_8)
+    if (string == "timestamp") {
+      ByteBuffer.allocate(8).putLong(1690202857485L).array()
+    } else if (string == "height") {
+      ByteBuffer.allocate(8).putLong(3745592L).array()
+    } else {
+      throw new Exception
+    }
+  }
 
   override def fastHash(bytes: Array[Byte]): Array[Byte] = WavesAlgorithms.fastHash(bytes)
 
@@ -207,6 +215,14 @@ class WASMServiceMock extends WASMService {
 
   override def cancelLease(contractId: Array[Byte], leaseId: Array[Byte]) =
     if (Base58.encode(leaseId) != this.lease) throw new Exception
+
+  override def containsKey(contractId: Array[Byte], key: Array[Byte]): Boolean = {
+    val k = if (key.isEmpty) throw new Exception else new String(key)
+    this.storage.get(Base58.encode(contractId)) match {
+      case Some(kv) => kv.contains(k)
+      case None     => throw new Exception
+    }
+  }
 
   override def getStorage(contractId: Array[Byte], key: Array[Byte]): Array[Byte] = {
     val k = if (key.isEmpty) throw new Exception else new String(key)

@@ -62,14 +62,10 @@ trait WASMService {
   def reissue(contractId: Array[Byte], assetId: Array[Byte], amount: Long, isReissuable: Boolean)
 
   /**
-    * @return Block timestamp
+    * @param field UTF-8 string with block field name
+    * @return Requested field data
     */
-  def getBlockTimestamp: Long
-
-  /**
-    * @return Block height
-    */
-  def getBlockHeight: Long
+  def block(field: Array[Byte]): Array[Byte]
 
   /**
     * @param bytes Raw data
@@ -104,6 +100,13 @@ trait WASMService {
     * @param leaseId ID of a leasing transaction. Base58 bytes
     */
   def cancelLease(contractId: Array[Byte], leaseId: Array[Byte])
+
+  /**
+    * @param contractId ID of a contract (possible contractId called this function). Base58 bytes
+    * @param key Record key. UTF-8 bytes
+    * @return Boolean value whether the key exists
+    */
+  def containsKey(contractId: Array[Byte], key: Array[Byte]): Boolean
 
   /**
     * @param contractId ID of a contract (possible contractId called this function). Base58 bytes
