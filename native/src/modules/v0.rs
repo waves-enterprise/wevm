@@ -99,13 +99,13 @@ module! {
     // Block
     fn get_block_timestamp() -> (i32, i64) {
         |caller: Caller<Runtime>| {
-            env::block::get_block_timestamp(caller)
+            env::block::get_block_field(env::Field::String("timestamp".to_string()), caller)
         }
     }
 
     fn get_block_height() -> (i32, i64) {
         |caller: Caller<Runtime>| {
-            env::block::get_block_height(caller)
+            env::block::get_block_field(env::Field::String("height".to_string()), caller)
         }
     }
 

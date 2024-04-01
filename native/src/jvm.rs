@@ -236,32 +236,27 @@ impl Node for Vm {
     }
 
     // Block
-    fn get_block_timestamp(&self) -> Result<i64> {
+    fn block(&self, field: &[u8]) -> Result<Vec<u8>> {
         let mut env = env!(self);
 
-        env.call_method(
-            jvm_callback!(&self.jvm_callback),
-            "getBlockTimestamp",
-            "()J",
-            &[],
-        )
-        .map_err(|_| Error::Jvm(JvmError::MethodCall))?
-        .j()
-        .map_err(|_| Error::Jvm(JvmError::ReceiveLong))
-    }
+        let field = byte_array!(env, field);
 
-    fn get_block_height(&self) -> Result<i64> {
-        let mut env = env!(self);
+        let result = env
+            .call_method(
+                jvm_callback!(&self.jvm_callback),
+                "block",
+                "([B)[B",
+                &[JValue::Object(&field.into())],
+            )
+            .map_err(|_| Error::Jvm(JvmError::MethodCall))?
+            .l()
+            .map_err(|_| Error::Jvm(JvmError::ReceiveObject))?;
 
-        env.call_method(
-            jvm_callback!(&self.jvm_callback),
-            "getBlockHeight",
-            "()J",
-            &[],
-        )
-        .map_err(|_| Error::Jvm(JvmError::MethodCall))?
-        .j()
-        .map_err(|_| Error::Jvm(JvmError::ReceiveLong))
+        let bytes = env
+            .convert_byte_array(<JObject<'_> as Into<JByteArray>>::into(result))
+            .map_err(|_| Error::Jvm(JvmError::ByteArrayConversion))?;
+
+        Ok(bytes.to_vec())
     }
 
     // Crypto

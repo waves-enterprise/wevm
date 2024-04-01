@@ -32,8 +32,7 @@ pub trait Node {
         is_reissuable: bool,
     ) -> Result<()>;
     // Block
-    fn get_block_timestamp(&self) -> Result<i64>;
-    fn get_block_height(&self) -> Result<i64>;
+    fn block(&self, field: &[u8]) -> Result<Vec<u8>>;
     // Crypto
     fn fast_hash(&self, bytes: &[u8]) -> Result<Vec<u8>>;
     fn secure_hash(&self, bytes: &[u8]) -> Result<Vec<u8>>;

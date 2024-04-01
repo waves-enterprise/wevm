@@ -66,6 +66,13 @@ module! {
         }
     }
 
+    // Block
+    fn block(offset_field: u32, length_field: u32) -> (i32, i32, i32) {
+        |caller: Caller<Runtime>| {
+            env::block::block(env::Field::Binary(offset_field, length_field), caller)
+        }
+    }
+
     // Tx
     fn get_payments() -> (i32, i64) {
         |caller: Caller<Runtime>| {

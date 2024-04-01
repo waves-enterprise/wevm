@@ -62,14 +62,10 @@ trait WASMService {
   def reissue(contractId: Array[Byte], assetId: Array[Byte], amount: Long, isReissuable: Boolean)
 
   /**
-    * @return Block timestamp
+    * @param field UTF-8 string with block field name
+    * @return Requested field data
     */
-  def getBlockTimestamp: Long
-
-  /**
-    * @return Block height
-    */
-  def getBlockHeight: Long
+  def block(field: Array[Byte]): Array[Byte]
 
   /**
     * @param bytes Raw data
