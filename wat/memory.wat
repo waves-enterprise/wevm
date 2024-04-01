@@ -16,7 +16,6 @@
     (import "env0" "set_storage_bool" (func $set_storage_bool (param i32 i32 i32) (result i32)))
     (import "env0" "set_storage_string" (func $set_storage_string (param i32 i32 i32 i32) (result i32)))
 
-
     (func (export "_constructor") (result i32)
         (i32.const 0)
     )
