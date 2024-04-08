@@ -1,9 +1,7 @@
-use crate::{env, module, modules::Module, runtime::Runtime};
-use wasmi::{Caller, Func, Store};
+use wevm_proc_macro::module;
 
-module! {
-    #[version = 1]
-
+#[module(env1)]
+mod test {
     // Asset
     fn get_balance(
         offset_asset_id: u32,
@@ -14,13 +12,15 @@ module! {
         version: u32,
     ) -> (i32, i64) {
         |caller: Caller<Runtime>| {
-            env::asset::get_balance(offset_asset_id,
-                                    length_asset_id,
-                                    offset_holder,
-                                    length_holder,
-                                    type_,
-                                    version,
-                                    caller)
+            env::asset::get_balance(
+                offset_asset_id,
+                length_asset_id,
+                offset_holder,
+                length_holder,
+                type_,
+                version,
+                caller,
+            )
         }
     }
 
@@ -34,14 +34,16 @@ module! {
         amount: i64,
     ) -> i32 {
         |caller: Caller<Runtime>| {
-            env::asset::transfer(offset_asset_id,
-                                 length_asset_id,
-                                 offset_recipient,
-                                 length_recipient,
-                                 type_,
-                                 version,
-                                 amount,
-                                 caller)
+            env::asset::transfer(
+                offset_asset_id,
+                length_asset_id,
+                offset_recipient,
+                length_recipient,
+                type_,
+                version,
+                amount,
+                caller,
+            )
         }
     }
 
@@ -55,14 +57,16 @@ module! {
         is_reissuable: i32,
     ) -> (i32, i32, i32) {
         |caller: Caller<Runtime>| {
-            env::asset::issue(offset_name,
-                              length_name,
-                              offset_description,
-                              length_description,
-                              quantity,
-                              decimals,
-                              is_reissuable,
-                              caller)
+            env::asset::issue(
+                offset_name,
+                length_name,
+                offset_description,
+                length_description,
+                quantity,
+                decimals,
+                is_reissuable,
+                caller,
+            )
         }
     }
 
@@ -75,21 +79,15 @@ module! {
 
     // Tx
     fn get_payments() -> (i32, i64) {
-        |caller: Caller<Runtime>| {
-            env::tx::get_payments(caller)
-        }
+        |caller: Caller<Runtime>| env::tx::get_payments(caller)
     }
 
     fn get_payment_asset_id(number: i64) -> (i32, i32, i32) {
-        |caller: Caller<Runtime>| {
-            env::tx::get_payment_asset_id(number, caller)
-        }
+        |caller: Caller<Runtime>| env::tx::get_payment_asset_id(number, caller)
     }
 
     fn get_payment_amount(number: i64) -> (i32, i64) {
-        |caller: Caller<Runtime>| {
-            env::tx::get_payment_amount(number, caller)
-        }
+        |caller: Caller<Runtime>| env::tx::get_payment_amount(number, caller)
     }
 
     fn tx(offset_field: u32, length_field: u32) -> (i32, i32, i32) {

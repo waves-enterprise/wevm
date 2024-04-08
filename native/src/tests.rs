@@ -1,22 +1,18 @@
 use crate::{
     error::{Error, ExecutableError, Result},
-    module,
-    modules::Module,
-    runtime::Runtime,
     vm::Vm,
 };
 use jni::{InitArgsBuilder, JNIVersion, JavaVM};
-use std::str;
-use wasmi::{Caller, Func, Store, Value};
+use wasmi::Value;
+use wevm_proc_macro::module;
 
 /// Converts the given `.wat` into `.wasm`.
 pub fn wat2wasm(wat: &str) -> Result<Vec<u8>, wat::Error> {
     wat::parse_str(wat)
 }
 
-module! {
-    #[version = 0]
-
+#[module(env0)]
+mod test {
     fn test_set_value(value: u32) {
         |mut _caller: Caller<Runtime>| {
             assert_eq!(42, value);
@@ -24,9 +20,7 @@ module! {
     }
 
     fn test_get_value() -> u32 {
-        |mut _caller: Caller<Runtime>| {
-            42
-        }
+        |mut _caller: Caller<Runtime>| 42
     }
 
     fn test_memory(offset: u32, length: u32) {
@@ -37,8 +31,9 @@ module! {
                 .expect("Error get memory")
                 .data_and_store_mut(&mut caller);
 
-            let result = str::from_utf8(&memory[offset as usize..offset as usize + length as usize])
-                .expect("Error converts a slice of bytes to a string slice");
+            let result =
+                std::str::from_utf8(&memory[offset as usize..offset as usize + length as usize])
+                    .expect("Error converts a slice of bytes to a string slice");
 
             assert_eq!("Hi", result);
         }
@@ -86,7 +81,7 @@ impl TestRunner {
             bytecode,
             memory,
             fuel_limit,
-            modules(),
+            modules::modules(),
             Some(jvm),
             Some(global_ref),
         )

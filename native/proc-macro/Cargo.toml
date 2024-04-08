@@ -1,0 +1,20 @@
+[package]
+name = "wevm-proc-macro"
+version = "0.1.0"
+edition = "2021"
+authors = ["DEADBLACKCLOVER <deadblackclover@protonmail.com>"]
+description = "Procedural macros used in WEVM"
+license = "MIT"
+readme = "README.md"
+homepage = "https://github.com/waves-enterprise/wevm"
+repository = "https://github.com/waves-enterprise/wevm"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[lib]
+proc-macro = true
+
+[dependencies]
+proc-macro2 = "1"
+syn = { version = "2", features = ["full", "extra-traits"] }
+quote = "1"
