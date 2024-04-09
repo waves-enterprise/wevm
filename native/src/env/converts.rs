@@ -36,7 +36,7 @@ pub fn parse_bool(offset: u32, length: u32, mut caller: Caller<Runtime>) -> (i32
     }
 }
 
-pub fn to_bytes(value: i64, mut caller: Caller<Runtime>) -> (i32, i32, i32) {
+pub fn to_bytes(value: i64, mut caller: Caller<Runtime>) -> (i32, u32, u32) {
     let (memory, ctx) = match caller.data().memory() {
         Some(memory) => memory.data_and_store_mut(&mut caller),
         None => return (RuntimeError::MemoryNotFound as i32, 0, 0),
@@ -59,7 +59,7 @@ pub fn to_int(offset: u32, length: u32, mut caller: Caller<Runtime>) -> (i32, i6
     (0, i64::from_be_bytes(bytes))
 }
 
-pub fn to_string<T: Display>(value: T, mut caller: Caller<Runtime>) -> (i32, i32, i32) {
+pub fn to_string<T: Display>(value: T, mut caller: Caller<Runtime>) -> (i32, u32, u32) {
     let (memory, ctx) = match caller.data().memory() {
         Some(memory) => memory.data_and_store_mut(&mut caller),
         None => return (RuntimeError::MemoryNotFound as i32, 0, 0),

@@ -4,10 +4,10 @@ use wevm_proc_macro::module;
 mod test {
     // Asset
     fn get_balance(
-        offset_asset_id: u32,
-        length_asset_id: u32,
-        offset_holder: u32,
-        length_holder: u32,
+        offset_asset_id: *const u8,
+        length_asset_id: usize,
+        offset_holder: usize,
+        length_holder: *const u8,
         type_: u32,
         version: u32,
     ) -> (i32, i64) {
@@ -25,10 +25,10 @@ mod test {
     }
 
     fn transfer(
-        offset_asset_id: u32,
-        length_asset_id: u32,
-        offset_recipient: u32,
-        length_recipient: u32,
+        offset_asset_id: *const u8,
+        length_asset_id: usize,
+        offset_recipient: *const u8,
+        length_recipient: usize,
         type_: u32,
         version: u32,
         amount: i64,
@@ -48,14 +48,14 @@ mod test {
     }
 
     fn issue(
-        offset_name: u32,
-        length_name: u32,
-        offset_description: u32,
-        length_description: u32,
+        offset_name: *const u8,
+        length_name: usize,
+        offset_description: *const u8,
+        length_description: usize,
         quantity: i64,
         decimals: i64,
-        is_reissuable: i32,
-    ) -> (i32, i32, i32) {
+        is_reissuable: bool,
+    ) -> (i32, *const u8, usize) {
         |caller: Caller<Runtime>| {
             env::asset::issue(
                 offset_name,
@@ -71,7 +71,7 @@ mod test {
     }
 
     // Block
-    fn block(offset_field: u32, length_field: u32) -> (i32, i32, i32) {
+    fn block(offset_field: *const u8, length_field: usize) -> (i32, *const u8, usize) {
         |caller: Caller<Runtime>| {
             env::block::block(env::Field::Binary(offset_field, length_field), caller)
         }
@@ -82,7 +82,7 @@ mod test {
         |caller: Caller<Runtime>| env::tx::get_payments(caller)
     }
 
-    fn get_payment_asset_id(number: i64) -> (i32, i32, i32) {
+    fn get_payment_asset_id(number: i64) -> (i32, *const u8, usize) {
         |caller: Caller<Runtime>| env::tx::get_payment_asset_id(number, caller)
     }
 
@@ -90,7 +90,7 @@ mod test {
         |caller: Caller<Runtime>| env::tx::get_payment_amount(number, caller)
     }
 
-    fn tx(offset_field: u32, length_field: u32) -> (i32, i32, i32) {
+    fn tx(offset_field: *const u8, length_field: usize) -> (i32, *const u8, usize) {
         |caller: Caller<Runtime>| {
             env::tx::tx(env::Field::Binary(offset_field, length_field), caller)
         }

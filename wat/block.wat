@@ -1,22 +1,22 @@
 (module
     (import "env" "memory" (memory 2 16))
 
-    (import "env0" "get_block_timestamp" (func $get_block_timestamp (result i32 i64)))
-    (import "env0" "get_block_height" (func $get_block_height (result i32 i64)))
-    (import "env1" "block" (func $block (param i32 i32) (result i32 i32 i32)))
+    (import "env0" "get_block_timestamp" (func $env0_get_block_timestamp (result i32 i64)))
+    (import "env0" "get_block_height" (func $env0_get_block_height (result i32 i64)))
+
+    (import "env1" "block" (func $env1_block (param i32 i32) (result i32 i32 i32)))
 
     (import "env0" "set_storage_int" (func $set_storage_int (param i32 i32 i64) (result i32)))
-
     (import "env0" "to_le_bytes" (func $to_le_bytes (param i32 i32) (result i32 i32 i32)))
 
     (func (export "_constructor") (result i32)
         (i32.const 0)
     )
 
-    (func (export "get_block_timestamp") (result i32)
+    (func (export "env0_get_block_timestamp") (result i32)
         (local $timestamp i64) (local $error i32)
         (block $code
-            (call $get_block_timestamp)
+            (call $env0_get_block_timestamp)
 
             (local.set $timestamp)
 
@@ -38,10 +38,10 @@
         (local.get $error)
     )
 
-    (func (export "get_block_height") (result i32)
+    (func (export "env0_get_block_height") (result i32)
         (local $height i64) (local $error i32)
         (block $code
-            (call $get_block_height)
+            (call $env0_get_block_height)
 
             (local.set $height)
 
@@ -63,10 +63,10 @@
         (local.get $error)
     )
 
-    (func (export "block") (param $p0 i32) (param $p1 i32) (result i32)
+    (func (export "env1_block") (param $p0 i32) (param $p1 i32) (result i32)
         (local $offset i32) (local $length i32) (local $error i32)
         (block $code
-            (call $block
+            (call $env1_block
                 (local.get $p0)
                 (local.get $p1)
             )

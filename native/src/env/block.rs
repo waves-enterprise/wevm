@@ -24,7 +24,7 @@ pub fn get_block_field(field: Field, mut caller: Caller<Runtime>) -> (i32, i64) 
     }
 }
 
-pub fn block(field: Field, mut caller: Caller<Runtime>) -> (i32, i32, i32) {
+pub fn block(field: Field, mut caller: Caller<Runtime>) -> (i32, u32, u32) {
     let (memory, ctx) = match caller.data().memory() {
         Some(memory) => memory.data_and_store_mut(&mut caller),
         None => return (RuntimeError::MemoryNotFound as i32, 0, 0),

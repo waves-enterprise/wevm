@@ -5,7 +5,7 @@ pub fn fast_hash(
     offset_bytes: u32,
     length_bytes: u32,
     mut caller: Caller<Runtime>,
-) -> (i32, i32, i32) {
+) -> (i32, u32, u32) {
     let (memory, ctx) = match caller.data().memory() {
         Some(memory) => memory.data_and_store_mut(&mut caller),
         None => return (RuntimeError::MemoryNotFound as i32, 0, 0),
@@ -24,7 +24,7 @@ pub fn secure_hash(
     offset_bytes: u32,
     length_bytes: u32,
     mut caller: Caller<Runtime>,
-) -> (i32, i32, i32) {
+) -> (i32, u32, u32) {
     let (memory, ctx) = match caller.data().memory() {
         Some(memory) => memory.data_and_store_mut(&mut caller),
         None => return (RuntimeError::MemoryNotFound as i32, 0, 0),

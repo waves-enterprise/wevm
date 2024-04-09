@@ -103,7 +103,14 @@ fn parse_type(type_: &syn::Type, is_bindings: bool) -> Option<TokenStream2> {
     match (type_, is_bindings) {
         (syn::Type::Ptr(_), true) => Some(quote!(*const u8)),
         (syn::Type::Ptr(_), false) => Some(quote!(u32)),
-        (syn::Type::Path(type_path), _) => Some(quote!(#type_path)),
+        (syn::Type::Path(type_path), _) => {
+            let path_seg = &type_path.path.segments[0];
+            match path_seg.ident.to_string().as_str() {
+                "usize" => Some(quote!(u32)),
+                "bool" => Some(quote!(i32)),
+                _ => Some(quote!(#type_path)),
+            }
+        }
         (syn::Type::Tuple(type_tuple), is_bindings) => {
             let mut result: Vec<TokenStream2> = vec![];
 

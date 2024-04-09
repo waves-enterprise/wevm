@@ -7,7 +7,7 @@ pub fn lease(
     version: u32,
     amount: i64,
     mut caller: Caller<Runtime>,
-) -> (i32, i32, i32) {
+) -> (i32, u32, u32) {
     let (memory, ctx) = match caller.data().memory() {
         Some(memory) => memory.data_and_store_mut(&mut caller),
         None => return (RuntimeError::MemoryNotFound as i32, 0, 0),

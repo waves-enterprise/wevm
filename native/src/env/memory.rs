@@ -55,7 +55,7 @@ pub fn join(
     offset_right: u32,
     length_right: u32,
     mut caller: Caller<Runtime>,
-) -> (i32, i32, i32) {
+) -> (i32, u32, u32) {
     let (memory, ctx) = match caller.data().memory() {
         Some(memory) => memory.data_and_store_mut(&mut caller),
         None => return (RuntimeError::MemoryNotFound as i32, 0, 0),
@@ -92,20 +92,16 @@ pub fn contains(
     (0, result as i32)
 }
 
-pub fn drop(offset_bytes: u32, length_bytes: u32, n: i64) -> (i32, i32, i32) {
+pub fn drop(offset_bytes: u32, length_bytes: u32, n: i64) -> (i32, u32, u32) {
     match u32::try_from(n) {
-        Ok(value) => (
-            0,
-            (offset_bytes + value) as i32,
-            (length_bytes - value) as i32,
-        ),
+        Ok(value) => (0, offset_bytes + value, length_bytes - value),
         Err(_) => (RuntimeError::ConvertingNumericTypes as i32, 0, 0),
     }
 }
 
-pub fn drop_right(offset_bytes: u32, length_bytes: u32, n: i64) -> (i32, i32, i32) {
+pub fn drop_right(offset_bytes: u32, length_bytes: u32, n: i64) -> (i32, u32, u32) {
     match u32::try_from(n) {
-        Ok(value) => (0, offset_bytes as i32, (length_bytes - value) as i32),
+        Ok(value) => (0, offset_bytes, length_bytes - value),
         Err(_) => (RuntimeError::ConvertingNumericTypes as i32, 0, 0),
     }
 }
@@ -149,20 +145,16 @@ pub fn index_of(
     }
 }
 
-pub fn take(offset_bytes: u32, _length_bytes: u32, n: i64) -> (i32, i32, i32) {
+pub fn take(offset_bytes: u32, _length_bytes: u32, n: i64) -> (i32, u32, u32) {
     match u32::try_from(n) {
-        Ok(value) => (0, offset_bytes as i32, value as i32),
+        Ok(value) => (0, offset_bytes, value),
         Err(_) => (RuntimeError::ConvertingNumericTypes as i32, 0, 0),
     }
 }
 
-pub fn take_right(offset_bytes: u32, length_bytes: u32, n: i64) -> (i32, i32, i32) {
+pub fn take_right(offset_bytes: u32, length_bytes: u32, n: i64) -> (i32, u32, u32) {
     match u32::try_from(n) {
-        Ok(value) => (
-            0,
-            (offset_bytes + (length_bytes - value)) as i32,
-            value as i32,
-        ),
+        Ok(value) => (0, offset_bytes + (length_bytes - value), value),
         Err(_) => (RuntimeError::ConvertingNumericTypes as i32, 0, 0),
     }
 }

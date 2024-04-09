@@ -10,7 +10,7 @@ pub fn get_payments(caller: Caller<Runtime>) -> (i32, i64) {
     }
 }
 
-pub fn get_payment_asset_id(number: i64, mut caller: Caller<Runtime>) -> (i32, i32, i32) {
+pub fn get_payment_asset_id(number: i64, mut caller: Caller<Runtime>) -> (i32, u32, u32) {
     let (memory, ctx) = match caller.data().memory() {
         Some(memory) => memory.data_and_store_mut(&mut caller),
         None => return (RuntimeError::MemoryNotFound as i32, 0, 0),
@@ -41,7 +41,7 @@ pub fn get_payment_amount(number: i64, caller: Caller<Runtime>) -> (i32, i64) {
     }
 }
 
-pub fn tx(field: Field, mut caller: Caller<Runtime>) -> (i32, i32, i32) {
+pub fn tx(field: Field, mut caller: Caller<Runtime>) -> (i32, u32, u32) {
     let (memory, ctx) = match caller.data().memory() {
         Some(memory) => memory.data_and_store_mut(&mut caller),
         None => return (RuntimeError::MemoryNotFound as i32, 0, 0),
