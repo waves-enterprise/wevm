@@ -440,7 +440,7 @@ mod test {
         }
     }
 
-    fn set_storage_bool(offset_key: *const u8, length_key: usize, value: i32) -> i32 {
+    fn set_storage_bool(offset_key: *const u8, length_key: usize, value: bool) -> i32 {
         |caller: Caller<Runtime>| {
             env::storage::set_storage_bool(offset_key, length_key, value, caller)
         }

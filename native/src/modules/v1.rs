@@ -6,8 +6,8 @@ mod test {
     fn get_balance(
         offset_asset_id: *const u8,
         length_asset_id: usize,
-        offset_holder: usize,
-        length_holder: *const u8,
+        offset_holder: *const u8,
+        length_holder: usize,
         type_: u32,
         version: u32,
     ) -> (i32, i64) {
