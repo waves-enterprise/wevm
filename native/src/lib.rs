@@ -1,23 +1,41 @@
+#[cfg(feature = "jvm")]
 mod env;
+
+#[cfg(feature = "jvm")]
 mod error;
+
+#[cfg(feature = "jvm")]
 mod exec;
-mod modules;
-mod node;
-mod runtime;
-mod vm;
 
 #[cfg(feature = "jvm")]
 mod jvm;
 
+mod modules;
+
+#[cfg(feature = "jvm")]
+mod node;
+
+#[cfg(feature = "jvm")]
+mod runtime;
+
 #[cfg(test)]
 mod tests;
 
+#[cfg(feature = "jvm")]
+mod vm;
+
+pub use modules::v0;
+pub use modules::v1;
+
+#[cfg(feature = "jvm")]
 use crate::{error::JvmError, exec::Executable, vm::Vm};
+#[cfg(feature = "jvm")]
 use jni::{
     objects::{JByteArray, JClass, JObject, JString},
     sys::{jint, jlong},
     JNIEnv,
 };
+#[cfg(feature = "jvm")]
 use wasmi::Value;
 
 /// Size of allocated linear memory.
@@ -36,6 +54,7 @@ pub const MEMORY: (u32, u32) = (2, 16);
 // local frame lifetime it is associated with.
 
 /// External Java function to execute bytecode contract.
+#[cfg(feature = "jvm")]
 #[no_mangle]
 pub extern "system" fn Java_com_wavesenterprise_wasm_core_WASMExecutor_runContract<'local>(
     mut env: JNIEnv<'local>,
@@ -57,8 +76,6 @@ pub extern "system" fn Java_com_wavesenterprise_wasm_core_WASMExecutor_runContra
         Err(_) => return JvmError::ByteArrayConversion as jint,
     };
 
-    let modules = modules::all();
-
     let jvm = match env.get_java_vm() {
         Ok(jvm) => jvm,
         Err(_) => return JvmError::GetJavaVM as jint,
@@ -74,7 +91,7 @@ pub extern "system" fn Java_com_wavesenterprise_wasm_core_WASMExecutor_runContra
         bytecode,
         MEMORY,
         fuel_limit as u64,
-        modules,
+        modules(),
         Some(jvm),
         Some(callback),
     ) {
@@ -104,6 +121,7 @@ pub extern "system" fn Java_com_wavesenterprise_wasm_core_WASMExecutor_runContra
 }
 
 /// External Java function to validate bytecode contract.
+#[cfg(feature = "jvm")]
 #[no_mangle]
 pub extern "system" fn Java_com_wavesenterprise_wasm_core_WASMExecutor_validateBytecode<'local>(
     env: JNIEnv<'local>,
@@ -119,4 +137,12 @@ pub extern "system" fn Java_com_wavesenterprise_wasm_core_WASMExecutor_validateB
         Ok(_) => 0,
         Err(error) => error.as_jint(),
     }
+}
+
+#[cfg(feature = "jvm")]
+fn modules() -> Vec<modules::Module> {
+    let mut vec = vec![];
+    vec.extend(v0::modules::modules());
+    vec.extend(v1::modules::modules());
+    vec
 }

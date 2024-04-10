@@ -77,6 +77,7 @@ pub fn module(attr: TokenStream2, item: TokenStream2) -> Result<TokenStream2, sy
     }
 
     Ok(quote!(
+        #[cfg(feature = "bindings")]
         pub mod bindings {
             #[link(wasm_import_module = #env)]
             extern "C" {
@@ -84,6 +85,7 @@ pub fn module(attr: TokenStream2, item: TokenStream2) -> Result<TokenStream2, sy
             }
         }
 
+        #[cfg(not(feature = "bindings"))]
         pub mod modules {
             use crate::{env, error::{Error, RuntimeError}, modules::Module, runtime::Runtime};
             use wasmi::{Caller, Func, Store};

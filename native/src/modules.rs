@@ -1,14 +1,10 @@
-mod v0;
-mod v1;
+pub mod v0;
+pub mod v1;
 
+#[cfg(not(feature = "bindings"))]
 use crate::runtime::Runtime;
+#[cfg(not(feature = "bindings"))]
 use wasmi::{Func, Store};
 
+#[cfg(not(feature = "bindings"))]
 pub type Module = fn(&mut Store<Runtime>) -> (String, String, Func);
-
-pub fn all() -> Vec<Module> {
-    let mut vec = vec![];
-    vec.extend(v0::modules::modules());
-    vec.extend(v1::modules::modules());
-    vec
-}
