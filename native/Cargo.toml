@@ -1,6 +1,6 @@
 [package]
 name = "wevm"
-version = "0.2.2"
+version = "0.3.0"
 edition = "2021"
 authors = ["DEADBLACKCLOVER <deadblackclover@protonmail.com>"]
 description = "Waves Enterprise Virtual Machine for WASM smart-contracts"
