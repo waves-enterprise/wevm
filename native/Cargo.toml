@@ -11,10 +11,14 @@ repository = "https://github.com/waves-enterprise/wevm"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
+[workspace]
+members = ["proc-macro"]
+
 [dependencies]
 base58 = "0.2.0"
 jni = "0.21.0"
 wasmi = "0.31.2"
+wevm-proc-macro = { version = "0.1.0", path = "proc-macro" }
 
 [dev-dependencies]
 jni = { version = "0.21.0", features = ["invocation"] }
@@ -25,3 +29,4 @@ crate_type = ["cdylib", "rlib"]
 
 [features]
 jvm = []
+bindings = []

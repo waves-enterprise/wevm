@@ -7,7 +7,7 @@ pub fn base58(
     offset_bytes: u32,
     length_bytes: u32,
     mut caller: Caller<Runtime>,
-) -> (i32, i32, i32) {
+) -> (i32, u32, u32) {
     let (memory, ctx) = match caller.data().memory() {
         Some(memory) => memory.data_and_store_mut(&mut caller),
         None => return (RuntimeError::MemoryNotFound as i32, 0, 0),
@@ -31,7 +31,7 @@ pub fn to_base58_string(
     offset_bytes: u32,
     length_bytes: u32,
     mut caller: Caller<Runtime>,
-) -> (i32, i32, i32) {
+) -> (i32, u32, u32) {
     let (memory, ctx) = match caller.data().memory() {
         Some(memory) => memory.data_and_store_mut(&mut caller),
         None => return (RuntimeError::MemoryNotFound as i32, 0, 0),
@@ -48,7 +48,7 @@ pub fn to_le_bytes(
     offset_bytes: u32,
     length_bytes: u32,
     mut caller: Caller<Runtime>,
-) -> (i32, i32, i32) {
+) -> (i32, u32, u32) {
     let (memory, ctx) = match caller.data().memory() {
         Some(memory) => memory.data_and_store_mut(&mut caller),
         None => return (RuntimeError::MemoryNotFound as i32, 0, 0),
@@ -62,7 +62,7 @@ pub fn to_le_bytes(
     crate::env::write_memory(ctx, memory, offset_memory, result)
 }
 
-pub fn caller(mut caller: Caller<Runtime>) -> (i32, i32, i32) {
+pub fn caller(mut caller: Caller<Runtime>) -> (i32, u32, u32) {
     let (memory, ctx) = match caller.data().memory() {
         Some(memory) => memory.data_and_store_mut(&mut caller),
         None => return (RuntimeError::MemoryNotFound as i32, 0, 0),

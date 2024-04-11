@@ -83,7 +83,7 @@ pub fn issue(
     decimals: i64,
     is_reissuable: i32,
     mut caller: Caller<Runtime>,
-) -> (i32, i32, i32) {
+) -> (i32, u32, u32) {
     let (memory, ctx) = match caller.data().memory() {
         Some(memory) => memory.data_and_store_mut(&mut caller),
         None => return (RuntimeError::MemoryNotFound as i32, 0, 0),

@@ -45,9 +45,9 @@ pub(in crate::env) fn write_memory(
     memory: &mut [u8],
     offset_memory: usize,
     result: Vec<u8>,
-) -> (i32, i32, i32) {
+) -> (i32, u32, u32) {
     let length = result.len();
     memory[offset_memory..offset_memory + length].copy_from_slice(result.as_slice());
     ctx.set_heap_base((offset_memory + length) as i32);
-    (0, offset_memory as i32, length as i32)
+    (0, offset_memory as u32, length as u32)
 }
