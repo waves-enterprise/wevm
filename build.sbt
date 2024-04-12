@@ -1,4 +1,3 @@
-import com.github.sbt.jni.build.Cargo
 import com.typesafe.sbt.git.JGit
 import scala.sys.process._
 
@@ -28,7 +27,7 @@ publish := (publish dependsOn (Compile / assembly)).value
 
 publishLocal := (publishLocal dependsOn (Compile / assembly)).value
 
-version in ThisBuild := {
+ThisBuild / version := {
   val suffix         = git.makeUncommittedSignifierSuffix(git.gitUncommittedChanges.value, Some("DIRTY"))
   val releaseVersion = git.releaseVersion(git.gitCurrentTags.value, git.gitTagToVersionNumber.value, suffix)
   lazy val describedExtended = git.gitDescribedVersion.value.map { described =>
@@ -131,10 +130,10 @@ lazy val wevm = (project in file("."))
     sbtJniCoreScope := Compile,
     classLoaderLayeringStrategy := ClassLoaderLayeringStrategy.Flat,
     assembly / assemblyJarName := s"wevm_${scalaVersion.value.reverse.dropWhile(_ != '.').drop(1).reverse.take(4)}-${version.value}.jar",
-    publishArtifact in (Compile, packageSrc) := true,
-    publishArtifact in (Compile, packageBin) := true,
-    publishArtifact in (Compile, packageDoc) := true,
-    addArtifact(artifact in (Compile, assembly), assembly),
+    Compile / packageSrc / publishArtifact := true,
+    Compile / packageBin / publishArtifact := true,
+    Compile / packageDoc / publishArtifact := true,
+    addArtifact(Compile / assembly / artifact, assembly),
   )
   .settings(publicationSettings)
   .aggregate(wevmNative)
@@ -148,7 +147,6 @@ lazy val wevmNative = (project in file("native"))
   .settings(crossPaths := false)
   .settings(
     nativeCompile / sourceDirectory := baseDirectory.value,
-    nativeBuildTool := Cargo.make(Seq("--release", "--features jvm"))
   )
   .settings(publicationSettings)
   .settings(
