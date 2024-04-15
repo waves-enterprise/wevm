@@ -105,7 +105,7 @@ mod test {
         |caller: Caller<Runtime>| env::call_contract::call_arg_int(value, caller)
     }
 
-    fn call_arg_bool(value: i32) {
+    fn call_arg_bool(value: bool) {
         |caller: Caller<Runtime>| env::call_contract::call_arg_bool(value, caller)
     }
 
@@ -172,7 +172,7 @@ mod test {
         |caller: Caller<Runtime>| env::converts::parse_int(offset, length, caller)
     }
 
-    fn parse_bool(offset_string: *const u8, length_string: usize) -> (i32, i32) {
+    fn parse_bool(offset_string: *const u8, length_string: usize) -> (i32, bool) {
         |caller: Caller<Runtime>| env::converts::parse_bool(offset_string, length_string, caller)
     }
 
@@ -184,7 +184,7 @@ mod test {
         |caller: Caller<Runtime>| env::converts::to_int(offset, length, caller)
     }
 
-    fn to_string_bool(value: u32) -> (i32, *const u8, usize) {
+    fn to_string_bool(value: bool) -> (i32, *const u8, usize) {
         |caller: Caller<Runtime>| env::converts::to_string(value != 0, caller)
     }
 
