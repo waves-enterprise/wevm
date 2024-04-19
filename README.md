@@ -1,4 +1,7 @@
 # wevm
+
+[![crates.io](https://img.shields.io/crates/v/wevm-core.svg)](https://crates.io/crates/wevm-core)
+
 Waves Enterprise Virtual Machine for WASM smart-contracts
 
 WEVM represents:
