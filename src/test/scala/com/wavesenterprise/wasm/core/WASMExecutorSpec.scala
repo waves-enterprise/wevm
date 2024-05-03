@@ -1,42 +1,31 @@
 package com.wavesenterprise.wasm.core
 
-import com.google.common.io.{ByteArrayDataOutput, ByteStreams}
-import com.wavesenterprise.state.{ByteStr, DataEntry, IntegerDataEntry, BooleanDataEntry, BinaryDataEntry, StringDataEntry}
-import com.wavesenterprise.utils.Base58
 import org.scalatest.freespec.AnyFreeSpec
 import org.scalatest.matchers.should.Matchers
 
 class WASMExecutorSpec extends AnyFreeSpec with Matchers {
-  val executor = new WASMExecutor
+  val bytecode = getClass.getResourceAsStream("/mock.wasm").readAllBytes()
 
-  "WASMExecutor" - {
-    "validate bytecode" in {
-      val bytecode = getClass.getResourceAsStream("/mock.wasm").readAllBytes()
+  "validate bytecode" in {
+    val executor = new WASMExecutor
 
-      val wrongBytecode = Array[Byte](
-        0, 14, 21, 1, 2
-      )
+    val wrongBytecode = Array[Byte](
+      0, 14, 21, 1, 2
+    )
 
-      executor.validateBytecode(bytecode) shouldBe 0
-      executor.validateBytecode(wrongBytecode) shouldBe 100
-    }
+    executor.validateBytecode(bytecode) shouldBe 0
+    executor.validateBytecode(wrongBytecode) shouldBe 100
+  }
 
-    "infinite_loop" in {
-      val service = new WASMServiceMock
+  "infinite_loop" in {
+    val simulator = new Simulator(bytecode)
 
-      val contractId = Base58.decode(service.contract).get
-      val bytecode   = getClass.getResourceAsStream("/mock.wasm").readAllBytes()
+    simulator.callMethod("infinite_loop", Array.empty[Byte]) shouldBe 111
+  }
 
-      executor.runContract(contractId, bytecode, "infinite_loop", Array[Byte](), fuelLimit, service) shouldBe 111
-    }
+  "recursion" in {
+    val simulator = new Simulator(bytecode)
 
-    "recursion" in {
-      val service = new WASMServiceMock
-
-      val contractId = Base58.decode(service.contract).get
-      val bytecode   = getClass.getResourceAsStream("/mock.wasm").readAllBytes()
-
-      executor.runContract(contractId, bytecode, "recursion", Array[Byte](), fuelLimit, service) shouldBe 111
-    }
+    simulator.callMethod("recursion", Array.empty[Byte]) shouldBe 111
   }
 }

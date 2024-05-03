@@ -1,49 +1,38 @@
 package com.wavesenterprise.wasm.core
 
-import com.google.common.io.{ByteArrayDataOutput, ByteStreams}
 import com.wavesenterprise.state.StringDataEntry
-import com.wavesenterprise.utils.Base58
 import org.scalatest.freespec.AnyFreeSpec
 import org.scalatest.matchers.should.Matchers
 
+import java.nio.charset.StandardCharsets.UTF_8
+
 class BlockSpec extends AnyFreeSpec with Matchers {
-  val executor = new WASMExecutor
+  val bytecode = getClass.getResourceAsStream("/block.wasm").readAllBytes()
 
   "env0_get_block_timestamp" in {
-    val service = new WASMServiceMock
+    val simulator = new Simulator(bytecode)
 
-    val contractId = Base58.decode(service.contract).get
-    val bytecode   = getClass.getResourceAsStream("/block.wasm").readAllBytes()
+    simulator.callMethod("env0_get_block_timestamp", Array.empty[Byte]) shouldBe 0
 
-    executor.runContract(contractId, bytecode, "env0_get_block_timestamp", Array[Byte](), fuelLimit, service) shouldBe 0
-
-    service.storage(service.contract)("result").value shouldBe 1690202857485L
+    parseDataEntry(simulator.getStorage("result".getBytes(UTF_8))).value shouldBe simulator.timestamp
   }
 
   "env0_get_block_height" in {
-    val service = new WASMServiceMock
+    val simulator = new Simulator(bytecode)
 
-    val contractId = Base58.decode(service.contract).get
-    val bytecode   = getClass.getResourceAsStream("/block.wasm").readAllBytes()
+    simulator.callMethod("env0_get_block_height", Array.empty[Byte]) shouldBe 0
 
-    executor.runContract(contractId, bytecode, "env0_get_block_height", Array[Byte](), fuelLimit, service) shouldBe 0
-
-    service.storage(service.contract)("result").value shouldBe 3745592L
+    parseDataEntry(simulator.getStorage("result".getBytes(UTF_8))).value shouldBe simulator.height
   }
 
   "env1_block" in {
-    val service = new WASMServiceMock
+    val simulator = new Simulator(bytecode)
 
-    val contractId = Base58.decode(service.contract).get
-    val bytecode   = getClass.getResourceAsStream("/block.wasm").readAllBytes()
+    val field  = StringDataEntry("field", "timestamp")
+    val params = serializeDataEntryList(List(field))
 
-    val field = StringDataEntry("field", "timestamp")
+    simulator.callMethod("env1_block", params) shouldBe 0
 
-    var params: ByteArrayDataOutput = ByteStreams.newDataOutput()
-    writeDataEntryList(List(field), params)
-
-    executor.runContract(contractId, bytecode, "env1_block", params.toByteArray(), fuelLimit, service) shouldBe 0
-
-    service.storage(service.contract)("result").value shouldBe 1690202857485L
+    parseDataEntry(simulator.getStorage("result".getBytes(UTF_8))).value shouldBe simulator.timestamp
   }
 }

@@ -1,134 +1,74 @@
 package com.wavesenterprise.wasm.core
 
-import com.google.common.io.{ByteArrayDataOutput, ByteStreams}
 import com.wavesenterprise.state.{BinaryDataEntry, BooleanDataEntry, ByteStr, IntegerDataEntry, StringDataEntry}
-import com.wavesenterprise.transaction.docker.ContractTransactionEntryOps.toBytes
-import com.wavesenterprise.utils.Base58
 import org.scalatest.freespec.AnyFreeSpec
 import org.scalatest.matchers.should.Matchers
 
+import java.nio.charset.StandardCharsets.UTF_8
+
 class StorageSpec extends AnyFreeSpec with Matchers {
-  val executor = new WASMExecutor
-
-  "contains_key" in {
-    val service = new WASMServiceMock
-
-    val contractId = Base58.decode(service.contract).get
-    val bytecode   = getClass.getResourceAsStream("/storage.wasm").readAllBytes()
-
-    val integer = IntegerDataEntry("integer", 42)
-    service.setStorage(Base58.decode(service.contract).get, toBytes(integer))
-
-    val key = StringDataEntry("key", "integer")
-
-    var params: ByteArrayDataOutput = ByteStreams.newDataOutput()
-    writeDataEntryList(List(key), params)
-
-    executor.runContract(contractId, bytecode, "contains_key", params.toByteArray(), fuelLimit, service) shouldBe 0
-
-    val result = BooleanDataEntry("result", true)
-    service.storage(service.contract)("result") shouldBe result
-  }
+  val bytecode  = getClass.getResourceAsStream("/storage.wasm").readAllBytes()
+  val simulator = new Simulator(bytecode)
 
   "set_storage" in {
-    val service = new WASMServiceMock
-
-    val contractId = Base58.decode(service.contract).get
-    val bytecode   = getClass.getResourceAsStream("/storage.wasm").readAllBytes()
-
     val integer = IntegerDataEntry("integer", 42)
     val boolean = BooleanDataEntry("boolean", true)
     val binary  = BinaryDataEntry("binary", ByteStr(Array[Byte](0, 1)))
     val string  = StringDataEntry("string", "test")
+    val params  = serializeDataEntryList(List(integer, boolean, binary, string))
 
-    var params: ByteArrayDataOutput = ByteStreams.newDataOutput()
-    writeDataEntryList(List(integer, boolean, binary, string), params)
+    simulator.callMethod("set_storage", params) shouldBe 0
 
-    executor.runContract(contractId, bytecode, "set_storage", params.toByteArray(), fuelLimit, service) shouldBe 0
+    parseDataEntry(simulator.getStorage("integer".getBytes(UTF_8))) shouldBe integer
+    parseDataEntry(simulator.getStorage("boolean".getBytes(UTF_8))) shouldBe boolean
+    parseDataEntry(simulator.getStorage("binary".getBytes(UTF_8))) shouldBe binary
+    parseDataEntry(simulator.getStorage("string".getBytes(UTF_8))) shouldBe string
+  }
 
-    service.storage(service.contract)("integer") shouldBe integer
-    service.storage(service.contract)("boolean") shouldBe boolean
-    service.storage(service.contract)("binary") shouldBe binary
-    service.storage(service.contract)("string") shouldBe string
+  "contains_key" in {
+    simulator.callMethod("contains_key", Array.empty[Byte]) shouldBe 0
+
+    val result = BooleanDataEntry("result", true)
+    parseDataEntry(simulator.getStorage("result".getBytes(UTF_8))) shouldBe result
   }
 
   "get_storage_int" in {
-    val service = new WASMServiceMock
+    val key    = StringDataEntry("key", "integer")
+    val params = serializeDataEntryList(List(key))
 
-    val contractId = Base58.decode(service.contract).get
-    val bytecode   = getClass.getResourceAsStream("/storage.wasm").readAllBytes()
-
-    val integer = IntegerDataEntry("integer", 42)
-    service.setStorage(Base58.decode(service.contract).get, toBytes(integer))
-
-    val key = StringDataEntry("key", "integer")
-
-    var params: ByteArrayDataOutput = ByteStreams.newDataOutput()
-    writeDataEntryList(List(key), params)
-
-    executor.runContract(contractId, bytecode, "get_storage_int", params.toByteArray(), fuelLimit, service) shouldBe 0
+    simulator.callMethod("get_storage_int", params) shouldBe 0
 
     val result = IntegerDataEntry("result", 42)
-    service.storage(service.contract)("result") shouldBe result
+    parseDataEntry(simulator.getStorage("result".getBytes(UTF_8))) shouldBe result
   }
 
   "get_storage_bool" in {
-    val service = new WASMServiceMock
+    val key    = StringDataEntry("key", "boolean")
+    val params = serializeDataEntryList(List(key))
 
-    val contractId = Base58.decode(service.contract).get
-    val bytecode   = getClass.getResourceAsStream("/storage.wasm").readAllBytes()
-
-    val boolean = BooleanDataEntry("boolean", true)
-    service.setStorage(Base58.decode(service.contract).get, toBytes(boolean))
-
-    val key = StringDataEntry("key", "boolean")
-
-    var params: ByteArrayDataOutput = ByteStreams.newDataOutput()
-    writeDataEntryList(List(key), params)
-
-    executor.runContract(contractId, bytecode, "get_storage_bool", params.toByteArray(), fuelLimit, service) shouldBe 0
+    simulator.callMethod("get_storage_bool", params) shouldBe 0
 
     val result = BooleanDataEntry("result", true)
-    service.storage(service.contract)("result") shouldBe result
+    parseDataEntry(simulator.getStorage("result".getBytes(UTF_8))) shouldBe result
   }
 
   "get_storage_binary" in {
-    val service = new WASMServiceMock
+    val key    = StringDataEntry("key", "binary")
+    val params = serializeDataEntryList(List(key))
 
-    val contractId = Base58.decode(service.contract).get
-    val bytecode   = getClass.getResourceAsStream("/storage.wasm").readAllBytes()
-
-    val binary = BinaryDataEntry("binary", ByteStr(Array[Byte](0, 1)))
-    service.setStorage(Base58.decode(service.contract).get, toBytes(binary))
-
-    val key = StringDataEntry("key", "binary")
-
-    var params: ByteArrayDataOutput = ByteStreams.newDataOutput()
-    writeDataEntryList(List(key), params)
-
-    executor.runContract(contractId, bytecode, "get_storage_binary", params.toByteArray(), fuelLimit, service) shouldBe 0
+    simulator.callMethod("get_storage_binary", params) shouldBe 0
 
     val result = BinaryDataEntry("result", ByteStr(Array[Byte](0, 1)))
-    service.storage(service.contract)("result") shouldBe result
+    parseDataEntry(simulator.getStorage("result".getBytes(UTF_8))) shouldBe result
   }
 
   "get_storage_string" in {
-    val service = new WASMServiceMock
+    val key    = StringDataEntry("key", "string")
+    val params = serializeDataEntryList(List(key))
 
-    val contractId = Base58.decode(service.contract).get
-    val bytecode   = getClass.getResourceAsStream("/storage.wasm").readAllBytes()
-
-    val string = StringDataEntry("string", "test")
-    service.setStorage(Base58.decode(service.contract).get, toBytes(string))
-
-    val key = StringDataEntry("key", "string")
-
-    var params: ByteArrayDataOutput = ByteStreams.newDataOutput()
-    writeDataEntryList(List(key), params)
-
-    executor.runContract(contractId, bytecode, "get_storage_string", params.toByteArray(), fuelLimit, service) shouldBe 0
+    simulator.callMethod("get_storage_string", params) shouldBe 0
 
     val result = StringDataEntry("result", "test")
-    service.storage(service.contract)("result") shouldBe result
+    parseDataEntry(simulator.getStorage("result".getBytes(UTF_8))) shouldBe result
   }
 }

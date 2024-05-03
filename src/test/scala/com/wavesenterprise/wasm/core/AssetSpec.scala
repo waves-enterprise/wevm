@@ -1,89 +1,87 @@
 package com.wavesenterprise.wasm.core
 
-import com.google.common.io.{ByteArrayDataOutput, ByteStreams}
 import com.wavesenterprise.state.{BinaryDataEntry, ByteStr}
-import com.wavesenterprise.utils.Base58
 import org.scalatest.freespec.AnyFreeSpec
 import org.scalatest.matchers.should.Matchers
 
+import java.nio.charset.StandardCharsets.UTF_8
+
 class AssetSpec extends AnyFreeSpec with Matchers {
-  val executor = new WASMExecutor
+  val bytecode = getClass.getResourceAsStream("/asset.wasm").readAllBytes()
 
   "env0_asset" in {
-    val service = new WASMServiceMock
+    val simulator = new Simulator(bytecode)
 
-    val contractId = Base58.decode(service.contract).get
-    val bytecode   = getClass.getResourceAsStream("/asset.wasm").readAllBytes()
+    simulator.callMethod("env0_asset", Array.empty[Byte]) shouldBe 0
 
-    executor.runContract(contractId, bytecode, "env0_asset", Array[Byte](), fuelLimit, service) shouldBe 0
+    val assetId = parseDataEntry(simulator.getStorage("result".getBytes(UTF_8))).value match {
+      case bytes: ByteStr => bytes.arr
+      case _              => throw new Exception
+    }
 
-    service.balances(service.asset)(service.contract) shouldBe 9999999982L
+    simulator.getBalance(assetId) shouldBe 82L
   }
 
   "env1_asset" in {
-    val service = new WASMServiceMock
+    val simulator = new Simulator(bytecode)
 
-    val contractId = Base58.decode(service.contract).get
-    val bytecode   = getClass.getResourceAsStream("/asset.wasm").readAllBytes()
+    simulator.callMethod("env1_asset", Array.empty[Byte]) shouldBe 0
 
-    executor.runContract(contractId, bytecode, "env1_asset", Array[Byte](), fuelLimit, service) shouldBe 0
+    val assetId = parseDataEntry(simulator.getStorage("result".getBytes(UTF_8))).value match {
+      case bytes: ByteStr => bytes.arr
+      case _              => throw new Exception
+    }
 
-    service.balances(service.asset)(service.contract) shouldBe 9999999982L
+    simulator.getBalance(assetId) shouldBe 82L
   }
 
   "env0_get_balance" in {
-    val service = new WASMServiceMock
+    val simulator = new Simulator(bytecode)
 
-    val contractId = Base58.decode(service.contract).get
-    val bytecode   = getClass.getResourceAsStream("/asset.wasm").readAllBytes()
+    val address = BinaryDataEntry("address", ByteStr(simulator.accounts(0)))
+    val params  = serializeDataEntryList(List(address))
 
-    val address = BinaryDataEntry("address", ByteStr(Base58.decode(service.txSender).get))
+    simulator.callMethod("env0_get_balance", params) shouldBe 0
 
-    var params: ByteArrayDataOutput = ByteStreams.newDataOutput()
-    writeDataEntryList(List(address), params)
-
-    executor.runContract(contractId, bytecode, "env0_get_balance", params.toByteArray(), fuelLimit, service) shouldBe 0
-
-    service.storage(service.contract)("result").value shouldBe service.balances("null")(service.txSender)
+    parseDataEntry(simulator.getStorage("result".getBytes(UTF_8))).value shouldBe 10000000000L
   }
 
   "env1_get_balance" in {
-    val service = new WASMServiceMock
+    val simulator = new Simulator(bytecode)
 
-    val contractId = Base58.decode(service.contract).get
-    val bytecode   = getClass.getResourceAsStream("/asset.wasm").readAllBytes()
+    val address = BinaryDataEntry("address", ByteStr(simulator.accounts(0)))
+    val params  = serializeDataEntryList(List(address))
 
-    val address = BinaryDataEntry("address", ByteStr(Base58.decode(service.txSender).get))
+    simulator.callMethod("env1_get_balance", params) shouldBe 0
 
-    var params: ByteArrayDataOutput = ByteStreams.newDataOutput()
-    writeDataEntryList(List(address), params)
-
-    executor.runContract(contractId, bytecode, "env1_get_balance", params.toByteArray(), fuelLimit, service) shouldBe 0
-
-    service.storage(service.contract)("result").value shouldBe service.balances("null")(service.txSender)
+    parseDataEntry(simulator.getStorage("result".getBytes(UTF_8))).value shouldBe 10000000000L
   }
 
   "env0_transfer" in {
-    val service = new WASMServiceMock
+    val simulator = new Simulator(bytecode)
 
-    val contractId = Base58.decode(service.contract).get
-    val bytecode   = getClass.getResourceAsStream("/asset.wasm").readAllBytes()
+    simulator.transfer(simulator.accounts(0), Array.empty[Byte], simulator.contractId, 5000000000L)
 
-    executor.runContract(contractId, bytecode, "env0_transfer", Array[Byte](), fuelLimit, service) shouldBe 0
+    val address = BinaryDataEntry("address", ByteStr(simulator.accounts(0)))
+    val params  = serializeDataEntryList(List(address))
 
-    service.balances("null")(service.contract) shouldBe 9999999958L
-    service.balances("null")("3NqEjAkFVzem9CGa3bEPhakQc1Sm2G8gAFU") shouldBe 10000000042L
+    simulator.callMethod("env0_transfer", params) shouldBe 0
+
+    simulator.getBalance(Array.empty[Byte]) shouldBe 4999999958L
+    simulator.getBalance(Array.empty[Byte], simulator.accounts(0)) shouldBe 5000000042L
   }
 
   "env1_transfer" in {
-    val service = new WASMServiceMock
+    val simulator = new Simulator(bytecode)
 
-    val contractId = Base58.decode(service.contract).get
-    val bytecode   = getClass.getResourceAsStream("/asset.wasm").readAllBytes()
+    simulator.transfer(simulator.accounts(0), Array.empty[Byte], simulator.contractId, 5000000000L)
 
-    executor.runContract(contractId, bytecode, "env1_transfer", Array[Byte](), fuelLimit, service) shouldBe 0
+    val address = BinaryDataEntry("address", ByteStr(simulator.accounts(0)))
+    val params  = serializeDataEntryList(List(address))
 
-    service.balances("null")(service.contract) shouldBe 9999999958L
-    service.balances("null")("3NqEjAkFVzem9CGa3bEPhakQc1Sm2G8gAFU") shouldBe 10000000042L
+    simulator.callMethod("env1_transfer", params) shouldBe 0
+
+    simulator.getBalance(Array.empty[Byte]) shouldBe 4999999958L
+    simulator.getBalance(Array.empty[Byte], simulator.accounts(0)) shouldBe 5000000042L
   }
 }

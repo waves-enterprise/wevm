@@ -1,63 +1,87 @@
 package com.wavesenterprise.wasm.core
 
-import com.google.common.io.{ByteArrayDataOutput, ByteStreams}
 import com.wavesenterprise.state.{BinaryDataEntry, BooleanDataEntry, ByteStr, IntegerDataEntry, StringDataEntry}
 import com.wavesenterprise.utils.Base58
 import org.scalatest.freespec.AnyFreeSpec
 import org.scalatest.matchers.should.Matchers
 
+import java.nio.charset.StandardCharsets.UTF_8
+
 class CallContractSpec extends AnyFreeSpec with Matchers {
-  val executor = new WASMExecutor
+  val bytecode = getClass.getResourceAsStream("/call_contract.wasm").readAllBytes()
 
   "call_contract" in {
-    val service = new WASMServiceMock
+    val simulator = new Simulator(bytecode)
 
-    val contractId = Base58.decode(service.contract).get
-    val bytecode   = getClass.getResourceAsStream("/call_contract.wasm").readAllBytes()
+    // Load storage contract
+    val storageBytecode   = getClass.getResourceAsStream("/storage.wasm").readAllBytes()
+    val storageContractId = simulator.loadAdditionalBytecode(storageBytecode)
 
-    executor.runContract(contractId, bytecode, "call_contract", Array[Byte](), fuelLimit, service) shouldBe 0
+    // Create asset
+    val assetId = simulator.issue(
+      "Asset".getBytes(UTF_8),
+      "Super asset".getBytes(UTF_8),
+      10000000000L,
+      8L,
+      false,
+    )
+
+    simulator.transfer(simulator.accounts(0), Array.empty[Byte], simulator.contractId, 10000000000L)
+    simulator.transfer(simulator.accounts(0), assetId, simulator.contractId, 10000000000L)
+
+    // Function parameters
+    val contractId = StringDataEntry("contractId", Base58.encode(storageContractId))
+    val funcName   = StringDataEntry("funcName", "set_storage")
+    val asset      = StringDataEntry("asset", Base58.encode(assetId))
+    val params     = serializeDataEntryList(List(contractId, funcName, asset))
+
+    simulator.callMethod("call_contract", params) shouldBe 0
 
     val integer = IntegerDataEntry("integer", 42)
     val boolean = BooleanDataEntry("boolean", true)
     val binary  = BinaryDataEntry("binary", ByteStr(Array[Byte](0, 1)))
     val string  = StringDataEntry("string", "test")
 
-    service.storage(service.contractStorage)("integer") shouldBe integer
-    service.storage(service.contractStorage)("boolean") shouldBe boolean
-    service.storage(service.contractStorage)("binary") shouldBe binary
-    service.storage(service.contractStorage)("string") shouldBe string
+    // Check if the storage contract has recorded the data sent by our contract
+    parseDataEntry(simulator.getStorage(storageContractId, "integer".getBytes(UTF_8))) shouldBe integer
+    parseDataEntry(simulator.getStorage(storageContractId, "boolean".getBytes(UTF_8))) shouldBe boolean
+    parseDataEntry(simulator.getStorage(storageContractId, "binary".getBytes(UTF_8))) shouldBe binary
+    parseDataEntry(simulator.getStorage(storageContractId, "string".getBytes(UTF_8))) shouldBe string
 
-    service.payments(service.paymentIdStorage).apply(0) shouldBe ("null", 4200000000L)
-    service.payments(service.paymentIdStorage).apply(1) shouldBe (service.asset, 2400000000L)
+    // Check whether the funds enclosed by the payment have gone away
+    simulator.getBalance(Array.empty[Byte]) shouldBe 5800000000L
+    simulator.getBalance(assetId) shouldBe 7600000000L
 
-    service.balances("null")(service.contract) shouldBe 5800000000L
-    service.balances(service.asset)(service.contract) shouldBe 7600000000L
+    // Checking to see if the contract has received funds
+    simulator.getBalance(Array.empty[Byte], storageContractId) shouldBe 4200000000L
+    simulator.getBalance(assetId, storageContractId) shouldBe 2400000000L
   }
 
   "call_contract_params" in {
-    val service = new WASMServiceMock
+    val simulator = new Simulator(bytecode)
 
-    val contractId = Base58.decode(service.contract).get
-    val bytecode   = getClass.getResourceAsStream("/call_contract.wasm").readAllBytes()
+    // Load storage contract
+    val storageBytecode   = getClass.getResourceAsStream("/storage.wasm").readAllBytes()
+    val storageContractId = simulator.loadAdditionalBytecode(storageBytecode)
 
     val integer = IntegerDataEntry("integer", 42)
     val boolean = BooleanDataEntry("boolean", true)
     val binary  = BinaryDataEntry("binary", ByteStr(Array[Byte](0, 1)))
     val string  = StringDataEntry("string", "test")
+    val data    = serializeDataEntryList(List(integer, boolean, binary, string))
 
-    var data: ByteArrayDataOutput = ByteStreams.newDataOutput()
-    writeDataEntryList(List(integer, boolean, binary, string), data)
+    // Function parameters
+    val contractId = StringDataEntry("contractId", Base58.encode(storageContractId))
+    val funcName   = StringDataEntry("funcName", "set_storage")
+    val bytes      = BinaryDataEntry("bytes", ByteStr(data))
+    val params     = serializeDataEntryList(List(contractId, funcName, bytes))
 
-    val bytes = BinaryDataEntry("bytes", ByteStr(data.toByteArray()))
+    simulator.callMethod("call_contract_params", params) shouldBe 0
 
-    var params: ByteArrayDataOutput = ByteStreams.newDataOutput()
-    writeDataEntryList(List(bytes), params)
-
-    executor.runContract(contractId, bytecode, "call_contract_params", params.toByteArray(), fuelLimit, service) shouldBe 0
-
-    service.storage(service.contractStorage)("integer") shouldBe integer
-    service.storage(service.contractStorage)("boolean") shouldBe boolean
-    service.storage(service.contractStorage)("binary") shouldBe binary
-    service.storage(service.contractStorage)("string") shouldBe string
+    // Check if the storage contract has recorded the data sent by our contract
+    parseDataEntry(simulator.getStorage(storageContractId, "integer".getBytes(UTF_8))) shouldBe integer
+    parseDataEntry(simulator.getStorage(storageContractId, "boolean".getBytes(UTF_8))) shouldBe boolean
+    parseDataEntry(simulator.getStorage(storageContractId, "binary".getBytes(UTF_8))) shouldBe binary
+    parseDataEntry(simulator.getStorage(storageContractId, "string".getBytes(UTF_8))) shouldBe string
   }
 }

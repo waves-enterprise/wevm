@@ -4,6 +4,7 @@ import scala.sys.process._
 import scala.jdk.CollectionConverters._
 
 enablePlugins(GitVersioning)
+ThisBuild / scalafmtOnCompile := true
 
 name := "wevm"
 
@@ -13,7 +14,7 @@ organization := "com.wavesenterprise"
 
 
 libraryDependencies += "org.scalatest" %% "scalatest" % "3.1.0" % "test"
-libraryDependencies += "com.wavesenterprise" % "we-core" % "1.14.0" % "test"
+libraryDependencies += "com.wavesenterprise" % "we-core" % "1.15.0"
 
 assembly / artifact := {
   val art = (assembly / artifact).value
@@ -39,6 +40,12 @@ ThisBuild / version := {
   releaseVersion.orElse(describedExtended).getOrElse(git.formattedDateVersion.value)
 }
 
+scalacOptions ++= Seq(
+  "-feature",
+  "-deprecation",
+  "-Ywarn-unused:-implicits",
+  "-Xlint"
+)
 
 ThisBuild / assemblyMergeStrategy := {
   case PathList("META-INF", xs @ _*) => MergeStrategy.discard

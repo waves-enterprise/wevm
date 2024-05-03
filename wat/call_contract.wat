@@ -17,7 +17,7 @@
         (i32.const 0)
     )
 
-    (func (export "call_contract") (result i32)
+    (func (export "call_contract") (param $p0 i32) (param $p1 i32) (param $p2 i32) (param $p3 i32) (param $p4 i32) (param $p5 i32) (result i32)
         (local $offset i32) (local $length i32) (local $error i32)
 
         (block $code
@@ -48,8 +48,8 @@
             )
 
             (call $base_58
-                (i32.const 6)  ;; Offset Asset
-                (i32.const 44) ;; Length Asset
+                (local.get $p4)
+                (local.get $p5)
             )
 
             (local.set $length)
@@ -80,8 +80,8 @@
             )
 
             (call $base_58
-                (i32.const 50) ;; Offset Contract Id
-                (i32.const 44) ;; Length Contract Id
+                (local.get $p0)
+                (local.get $p1)
             )
 
             (local.set $length)
@@ -96,8 +96,8 @@
                     (call $call_contract
                         (local.get $offset)
                         (local.get $length)
-                        (i32.const 94)
-                        (i32.const 11)
+                        (local.get $p2)
+                        (local.get $p3)
                     )
                 )
             )
@@ -106,13 +106,13 @@
         (local.get $error)
     )
 
-    (func (export "call_contract_params") (param $p0 i32) (param $p1 i32) (result i32)
+    (func (export "call_contract_params") (param $p0 i32) (param $p1 i32) (param $p2 i32) (param $p3 i32) (param $p4 i32) (param $p5 i32) (result i32)
         (local $offset i32) (local $length i32) (local $error i32)
 
         (block $code
             (call $base_58
-                (i32.const 50) ;; Offset Contract Id
-                (i32.const 44) ;; Length Contract Id
+                (local.get $p0)
+                (local.get $p1)
             )
 
             (local.set $length)
@@ -127,10 +127,10 @@
                     (call $call_contract_params
                         (local.get $offset)
                         (local.get $length)
-                        (i32.const 94)
-                        (i32.const 11)
-                        (local.get $p0)
-                        (local.get $p1)
+                        (local.get $p2)
+                        (local.get $p3)
+                        (local.get $p4)
+                        (local.get $p5)
                     )
                 )
             )
@@ -139,17 +139,9 @@
         (local.get $error)
     )
 
-    (global $__heap_base (export "__heap_base") i32 (i32.const 105))
+    (global $__heap_base (export "__heap_base") i32 (i32.const 6))
 
     ;; Args
     (data (i32.const 0) "\00\01")
     (data (i32.const 2) "test")
-
-    ;; Asset
-    (data (i32.const 6) "DnK5Xfi2wXUJx9BjK9X6ZpFdTLdq2GtWH9pWrcxcmrhB")
-
-    ;; Contract Id
-    (data (i32.const 50) "757aQzJiQZRfVRuJNnP3L1d369H2oTjUEazwtYxGngCd")
-    ;; Func name
-    (data (i32.const 94) "set_storage")
 )

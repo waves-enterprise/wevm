@@ -17,14 +17,14 @@
         (i32.const 0)
     )
 
-    (func (export "contains_key") (param $p0 i32) (param $p1 i32) (result i32)
+    (func (export "contains_key") (result i32)
         (local $result i32) (local $error i32)
         (block $code
             (call $contains_key
                 (i32.const 0)
                 (i32.const 0)
-                (local.get $p0)
-                (local.get $p1)
+                (i32.const 0)
+                (i32.const 7)
             )
 
             (local.set $result)
