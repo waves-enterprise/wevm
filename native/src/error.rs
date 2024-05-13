@@ -8,7 +8,6 @@ pub enum Error {
     Executable(ExecutableError),
     Jvm(JvmError),
     Runtime(RuntimeError),
-    Simulator(SimulatorError),
 }
 
 impl Error {
@@ -18,7 +17,6 @@ impl Error {
             Error::Executable(error) => *error as jint,
             Error::Jvm(error) => *error as jint,
             Error::Runtime(error) => *error as jint,
-            Error::Simulator(error) => *error as jint,
         }
     }
 
@@ -28,7 +26,6 @@ impl Error {
             Error::Executable(error) => *error as i32,
             Error::Jvm(error) => *error as i32,
             Error::Runtime(error) => *error as i32,
-            Error::Simulator(error) => *error as i32,
         }
     }
 }
@@ -125,15 +122,6 @@ pub enum RuntimeError {
     ParseError = 308,
 }
 
-/// Enumeration of errors that may occur in the simulator.
-#[derive(Copy, Clone, Debug, PartialEq)]
-pub enum SimulatorError {
-    /// Failed receiving Simulator.
-    SimulatorNotFound = 400,
-    /// Failed receiving bytecode.
-    BytecodeNotFound = 401,
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -144,6 +132,5 @@ mod tests {
         assert_eq!(ExecutableError::InvalidBytecode as jint, 100);
         assert_eq!(JvmError::JvmNotFound as jint, 200);
         assert_eq!(RuntimeError::Exception as jint, 300);
-        assert_eq!(SimulatorError::SimulatorNotFound as jint, 400);
     }
 }
