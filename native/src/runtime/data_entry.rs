@@ -1,5 +1,5 @@
 use crate::{
-    error::{Error, ExecutableError, Result, RuntimeError},
+    error::{Error, ExecutableError, Result},
     runtime::utils,
 };
 
@@ -47,33 +47,11 @@ impl DataEntry {
         result
     }
 
-    pub fn serialize_slice(data_entry: &[DataEntry]) -> Vec<u8> {
-        let mut result: Vec<u8> = vec![];
-
-        if !data_entry.is_empty() {
-            result.extend_from_slice(&(data_entry.len() as u16).to_be_bytes());
-
-            for item in data_entry {
-                result.extend(item.serialize(None));
-            }
-        }
-
-        result
-    }
-
     pub fn deserialize(input: &[u8]) -> Result<Self> {
         let mut offset_input: usize = 0;
 
         Self::skip_key(input, &mut offset_input)?;
         Self::get_value(input, &mut offset_input)
-    }
-
-    pub fn deserialize_with_key(input: &[u8]) -> Result<(String, Self)> {
-        let mut offset_input: usize = 0;
-
-        let key = Self::get_key(input, &mut offset_input)?;
-        let value = Self::get_value(input, &mut offset_input)?;
-        Ok((key, value))
     }
 
     pub fn deserialize_params(
@@ -116,12 +94,6 @@ impl DataEntry {
         }
 
         Ok(params)
-    }
-
-    fn get_key(input: &[u8], offset: &mut usize) -> Result<String> {
-        let length = utils::get_u16(input, offset)?;
-        let key = utils::get_bytes(input, offset, length as usize)?;
-        String::from_utf8(key).map_err(|_| Error::Runtime(RuntimeError::Utf8Error))
     }
 
     fn skip_key(input: &[u8], offset: &mut usize) -> Result<()> {
@@ -189,18 +161,6 @@ mod tests {
         ];
         let result = DataEntry::deserialize(&input).expect("Error deserialize DataEntry");
         assert_eq!(result, DataEntry::String(vec.clone()));
-    }
-
-    #[test]
-    fn test_deserialize_with_key() {
-        let input = [
-            0, 8, 116, 101, 115, 116, 95, 107, 101, 121, 0, 0, 0, 0, 0, 0, 0, 0, 1,
-        ];
-        let (key, value) =
-            DataEntry::deserialize_with_key(&input).expect("Error deserialize DataEntry");
-
-        assert_eq!(key, "test_key".to_string());
-        assert_eq!(value, DataEntry::Integer(1));
     }
 
     #[test]

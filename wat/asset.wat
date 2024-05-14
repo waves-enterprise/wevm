@@ -13,6 +13,7 @@
 
     (import "env0" "base_58" (func $base_58 (param i32 i32) (result i32 i32 i32)))
     (import "env0" "set_storage_int" (func $set_storage_int (param i32 i32 i64) (result i32)))
+    (import "env0" "set_storage_binary" (func $set_storage_binary (param i32 i32 i32 i32) (result i32)))
 
     (func (export "_constructor") (result i32)
         (i32.const 0)
@@ -33,6 +34,17 @@
 
             (local.set $length)
             (local.set $offset)
+
+            (br_if $code
+                (local.tee $error)
+            )
+
+            (call $set_storage_binary
+                (i32.const 14)
+                (i32.const 6)
+                (local.get $offset)
+                (local.get $length)
+            )
 
             (br_if $code
                 (local.tee $error)
@@ -76,6 +88,17 @@
 
             (local.set $length)
             (local.set $offset)
+
+            (br_if $code
+                (local.tee $error)
+            )
+
+            (call $set_storage_binary
+                (i32.const 14)
+                (i32.const 6)
+                (local.get $offset)
+                (local.get $length)
+            )
 
             (br_if $code
                 (local.tee $error)
@@ -162,21 +185,9 @@
         (local.get $error)
     )
 
-    (func (export "env0_transfer") (result i32)
-        (local $offset i32) (local $length i32) (local $balance i64) (local $error i32)
+    (func (export "env0_transfer") (param $p0 i32) (param $p1 i32) (result i32)
+        (local $balance i64) (local $error i32)
         (block $code
-            (call $base_58
-                (i32.const 20)  ;; Offset address
-                (i32.const 35) ;; Length address
-            )
-
-            (local.set $length)
-            (local.set $offset)
-
-            (br_if $code
-                (local.tee $error)
-            )
-
             (call $env0_get_balance
                 (i32.const 0)
                 (i32.const 0)
@@ -205,8 +216,8 @@
                 (call $env0_transfer
                     (i32.const 0)
                     (i32.const 0)
-                    (local.get $offset)
-                    (local.get $length)
+                    (local.get $p0)
+                    (local.get $p1)
                     (i64.const 42)
                 )
             )
@@ -215,21 +226,9 @@
         (local.get $error)
     )
 
-    (func (export "env1_transfer") (result i32)
-        (local $offset i32) (local $length i32) (local $balance i64) (local $error i32)
+    (func (export "env1_transfer") (param $p0 i32) (param $p1 i32) (result i32)
+        (local $balance i64) (local $error i32)
         (block $code
-            (call $base_58
-                (i32.const 20)  ;; Offset address
-                (i32.const 35) ;; Length address
-            )
-
-            (local.set $length)
-            (local.set $offset)
-
-            (br_if $code
-                (local.tee $error)
-            )
-
             (call $env1_get_balance
                 (i32.const 0)
                 (i32.const 0)
@@ -260,8 +259,8 @@
                 (call $env1_transfer
                     (i32.const 0)
                     (i32.const 0)
-                    (local.get $offset)
-                    (local.get $length)
+                    (local.get $p0)
+                    (local.get $p1)
                     (i32.const 0) ;; Type - Account
                     (i32.const 1) ;; Version - Address
                     (i64.const 42)
@@ -272,7 +271,7 @@
         (local.get $error)
     )
 
-    (global $__heap_base (export "__heap_base") i32 (i32.const 55))
+    (global $__heap_base (export "__heap_base") i32 (i32.const 20))
 
     ;; Name
     (data (i32.const 0) "TEST")
@@ -280,6 +279,4 @@
     (data (i32.const 4) "Test asset")
     ;; Key
     (data (i32.const 14) "result")
-    ;; Address
-    (data (i32.const 20) "3NqEjAkFVzem9CGa3bEPhakQc1Sm2G8gAFU")
 )

@@ -85,12 +85,12 @@
         (local.get $error)
     )
 
-    (func (export "caller") (result i32)
+    (func (export "caller") (param $p0 i32) (param $p1 i32) (param $p2 i32) (param $p3 i32) (result i32)
         (local $offset i32) (local $length i32) (local $error i32)
         (block $code
             (call $base_58
-                (i32.const 16) ;; Offset Contract Id
-                (i32.const 44) ;; Length Contract Id
+                (local.get $p0)
+                (local.get $p1)
             )
 
             (local.set $length)
@@ -105,8 +105,8 @@
                     (call $call_contract
                         (local.get $offset)
                         (local.get $length)
-                        (i32.const 60)
-                        (i32.const 6)
+                        (local.get $p2)
+                        (local.get $p3)
                     )
                 )
             )
@@ -115,7 +115,7 @@
         (local.get $error)
     )
 
-    (global $__heap_base (export "__heap_base") i32 (i32.const 66))
+    (global $__heap_base (export "__heap_base") i32 (i32.const 16))
 
     ;; Key
     (data (i32.const 0) "result")
@@ -125,8 +125,4 @@
     ;; String
     (data (i32.const 10) "one")
     (data (i32.const 13) "two")
-    ;; Contract Id
-    (data (i32.const 16) "2sqPS2VAKmK77FoNakw1VtDTCbDSa7nqh5wTXvJeYGo2")
-    ;; Func name
-    (data (i32.const 60) "caller")
 )
