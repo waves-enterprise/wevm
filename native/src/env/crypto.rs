@@ -1,4 +1,7 @@
 use crate::{error::RuntimeError, node::Node, runtime::Runtime};
+use blake2::{digest::consts::U32, Blake2b, Digest};
+use sha2::Sha256;
+use sha3::Keccak256;
 use wasmi::Caller;
 
 pub fn fast_hash(
@@ -37,6 +40,57 @@ pub fn secure_hash(
         Ok(result) => crate::env::write_memory(ctx, memory, offset_memory, result),
         Err(error) => (error.as_i32(), 0, 0),
     }
+}
+
+pub fn blake2b256(
+    offset_bytes: u32,
+    length_bytes: u32,
+    mut caller: Caller<Runtime>,
+) -> (i32, u32, u32) {
+    let (memory, ctx) = match caller.data().memory() {
+        Some(memory) => memory.data_and_store_mut(&mut caller),
+        None => return (RuntimeError::MemoryNotFound as i32, 0, 0),
+    };
+    let offset_memory = ctx.heap_base() as usize;
+
+    let mut hasher: Blake2b<U32> = Blake2b::new();
+    hasher.update(&memory[offset_bytes as usize..offset_bytes as usize + length_bytes as usize]);
+
+    crate::env::write_memory(ctx, memory, offset_memory, hasher.finalize().to_vec())
+}
+
+pub fn keccak256(
+    offset_bytes: u32,
+    length_bytes: u32,
+    mut caller: Caller<Runtime>,
+) -> (i32, u32, u32) {
+    let (memory, ctx) = match caller.data().memory() {
+        Some(memory) => memory.data_and_store_mut(&mut caller),
+        None => return (RuntimeError::MemoryNotFound as i32, 0, 0),
+    };
+    let offset_memory = ctx.heap_base() as usize;
+
+    let mut hasher = Keccak256::new();
+    hasher.update(&memory[offset_bytes as usize..offset_bytes as usize + length_bytes as usize]);
+
+    crate::env::write_memory(ctx, memory, offset_memory, hasher.finalize().to_vec())
+}
+
+pub fn sha256(
+    offset_bytes: u32,
+    length_bytes: u32,
+    mut caller: Caller<Runtime>,
+) -> (i32, u32, u32) {
+    let (memory, ctx) = match caller.data().memory() {
+        Some(memory) => memory.data_and_store_mut(&mut caller),
+        None => return (RuntimeError::MemoryNotFound as i32, 0, 0),
+    };
+    let offset_memory = ctx.heap_base() as usize;
+
+    let mut hasher = Sha256::new();
+    hasher.update(&memory[offset_bytes as usize..offset_bytes as usize + length_bytes as usize]);
+
+    crate::env::write_memory(ctx, memory, offset_memory, hasher.finalize().to_vec())
 }
 
 pub fn sig_verify(
