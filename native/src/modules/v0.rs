@@ -534,4 +534,8 @@ mod test {
     fn caller() -> (i32, *const u8, usize) {
         |caller: Caller<Runtime>| env::utils::caller(caller)
     }
+
+    fn require(offset_message: *const u8, length_message: usize) -> i32 {
+        |caller: Caller<Runtime>| env::utils::require(offset_message, length_message, caller)
+    }
 }

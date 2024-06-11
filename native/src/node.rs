@@ -3,6 +3,7 @@ use crate::error::Result;
 /// Interface of interaction with the node.
 pub trait Node {
     fn get_chain_id(&self) -> Result<i8>;
+    fn require(&self, message: &[u8]) -> Result<()>;
     fn get_bytecode(&self, contract_id: &[u8]) -> Result<Vec<u8>>;
     fn add_payments(&self, contract_id: &[u8], payment_id: &[u8], payments: &[u8]) -> Result<()>;
     // Asset

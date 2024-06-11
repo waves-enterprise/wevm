@@ -4,6 +4,7 @@
     (import "env0" "base_58" (func $base_58 (param i32 i32) (result i32 i32 i32)))
     (import "env0" "to_base_58_string" (func $to_base_58_string (param i32 i32) (result i32 i32 i32)))
     (import "env0" "to_le_bytes" (func $to_le_bytes (param i32 i32) (result i32 i32 i32)))
+    (import "env0" "require" (func $require (param i32 i32) (result i32)))
 
     (import "env0" "set_storage_int" (func $set_storage_int (param i32 i32 i64) (result i32)))
     (import "env0" "set_storage_string" (func $set_storage_string (param i32 i32 i32 i32) (result i32)))
@@ -115,7 +116,25 @@
         (local.get $error)
     )
 
-    (global $__heap_base (export "__heap_base") i32 (i32.const 16))
+    (func (export "require") (result i32)
+        (local $error i32)
+        (block $code
+            (br_if $code
+                (local.tee $error
+                    (call $require
+                        (i32.const 16)
+                        (i32.const 14)
+                    )
+                )
+            )
+
+            (local.set $error (i32.const 300))
+        )
+
+        (local.get $error)
+    )
+
+    (global $__heap_base (export "__heap_base") i32 (i32.const 30))
 
     ;; Key
     (data (i32.const 0) "result")
@@ -125,4 +144,6 @@
     ;; String
     (data (i32.const 10) "one")
     (data (i32.const 13) "two")
+    ;; Error message
+    (data (i32.const 16) "Runtime error!")
 )

@@ -51,6 +51,22 @@ impl Node for Vm {
             .map_err(|_| Error::Jvm(JvmError::ReceiveByte))
     }
 
+    fn require(&self, message: &[u8]) -> Result<()> {
+        let mut env = env!(self);
+
+        let message = byte_array!(env, message);
+
+        env.call_method(
+            jvm_callback!(&self.jvm_callback),
+            "require",
+            "([B)V",
+            &[JValue::Object(&message.into())],
+        )
+        .map_err(|_| Error::Jvm(JvmError::MethodCall))?;
+
+        Ok(())
+    }
+
     fn get_bytecode(&self, contract_id: &[u8]) -> Result<Vec<u8>> {
         let mut env = env!(self);
 
