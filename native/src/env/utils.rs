@@ -1,4 +1,4 @@
-use crate::{error::RuntimeError, runtime::Runtime};
+use crate::{error::RuntimeError, node::Node, runtime::Runtime};
 use base58::{FromBase58, ToBase58};
 use std::str;
 use wasmi::Caller;
@@ -72,4 +72,19 @@ pub fn caller(mut caller: Caller<Runtime>) -> (i32, u32, u32) {
     let result = ctx.vm.get_caller_current_frame();
 
     crate::env::write_memory(ctx, memory, offset_memory, result)
+}
+
+pub fn require(offset_message: u32, length_message: u32, mut caller: Caller<Runtime>) -> i32 {
+    let (memory, ctx) = match caller.data().memory() {
+        Some(memory) => memory.data_and_store_mut(&mut caller),
+        None => return RuntimeError::MemoryNotFound as i32,
+    };
+
+    let message =
+        &memory[offset_message as usize..offset_message as usize + length_message as usize];
+
+    match ctx.vm.require(message) {
+        Ok(_) => 0,
+        Err(error) => error.as_i32(),
+    }
 }

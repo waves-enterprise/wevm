@@ -6,6 +6,9 @@
 
     (import "env0" "fast_hash" (func $fast_hash (param i32 i32) (result i32 i32 i32)))
     (import "env0" "secure_hash" (func $secure_hash (param i32 i32) (result i32 i32 i32)))
+    (import "env0" "blake2b256" (func $blake2b256 (param i32 i32) (result i32 i32 i32)))
+    (import "env0" "keccak256" (func $keccak256 (param i32 i32) (result i32 i32 i32)))
+    (import "env0" "sha256" (func $sha256 (param i32 i32) (result i32 i32 i32)))
     (import "env0" "sig_verify" (func $sig_verify (param i32 i32 i32 i32 i32 i32) (result i32 i32)))
 
     (func (export "_constructor") (result i32)
@@ -24,7 +27,7 @@
             (local.set $offset)
 
             (br_if $code
-                (local.tee $error) 
+                (local.tee $error)
             )
 
             (br_if $code
@@ -54,7 +57,97 @@
             (local.set $offset)
 
             (br_if $code
-                (local.tee $error) 
+                (local.tee $error)
+            )
+
+            (br_if $code
+                (local.tee $error
+                    (call $set_storage_binary
+                        (i32.const 0) ;; Key offset
+                        (i32.const 6) ;; Key length
+                        (local.get $offset)
+                        (local.get $length)
+                    )
+                )
+            )
+        )
+
+        (local.get $error)
+    )
+
+    (func (export "blake2b256") (param $p0 i32) (param $p1 i32) (result i32)
+        (local $offset i32) (local $length i32) (local $error i32)
+        (block $code
+            (call $blake2b256
+                (local.get $p0)
+                (local.get $p1)
+            )
+
+            (local.set $length)
+            (local.set $offset)
+
+            (br_if $code
+                (local.tee $error)
+            )
+
+            (br_if $code
+                (local.tee $error
+                    (call $set_storage_binary
+                        (i32.const 0) ;; Key offset
+                        (i32.const 6) ;; Key length
+                        (local.get $offset)
+                        (local.get $length)
+                    )
+                )
+            )
+        )
+
+        (local.get $error)
+    )
+
+    (func (export "keccak256") (param $p0 i32) (param $p1 i32) (result i32)
+        (local $offset i32) (local $length i32) (local $error i32)
+        (block $code
+            (call $keccak256
+                (local.get $p0)
+                (local.get $p1)
+            )
+
+            (local.set $length)
+            (local.set $offset)
+
+            (br_if $code
+                (local.tee $error)
+            )
+
+            (br_if $code
+                (local.tee $error
+                    (call $set_storage_binary
+                        (i32.const 0) ;; Key offset
+                        (i32.const 6) ;; Key length
+                        (local.get $offset)
+                        (local.get $length)
+                    )
+                )
+            )
+        )
+
+        (local.get $error)
+    )
+
+    (func (export "sha256") (param $p0 i32) (param $p1 i32) (result i32)
+        (local $offset i32) (local $length i32) (local $error i32)
+        (block $code
+            (call $sha256
+                (local.get $p0)
+                (local.get $p1)
+            )
+
+            (local.set $length)
+            (local.set $offset)
+
+            (br_if $code
+                (local.tee $error)
             )
 
             (br_if $code
@@ -87,7 +180,7 @@
             (local.set $result)
 
             (br_if $code
-                (local.tee $error) 
+                (local.tee $error)
             )
 
             (br_if $code

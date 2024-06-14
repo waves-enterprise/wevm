@@ -8,6 +8,11 @@ trait WASMService {
   def getChainId(): Byte
 
   /**
+    * @param message Error message to the user if the require value was false
+    */
+  def require(message: Array[Byte]): Unit
+
+  /**
     * @param contractId ID of a contract. Base58 bytes
     * @return Bytecode contract
     */
@@ -18,7 +23,7 @@ trait WASMService {
     * @param paymentId Unique payment identifier. Represents the concatenation of contractId bytes and unique 8 bytes
     * @param payments Serialized list assetId and amount
     */
-  def addPayments(contractId: Array[Byte], paymentId: Array[Byte], payments: Array[Byte])
+  def addPayments(contractId: Array[Byte], paymentId: Array[Byte], payments: Array[Byte]): Unit
 
   /**
     * @param assetId ID of a token (optional field, array can be empty). Base58 bytes
@@ -33,7 +38,7 @@ trait WASMService {
     * @param recipient AssetHolder of recipient of tokens
     * @param amount Amount of tokens
     */
-  def transfer(contractId: Array[Byte], assetId: Array[Byte], recipient: Array[Byte], amount: Long)
+  def transfer(contractId: Array[Byte], assetId: Array[Byte], recipient: Array[Byte], amount: Long): Unit
 
   /**
     * @param contractId ID of a contract called this function. Base58 bytes
@@ -51,7 +56,7 @@ trait WASMService {
     * @param assetId ID of a token to be burned. Base58 bytes
     * @param amount Amount of tokens
     */
-  def burn(contractId: Array[Byte], assetId: Array[Byte], amount: Long)
+  def burn(contractId: Array[Byte], assetId: Array[Byte], amount: Long): Unit
 
   /**
     * @param contractId ID of a contract called this function. Base58 bytes
@@ -59,7 +64,7 @@ trait WASMService {
     * @param amount Amount of tokens
     * @param isReissuable Re-issuability of a token
     */
-  def reissue(contractId: Array[Byte], assetId: Array[Byte], amount: Long, isReissuable: Boolean)
+  def reissue(contractId: Array[Byte], assetId: Array[Byte], amount: Long, isReissuable: Boolean): Unit
 
   /**
     * @param field UTF-8 string with block field name
@@ -99,7 +104,7 @@ trait WASMService {
     * @param contractId ID of a contract called this function. Base58 bytes
     * @param leaseId ID of a leasing transaction. Base58 bytes
     */
-  def cancelLease(contractId: Array[Byte], leaseId: Array[Byte])
+  def cancelLease(contractId: Array[Byte], leaseId: Array[Byte]): Unit
 
   /**
     * @param contractId ID of a contract (possible contractId called this function). Base58 bytes
@@ -119,7 +124,7 @@ trait WASMService {
     * @param contractId ID of a contract called this function. Base58 bytes
     * @param value Serialized DataEntry record value
     */
-  def setStorage(contractId: Array[Byte], value: Array[Byte])
+  def setStorage(contractId: Array[Byte], value: Array[Byte]): Unit
 
   /**
     * @param paymentId Unique payment identifier. Represents the concatenation of contractId bytes and unique 8 bytes

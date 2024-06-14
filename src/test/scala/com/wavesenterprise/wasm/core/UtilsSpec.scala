@@ -49,4 +49,12 @@ class UtilsSpec extends AnyFreeSpec with Matchers {
     val result = BinaryDataEntry("result", ByteStr(simulator.contractId))
     parseDataEntry(simulator.getStorage(mockContractId, "result".getBytes(UTF_8))) shouldBe result
   }
+
+  "require" in {
+    val simulator = new Simulator(bytecode)
+
+    simulator.callMethod("require", Array.empty[Byte]) shouldBe 300
+
+    simulator.errorMessage shouldBe "Runtime error!"
+  }
 }

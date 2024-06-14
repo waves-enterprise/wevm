@@ -16,7 +16,10 @@ members = ["proc-macro"]
 
 [dependencies]
 base58 = "0.2.0"
+blake2 = "0.10"
 jni = "0.21.0"
+sha2 = "0.10"
+sha3 = "0.10"
 wasmi = "0.31.2"
 wevm-proc-macro = { version = "0.1.0", path = "proc-macro" }
 

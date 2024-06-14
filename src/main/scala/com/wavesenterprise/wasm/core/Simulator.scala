@@ -21,6 +21,8 @@ class Simulator(bytecode: Array[Byte]) {
   def chainId: Byte           = this.service.getChainId()
   def setChainId(value: Byte) = this.service.setChainId(value)
 
+  def errorMessage: String = this.service.errorMessage
+
   def timestamp: Long           = this.service.timestamp
   def setTimestamp(value: Long) = this.service.setTimestamp(value)
 

@@ -13,10 +13,11 @@ import java.time.Instant
 import scala.collection.mutable.{Map, Seq}
 
 class SimulatorWASMService extends WASMService {
-  private var _chainId: Byte         = 'V'.toByte
-  private var _timestamp: Long       = Instant.now().toEpochMilli()
-  private val _height: Long          = 1L
-  private var _txSender: Array[Byte] = Array.empty[Byte]
+  private var _chainId: Byte             = 'V'.toByte
+  private var _errorMessage: Array[Byte] = Array.empty[Byte]
+  private var _timestamp: Long           = Instant.now().toEpochMilli()
+  private val _height: Long              = 1L
+  private var _txSender: Array[Byte]     = Array.empty[Byte]
 
   private val _bytecodes: Map[ByteBuffer, Array[Byte]]             = Map.empty[ByteBuffer, Array[Byte]]
   private val _balances: Map[ByteBuffer, Map[ByteBuffer, Long]]    = Map.empty[ByteBuffer, Map[ByteBuffer, Long]]
@@ -25,6 +26,8 @@ class SimulatorWASMService extends WASMService {
   private val _payments: Map[ByteBuffer, Seq[(ByteBuffer, Long)]]  = Map.empty[ByteBuffer, Seq[(ByteBuffer, Long)]]
 
   private[core] def setChainId(value: Byte) = this._chainId = value
+
+  private[core] def errorMessage: String = new String(this._errorMessage, UTF_8)
 
   private[core] def timestamp: Long           = this._timestamp
   private[core] def setTimestamp(value: Long) = this._timestamp = value
@@ -95,6 +98,8 @@ class SimulatorWASMService extends WASMService {
     this._storage.getOrElse(contractId, Map.empty[String, DataEntry[_]])
 
   override def getChainId(): Byte = this._chainId
+
+  override def require(message: Array[Byte]): Unit = this._errorMessage = message
 
   override def getBytecode(contractId: Array[Byte]): Array[Byte] =
     this._bytecodes(ByteBuffer.wrap(contractId))

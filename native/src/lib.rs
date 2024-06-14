@@ -18,7 +18,7 @@ mod node;
 #[cfg(feature = "jvm")]
 mod runtime;
 
-#[cfg(test)]
+#[cfg(all(test, feature = "jvm"))]
 mod tests;
 
 #[cfg(feature = "jvm")]

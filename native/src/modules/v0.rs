@@ -201,6 +201,18 @@ mod test {
         |caller: Caller<Runtime>| env::crypto::secure_hash(offset_bytes, length_bytes, caller)
     }
 
+    fn blake2b256(offset_bytes: *const u8, length_bytes: usize) -> (i32, *const u8, usize) {
+        |caller: Caller<Runtime>| env::crypto::blake2b256(offset_bytes, length_bytes, caller)
+    }
+
+    fn keccak256(offset_bytes: *const u8, length_bytes: usize) -> (i32, *const u8, usize) {
+        |caller: Caller<Runtime>| env::crypto::keccak256(offset_bytes, length_bytes, caller)
+    }
+
+    fn sha256(offset_bytes: *const u8, length_bytes: usize) -> (i32, *const u8, usize) {
+        |caller: Caller<Runtime>| env::crypto::sha256(offset_bytes, length_bytes, caller)
+    }
+
     fn sig_verify(
         offset_message: *const u8,
         length_message: usize,
@@ -521,5 +533,9 @@ mod test {
 
     fn caller() -> (i32, *const u8, usize) {
         |caller: Caller<Runtime>| env::utils::caller(caller)
+    }
+
+    fn require(offset_message: *const u8, length_message: usize) -> i32 {
+        |caller: Caller<Runtime>| env::utils::require(offset_message, length_message, caller)
     }
 }

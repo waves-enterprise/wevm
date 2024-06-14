@@ -38,6 +38,48 @@ class CryptoSpec extends AnyFreeSpec with Matchers {
     parseDataEntry(simulator.getStorage("result".getBytes(UTF_8))) shouldBe result
   }
 
+  "blake2b256" in {
+    val simulator = new Simulator(bytecode)
+
+    val bytes  = Array[Byte](0, 0, 0, 1)
+    val binary = BinaryDataEntry("bytes", ByteStr(bytes))
+    val params = serializeDataEntryList(List(binary))
+
+    simulator.callMethod("blake2b256", params) shouldBe 0
+
+    val hash   = Blake2b256.hash(bytes)
+    val result = BinaryDataEntry("result", ByteStr(hash))
+    parseDataEntry(simulator.getStorage("result".getBytes(UTF_8))) shouldBe result
+  }
+
+  "keccak256" in {
+    val simulator = new Simulator(bytecode)
+
+    val bytes  = Array[Byte](0, 0, 0, 1)
+    val binary = BinaryDataEntry("bytes", ByteStr(bytes))
+    val params = serializeDataEntryList(List(binary))
+
+    simulator.callMethod("keccak256", params) shouldBe 0
+
+    val hash   = Keccak256.hash(bytes)
+    val result = BinaryDataEntry("result", ByteStr(hash))
+    parseDataEntry(simulator.getStorage("result".getBytes(UTF_8))) shouldBe result
+  }
+
+  "sha256" in {
+    val simulator = new Simulator(bytecode)
+
+    val bytes  = Array[Byte](0, 0, 0, 1)
+    val binary = BinaryDataEntry("bytes", ByteStr(bytes))
+    val params = serializeDataEntryList(List(binary))
+
+    simulator.callMethod("sha256", params) shouldBe 0
+
+    val hash   = SHA256.hash(bytes)
+    val result = BinaryDataEntry("result", ByteStr(hash))
+    parseDataEntry(simulator.getStorage("result".getBytes(UTF_8))) shouldBe result
+  }
+
   "sig_verify" in {
     val simulator = new Simulator(bytecode)
 
