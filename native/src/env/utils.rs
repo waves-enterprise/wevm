@@ -83,6 +83,10 @@ pub fn require(offset_message: u32, length_message: u32, mut caller: Caller<Runt
     let message =
         &memory[offset_message as usize..offset_message as usize + length_message as usize];
 
+    if str::from_utf8(message).is_err() {
+        return RuntimeError::Utf8Error.as_i32();
+    }
+
     match ctx.vm.require(message) {
         Ok(_) => 0,
         Err(error) => error.as_i32(),
