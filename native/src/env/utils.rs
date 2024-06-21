@@ -10,7 +10,7 @@ pub fn base58(
 ) -> (i32, u32, u32) {
     let (memory, ctx) = match caller.data().memory() {
         Some(memory) => memory.data_and_store_mut(&mut caller),
-        None => return (RuntimeError::MemoryNotFound as i32, 0, 0),
+        None => return (RuntimeError::MemoryNotFound.as_i32(), 0, 0),
     };
     let offset_memory = ctx.heap_base() as usize;
 
@@ -18,12 +18,12 @@ pub fn base58(
         &memory[offset_bytes as usize..offset_bytes as usize + length_bytes as usize],
     ) {
         Ok(string) => string,
-        Err(_) => return (RuntimeError::Utf8Error as i32, 0, 0),
+        Err(_) => return (RuntimeError::Utf8Error.as_i32(), 0, 0),
     };
 
     match value.from_base58() {
         Ok(result) => crate::env::write_memory(ctx, memory, offset_memory, result),
-        Err(_) => (RuntimeError::Base58Error as i32, 0, 0),
+        Err(_) => (RuntimeError::Base58Error.as_i32(), 0, 0),
     }
 }
 
@@ -34,7 +34,7 @@ pub fn to_base58_string(
 ) -> (i32, u32, u32) {
     let (memory, ctx) = match caller.data().memory() {
         Some(memory) => memory.data_and_store_mut(&mut caller),
-        None => return (RuntimeError::MemoryNotFound as i32, 0, 0),
+        None => return (RuntimeError::MemoryNotFound.as_i32(), 0, 0),
     };
     let offset_memory = ctx.heap_base() as usize;
 
@@ -51,7 +51,7 @@ pub fn to_le_bytes(
 ) -> (i32, u32, u32) {
     let (memory, ctx) = match caller.data().memory() {
         Some(memory) => memory.data_and_store_mut(&mut caller),
-        None => return (RuntimeError::MemoryNotFound as i32, 0, 0),
+        None => return (RuntimeError::MemoryNotFound.as_i32(), 0, 0),
     };
     let offset_memory = ctx.heap_base() as usize;
 
@@ -65,7 +65,7 @@ pub fn to_le_bytes(
 pub fn caller(mut caller: Caller<Runtime>) -> (i32, u32, u32) {
     let (memory, ctx) = match caller.data().memory() {
         Some(memory) => memory.data_and_store_mut(&mut caller),
-        None => return (RuntimeError::MemoryNotFound as i32, 0, 0),
+        None => return (RuntimeError::MemoryNotFound.as_i32(), 0, 0),
     };
     let offset_memory = ctx.heap_base() as usize;
 
@@ -77,7 +77,7 @@ pub fn caller(mut caller: Caller<Runtime>) -> (i32, u32, u32) {
 pub fn require(offset_message: u32, length_message: u32, mut caller: Caller<Runtime>) -> i32 {
     let (memory, ctx) = match caller.data().memory() {
         Some(memory) => memory.data_and_store_mut(&mut caller),
-        None => return RuntimeError::MemoryNotFound as i32,
+        None => return RuntimeError::MemoryNotFound.as_i32(),
     };
 
     let message =

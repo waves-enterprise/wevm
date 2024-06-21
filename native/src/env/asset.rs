@@ -1,4 +1,5 @@
 use crate::{error::RuntimeError, node::Node, runtime::Runtime};
+use log::error;
 use wasmi::Caller;
 
 pub fn get_balance(
@@ -12,7 +13,7 @@ pub fn get_balance(
 ) -> (i32, i64) {
     let (memory, ctx) = match caller.data().memory() {
         Some(memory) => memory.data_and_store_mut(&mut caller),
-        None => return (RuntimeError::MemoryNotFound as i32, 0),
+        None => return (RuntimeError::MemoryNotFound.as_i32(), 0),
     };
 
     let asset_id =
@@ -33,7 +34,10 @@ pub fn get_balance(
 
     match ctx.vm.get_balance(asset_id, asset_holder.as_slice()) {
         Ok(result) => (0, result),
-        Err(error) => (error.as_i32(), 0),
+        Err(error) => {
+            error!("{}", error);
+            (error.as_i32(), 0)
+        }
     }
 }
 
@@ -49,7 +53,7 @@ pub fn transfer(
 ) -> i32 {
     let (memory, ctx) = match caller.data().memory() {
         Some(memory) => memory.data_and_store_mut(&mut caller),
-        None => return RuntimeError::MemoryNotFound as i32,
+        None => return RuntimeError::MemoryNotFound.as_i32(),
     };
 
     let contract_id = ctx.vm.top_frame().contract_id();
@@ -60,7 +64,10 @@ pub fn transfer(
         &memory[offset_recipient as usize..offset_recipient as usize + length_recipient as usize];
     let asset_holder = match crate::env::get_asset_holder(ctx, type_, version, recipient.to_vec()) {
         Ok(bytes) => bytes,
-        Err(error) => return error.as_i32(),
+        Err(error) => {
+            error!("{}", error);
+            return error.as_i32();
+        }
     };
 
     match ctx.vm.transfer(
@@ -70,7 +77,10 @@ pub fn transfer(
         amount,
     ) {
         Ok(_) => 0,
-        Err(error) => error.as_i32(),
+        Err(error) => {
+            error!("{}", error);
+            error.as_i32()
+        }
     }
 }
 
@@ -86,7 +96,7 @@ pub fn issue(
 ) -> (i32, u32, u32) {
     let (memory, ctx) = match caller.data().memory() {
         Some(memory) => memory.data_and_store_mut(&mut caller),
-        None => return (RuntimeError::MemoryNotFound as i32, 0, 0),
+        None => return (RuntimeError::MemoryNotFound.as_i32(), 0, 0),
     };
     let offset_memory = ctx.heap_base() as usize;
 
@@ -104,7 +114,10 @@ pub fn issue(
         is_reissuable != 0,
     ) {
         Ok(result) => crate::env::write_memory(ctx, memory, offset_memory, result),
-        Err(error) => (error.as_i32(), 0, 0),
+        Err(error) => {
+            error!("{}", error);
+            (error.as_i32(), 0, 0)
+        }
     }
 }
 
@@ -116,7 +129,9 @@ pub fn burn(
 ) -> i32 {
     let (memory, ctx) = match caller.data().memory() {
         Some(memory) => memory.data_and_store_mut(&mut caller),
-        None => return RuntimeError::MemoryNotFound as i32,
+        None => {
+            return RuntimeError::MemoryNotFound.as_i32();
+        }
     };
 
     let contract_id = ctx.vm.top_frame().contract_id();
@@ -125,7 +140,10 @@ pub fn burn(
 
     match ctx.vm.burn(contract_id.as_slice(), asset_id, amount) {
         Ok(_) => 0,
-        Err(error) => error.as_i32(),
+        Err(error) => {
+            error!("{}", error);
+            error.as_i32()
+        }
     }
 }
 
@@ -138,7 +156,7 @@ pub fn reissue(
 ) -> i32 {
     let (memory, ctx) = match caller.data().memory() {
         Some(memory) => memory.data_and_store_mut(&mut caller),
-        None => return RuntimeError::MemoryNotFound as i32,
+        None => return RuntimeError::MemoryNotFound.as_i32(),
     };
 
     let contract_id = ctx.vm.top_frame().contract_id();
@@ -150,6 +168,9 @@ pub fn reissue(
         .reissue(contract_id.as_slice(), asset_id, amount, is_reissuable != 0)
     {
         Ok(_) => 0,
-        Err(error) => error.as_i32(),
+        Err(error) => {
+            error!("{}", error);
+            error.as_i32()
+        }
     }
 }

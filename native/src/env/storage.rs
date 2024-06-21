@@ -14,7 +14,7 @@ pub fn contains_key(
 ) -> (i32, i32) {
     let (memory, ctx) = match caller.data().memory() {
         Some(memory) => memory.data_and_store_mut(&mut caller),
-        None => return (RuntimeError::MemoryNotFound as i32, 0),
+        None => return (RuntimeError::MemoryNotFound.as_i32(), 0),
     };
 
     let address = if length_address != 0 {
@@ -40,7 +40,7 @@ pub fn get_storage_int(
 ) -> (i32, i64) {
     let (memory, ctx) = match caller.data().memory() {
         Some(memory) => memory.data_and_store_mut(&mut caller),
-        None => return (RuntimeError::MemoryNotFound as i32, 0),
+        None => return (RuntimeError::MemoryNotFound.as_i32(), 0),
     };
 
     let address = if length_address != 0 {
@@ -54,7 +54,7 @@ pub fn get_storage_int(
     match ctx.vm.get_storage(address.as_slice(), key) {
         Ok(bytes) => match DataEntry::deserialize(bytes.as_slice()) {
             Ok(DataEntry::Integer(integer)) => (0, integer),
-            _ => (ExecutableError::FailedDeserialize as i32, 0),
+            _ => (ExecutableError::FailedDeserialize.as_i32(), 0),
         },
         Err(error) => (error.as_i32(), 0),
     }
@@ -69,7 +69,7 @@ pub fn get_storage_bool(
 ) -> (i32, i32) {
     let (memory, ctx) = match caller.data().memory() {
         Some(memory) => memory.data_and_store_mut(&mut caller),
-        None => return (RuntimeError::MemoryNotFound as i32, 0),
+        None => return (RuntimeError::MemoryNotFound.as_i32(), 0),
     };
 
     let address = if length_address != 0 {
@@ -83,7 +83,7 @@ pub fn get_storage_bool(
     match ctx.vm.get_storage(address.as_slice(), key) {
         Ok(bytes) => match DataEntry::deserialize(bytes.as_slice()) {
             Ok(DataEntry::Boolean(boolean)) => (0, boolean),
-            _ => (ExecutableError::FailedDeserialize as i32, 0),
+            _ => (ExecutableError::FailedDeserialize.as_i32(), 0),
         },
         Err(error) => (error.as_i32(), 0),
     }
@@ -98,7 +98,7 @@ pub fn get_storage_binary(
 ) -> (i32, u32, u32) {
     let (memory, ctx) = match caller.data().memory() {
         Some(memory) => memory.data_and_store_mut(&mut caller),
-        None => return (RuntimeError::MemoryNotFound as i32, 0, 0),
+        None => return (RuntimeError::MemoryNotFound.as_i32(), 0, 0),
     };
     let offset_memory = ctx.heap_base() as usize;
 
@@ -114,7 +114,7 @@ pub fn get_storage_binary(
         Ok(bytes) => {
             let result = match DataEntry::deserialize(bytes.as_slice()) {
                 Ok(DataEntry::Binary(bytes)) => bytes,
-                _ => return (ExecutableError::FailedDeserialize as i32, 0, 0),
+                _ => return (ExecutableError::FailedDeserialize.as_i32(), 0, 0),
             };
             crate::env::write_memory(ctx, memory, offset_memory, result)
         }
@@ -131,7 +131,7 @@ pub fn get_storage_string(
 ) -> (i32, u32, u32) {
     let (memory, ctx) = match caller.data().memory() {
         Some(memory) => memory.data_and_store_mut(&mut caller),
-        None => return (RuntimeError::MemoryNotFound as i32, 0, 0),
+        None => return (RuntimeError::MemoryNotFound.as_i32(), 0, 0),
     };
     let offset_memory = ctx.heap_base() as usize;
 
@@ -147,7 +147,7 @@ pub fn get_storage_string(
         Ok(bytes) => {
             let result = match DataEntry::deserialize(bytes.as_slice()) {
                 Ok(DataEntry::String(bytes)) => bytes,
-                _ => return (ExecutableError::FailedDeserialize as i32, 0, 0),
+                _ => return (ExecutableError::FailedDeserialize.as_i32(), 0, 0),
             };
             crate::env::write_memory(ctx, memory, offset_memory, result)
         }
@@ -163,7 +163,7 @@ pub fn set_storage_int(
 ) -> i32 {
     let (memory, ctx) = match caller.data().memory() {
         Some(memory) => memory.data_and_store_mut(&mut caller),
-        None => return RuntimeError::MemoryNotFound as i32,
+        None => return RuntimeError::MemoryNotFound.as_i32(),
     };
 
     let contract_id = ctx.vm.top_frame().contract_id();
@@ -187,7 +187,7 @@ pub fn set_storage_bool(
 ) -> i32 {
     let (memory, ctx) = match caller.data().memory() {
         Some(memory) => memory.data_and_store_mut(&mut caller),
-        None => return RuntimeError::MemoryNotFound as i32,
+        None => return RuntimeError::MemoryNotFound.as_i32(),
     };
 
     let contract_id = ctx.vm.top_frame().contract_id();
@@ -212,7 +212,7 @@ pub fn set_storage_binary(
 ) -> i32 {
     let (memory, ctx) = match caller.data().memory() {
         Some(memory) => memory.data_and_store_mut(&mut caller),
-        None => return RuntimeError::MemoryNotFound as i32,
+        None => return RuntimeError::MemoryNotFound.as_i32(),
     };
 
     let contract_id = ctx.vm.top_frame().contract_id();
@@ -238,7 +238,7 @@ pub fn set_storage_string(
 ) -> i32 {
     let (memory, ctx) = match caller.data().memory() {
         Some(memory) => memory.data_and_store_mut(&mut caller),
-        None => return RuntimeError::MemoryNotFound as i32,
+        None => return RuntimeError::MemoryNotFound.as_i32(),
     };
 
     let contract_id = ctx.vm.top_frame().contract_id();
