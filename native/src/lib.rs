@@ -30,11 +30,15 @@ pub use modules::v1;
 #[cfg(feature = "jvm")]
 use crate::{error::JvmError, exec::Executable, vm::Vm};
 #[cfg(feature = "jvm")]
+use base58::ToBase58;
+#[cfg(feature = "jvm")]
 use jni::{
     objects::{JByteArray, JClass, JObject, JString},
     sys::{jint, jlong},
     JNIEnv,
 };
+#[cfg(feature = "jvm")]
+use log::{debug, error};
 #[cfg(feature = "jvm")]
 use wasmi::Value;
 
@@ -66,24 +70,42 @@ pub extern "system" fn Java_com_wavesenterprise_wasm_core_WASMExecutor_runContra
     fuel_limit: jlong,
     callback: JObject<'local>,
 ) -> jint {
+    let _ = env_logger::try_init();
     let contract_id = match env.convert_byte_array(contract_id) {
         Ok(bytes) => bytes,
-        Err(_) => return JvmError::ByteArrayConversion as jint,
+        Err(_) => {
+            error!("{}", JvmError::ByteArrayConversion);
+            return JvmError::ByteArrayConversion.as_jint();
+        }
     };
+
+    debug!(
+        "Started WEVM to execute the contract: {}",
+        contract_id.clone().to_base58()
+    );
 
     let bytecode = match env.convert_byte_array(bytecode) {
         Ok(bytes) => bytes,
-        Err(_) => return JvmError::ByteArrayConversion as jint,
+        Err(_) => {
+            error!("{}", JvmError::ByteArrayConversion);
+            return JvmError::ByteArrayConversion.as_jint();
+        }
     };
 
     let jvm = match env.get_java_vm() {
         Ok(jvm) => jvm,
-        Err(_) => return JvmError::GetJavaVM as jint,
+        Err(_) => {
+            error!("{}", JvmError::GetJavaVM);
+            return JvmError::GetJavaVM.as_jint();
+        }
     };
 
     let callback = match env.new_global_ref(callback) {
         Ok(callback) => callback,
-        Err(_) => return JvmError::NewGlobalRef as jint,
+        Err(_) => {
+            error!("{}", JvmError::NewGlobalRef);
+            return JvmError::NewGlobalRef.as_jint();
+        }
     };
 
     let mut vm = match Vm::new(
@@ -96,22 +118,34 @@ pub extern "system" fn Java_com_wavesenterprise_wasm_core_WASMExecutor_runContra
         Some(callback),
     ) {
         Ok(vm) => vm,
-        Err(error) => return error.as_jint(),
+        Err(error) => {
+            error!("{}", error);
+            return error.as_jint();
+        }
     };
 
     let func_name: String = match env.get_string(&func_name) {
         Ok(string) => string.into(),
-        Err(_) => return JvmError::NewString as jint,
+        Err(_) => {
+            error!("{}", JvmError::NewString);
+            return JvmError::NewString.as_jint();
+        }
     };
 
     let params = match env.convert_byte_array(params) {
         Ok(bytes) => bytes,
-        Err(_) => return JvmError::ByteArrayConversion as jint,
+        Err(_) => {
+            error!("{}", JvmError::ByteArrayConversion);
+            return JvmError::ByteArrayConversion.as_jint();
+        }
     };
 
     let result = match vm.run(&func_name, &params) {
         Ok(result) => result,
-        Err(error) => return error.as_jint(),
+        Err(error) => {
+            error!("{}", error);
+            return error.as_jint();
+        }
     };
 
     match result[0] {
@@ -130,12 +164,18 @@ pub extern "system" fn Java_com_wavesenterprise_wasm_core_WASMExecutor_validateB
 ) -> jint {
     let bytecode = match env.convert_byte_array(bytecode) {
         Ok(bytes) => bytes,
-        Err(_) => return JvmError::ByteArrayConversion as jint,
+        Err(_) => {
+            error!("{}", JvmError::ByteArrayConversion);
+            return JvmError::ByteArrayConversion.as_jint();
+        }
     };
 
     match Executable::validate_bytecode(&bytecode) {
         Ok(_) => 0,
-        Err(error) => error.as_jint(),
+        Err(error) => {
+            error!("{}", error);
+            error.as_jint()
+        }
     }
 }
 

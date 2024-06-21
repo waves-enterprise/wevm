@@ -1,10 +1,11 @@
 use crate::{env::Field, error::RuntimeError, node::Node, runtime::Runtime};
+use log::error;
 use wasmi::Caller;
 
 pub fn get_block_field(field: Field, mut caller: Caller<Runtime>) -> (i32, i64) {
     let (memory, ctx) = match caller.data().memory() {
         Some(memory) => memory.data_and_store_mut(&mut caller),
-        None => return (RuntimeError::MemoryNotFound as i32, 0),
+        None => return (RuntimeError::MemoryNotFound.as_i32(), 0),
     };
 
     let field = match field {
@@ -20,14 +21,17 @@ pub fn get_block_field(field: Field, mut caller: Caller<Runtime>) -> (i32, i64) 
             result.copy_from_slice(&bytes);
             (0, i64::from_be_bytes(result))
         }
-        Err(error) => (error.as_i32(), 0),
+        Err(error) => {
+            error!("{}", error);
+            (error.as_i32(), 0)
+        }
     }
 }
 
 pub fn block(field: Field, mut caller: Caller<Runtime>) -> (i32, u32, u32) {
     let (memory, ctx) = match caller.data().memory() {
         Some(memory) => memory.data_and_store_mut(&mut caller),
-        None => return (RuntimeError::MemoryNotFound as i32, 0, 0),
+        None => return (RuntimeError::MemoryNotFound.as_i32(), 0, 0),
     };
     let offset_memory = ctx.heap_base() as usize;
 
@@ -40,6 +44,9 @@ pub fn block(field: Field, mut caller: Caller<Runtime>) -> (i32, u32, u32) {
 
     match ctx.vm.block(field.as_slice()) {
         Ok(result) => crate::env::write_memory(ctx, memory, offset_memory, result),
-        Err(error) => (error.as_i32(), 0, 0),
+        Err(error) => {
+            error!("{}", error);
+            (error.as_i32(), 0, 0)
+        }
     }
 }

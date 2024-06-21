@@ -11,7 +11,7 @@ pub fn fast_hash(
 ) -> (i32, u32, u32) {
     let (memory, ctx) = match caller.data().memory() {
         Some(memory) => memory.data_and_store_mut(&mut caller),
-        None => return (RuntimeError::MemoryNotFound as i32, 0, 0),
+        None => return (RuntimeError::MemoryNotFound.as_i32(), 0, 0),
     };
     let offset_memory = ctx.heap_base() as usize;
 
@@ -30,7 +30,7 @@ pub fn secure_hash(
 ) -> (i32, u32, u32) {
     let (memory, ctx) = match caller.data().memory() {
         Some(memory) => memory.data_and_store_mut(&mut caller),
-        None => return (RuntimeError::MemoryNotFound as i32, 0, 0),
+        None => return (RuntimeError::MemoryNotFound.as_i32(), 0, 0),
     };
     let offset_memory = ctx.heap_base() as usize;
 
@@ -49,7 +49,7 @@ pub fn blake2b256(
 ) -> (i32, u32, u32) {
     let (memory, ctx) = match caller.data().memory() {
         Some(memory) => memory.data_and_store_mut(&mut caller),
-        None => return (RuntimeError::MemoryNotFound as i32, 0, 0),
+        None => return (RuntimeError::MemoryNotFound.as_i32(), 0, 0),
     };
     let offset_memory = ctx.heap_base() as usize;
 
@@ -66,7 +66,7 @@ pub fn keccak256(
 ) -> (i32, u32, u32) {
     let (memory, ctx) = match caller.data().memory() {
         Some(memory) => memory.data_and_store_mut(&mut caller),
-        None => return (RuntimeError::MemoryNotFound as i32, 0, 0),
+        None => return (RuntimeError::MemoryNotFound.as_i32(), 0, 0),
     };
     let offset_memory = ctx.heap_base() as usize;
 
@@ -83,7 +83,7 @@ pub fn sha256(
 ) -> (i32, u32, u32) {
     let (memory, ctx) = match caller.data().memory() {
         Some(memory) => memory.data_and_store_mut(&mut caller),
-        None => return (RuntimeError::MemoryNotFound as i32, 0, 0),
+        None => return (RuntimeError::MemoryNotFound.as_i32(), 0, 0),
     };
     let offset_memory = ctx.heap_base() as usize;
 
@@ -104,7 +104,7 @@ pub fn sig_verify(
 ) -> (i32, i32) {
     let (memory, ctx) = match caller.data().memory() {
         Some(memory) => memory.data_and_store_mut(&mut caller),
-        None => return (RuntimeError::MemoryNotFound as i32, 0),
+        None => return (RuntimeError::MemoryNotFound.as_i32(), 0),
     };
 
     let message =

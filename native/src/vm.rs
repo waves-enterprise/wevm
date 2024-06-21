@@ -4,7 +4,9 @@ use crate::{
     modules::Module,
     runtime::payment_id::PaymentId,
 };
+use base58::ToBase58;
 use jni::{objects::GlobalRef, JavaVM};
+use log::debug;
 use std::str::FromStr;
 use wasmi::Value;
 
@@ -61,6 +63,11 @@ impl Vm {
             nonce: 0,
         };
 
+        debug!(
+            "The virtual machine is initialized to execute the contract: {}",
+            first_frame.contract_id.to_base58()
+        );
+
         Ok(Self {
             frames: Default::default(),
             first_frame,
@@ -89,6 +96,13 @@ impl Vm {
             nonce,
         };
 
+        debug!(
+            "The contract with id: {} triggers the contract with id: {} to call the function: {}",
+            self.top_frame().contract_id().to_base58(),
+            frame.contract_id.to_base58(),
+            func_name
+        );
+
         self.push_frame(frame)?;
         self.run(func_name, params)
     }
@@ -101,6 +115,13 @@ impl Vm {
 
         let mut exec = Executable::new(self.memory.0, self.memory.1, self.fuel_limit);
         exec.load_bytecode(&frame.bytecode)?;
+
+        debug!(
+            "Calling the function: {} contract: {}",
+            func_name.to_string(),
+            self.top_frame().contract_id().to_base58()
+        );
+
         let result = exec.execute(&func_name, params, self.modules.clone(), self);
 
         self.frames.pop();

@@ -223,10 +223,11 @@ fn test_vm() {
                 0, 1, 0, 8, 116, 101, 115, 116, 95, 107, 101, 121, 0, 0, 0, 0, 0, 0, 0, 0, 1,
             ],
         );
-        assert!(result.is_err());
-        assert_eq!(
-            result.unwrap_err(),
-            Error::Executable(ExecutableError::InvalidBytecode)
-        );
+
+        if let Err(Error::Executable(ExecutableError::InvalidBytecode(_))) = result {
+            assert!(true);
+        } else {
+            assert!(false);
+        }
     }
 }

@@ -1,4 +1,5 @@
 use crate::{error::RuntimeError, node::Node, runtime::Runtime};
+use log::error;
 use wasmi::Caller;
 
 pub fn lease(
@@ -10,7 +11,7 @@ pub fn lease(
 ) -> (i32, u32, u32) {
     let (memory, ctx) = match caller.data().memory() {
         Some(memory) => memory.data_and_store_mut(&mut caller),
-        None => return (RuntimeError::MemoryNotFound as i32, 0, 0),
+        None => return (RuntimeError::MemoryNotFound.as_i32(), 0, 0),
     };
     let offset_memory = ctx.heap_base() as usize;
 
@@ -28,7 +29,10 @@ pub fn lease(
         .lease(contract_id.as_slice(), asset_holder.as_slice(), amount)
     {
         Ok(result) => crate::env::write_memory(ctx, memory, offset_memory, result),
-        Err(error) => (error.as_i32(), 0, 0),
+        Err(error) => {
+            error!("{}", error);
+            (error.as_i32(), 0, 0)
+        }
     }
 }
 
@@ -39,7 +43,7 @@ pub fn cancel_lease(
 ) -> i32 {
     let (memory, ctx) = match caller.data().memory() {
         Some(memory) => memory.data_and_store_mut(&mut caller),
-        None => return RuntimeError::MemoryNotFound as i32,
+        None => return RuntimeError::MemoryNotFound.as_i32(),
     };
 
     let contract_id = ctx.vm.top_frame().contract_id();
@@ -48,6 +52,9 @@ pub fn cancel_lease(
 
     match ctx.vm.cancel_lease(contract_id.as_slice(), lease_id) {
         Ok(_) => 0,
-        Err(error) => error.as_i32(),
+        Err(error) => {
+            error!("{}", error);
+            error.as_i32()
+        }
     }
 }

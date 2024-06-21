@@ -88,8 +88,9 @@ impl Executable {
             .consume_fuel(true);
 
         let engine = Engine::new(&config);
-        let module = Module::new(&engine, &mut &bytecode[..])
-            .map_err(|_| Error::Executable(ExecutableError::InvalidBytecode))?;
+        let module = Module::new(&engine, &mut &bytecode[..]).map_err(|error| {
+            Error::Executable(ExecutableError::InvalidBytecode(format!("{:?}", error)))
+        })?;
 
         if module
             .exports()
@@ -142,7 +143,9 @@ impl Executable {
         let mut results = Self::prepare_results_buffer(&func_type);
 
         func.call(&mut store, &func_args, &mut results)
-            .map_err(|_| Error::Executable(ExecutableError::FailedExec))?;
+            .map_err(|error| {
+                Error::Executable(ExecutableError::FailedExec(format!("{:?}", error)))
+            })?;
 
         Ok(results)
     }
@@ -170,31 +173,39 @@ impl Executable {
 
         for item in modules {
             let (module, name, func) = item(&mut store);
-            linker
-                .define(&module, &name, func)
-                .map_err(|_| Error::Executable(ExecutableError::LinkerError))?;
+            linker.define(&module, &name, func).map_err(|error| {
+                Error::Executable(ExecutableError::LinkerError(format!("{:?}", error)))
+            })?;
         }
 
         let memory = Memory::new(
             &mut store,
-            MemoryType::new(memory.0, Some(memory.1))
-                .map_err(|_| Error::Executable(ExecutableError::MemoryError))?,
+            MemoryType::new(memory.0, Some(memory.1)).map_err(|error| {
+                Error::Executable(ExecutableError::MemoryError(format!("{:?}", error)))
+            })?,
         )
-        .map_err(|_| Error::Executable(ExecutableError::MemoryLimits))?;
+        .map_err(|error| {
+            Error::Executable(ExecutableError::MemoryLimits(format!("{:?}", error)))
+        })?;
 
-        linker
-            .define("env", "memory", memory)
-            .map_err(|_| Error::Executable(ExecutableError::LinkerError))?;
+        linker.define("env", "memory", memory).map_err(|error| {
+            Error::Executable(ExecutableError::LinkerError(format!("{:?}", error)))
+        })?;
 
         let instance = linker
             .instantiate(&mut store, module)
             .and_then(|pre| pre.start(&mut store))
-            .map_err(|_| Error::Executable(ExecutableError::InstantiateFailed))?;
+            .map_err(|error| {
+                Error::Executable(ExecutableError::InstantiateFailed(format!("{:?}", error)))
+            })?;
 
         store.data_mut().set_memory(memory);
-        store
-            .add_fuel(fuel_limit)
-            .map_err(|_| Error::Executable(ExecutableError::FuelMeteringDisabled))?;
+        store.add_fuel(fuel_limit).map_err(|error| {
+            Error::Executable(ExecutableError::FuelMeteringDisabled(format!(
+                "{:?}",
+                error
+            )))
+        })?;
 
         let heap_base = match instance.get_global(&mut store, "__heap_base") {
             Some(global) => match global.get(&mut store) {
@@ -233,14 +244,21 @@ impl Executable {
             .map(|(_, (param_type, arg))| {
                 macro_rules! make_err {
                     () => {
-                        |_| Error::Executable(ExecutableError::FailedParseFuncArgs)
+                        |error| {
+                            Error::Executable(ExecutableError::FailedParseFuncArgs(format!(
+                                "{:?}",
+                                error
+                            )))
+                        }
                     };
                 }
 
                 match param_type {
                     ValueType::I32 => arg.parse::<i32>().map(Value::from).map_err(make_err!()),
                     ValueType::I64 => arg.parse::<i64>().map(Value::from).map_err(make_err!()),
-                    _ => Err(Error::Executable(ExecutableError::FailedParseFuncArgs)),
+                    _ => Err(Error::Executable(ExecutableError::FailedParseFuncArgs(
+                        "Not known or inappropriate argument type".to_string(),
+                    ))),
                 }
             })
             .collect::<Result<Vec<_>, _>>()?;

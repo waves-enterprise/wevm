@@ -4,6 +4,7 @@ use crate::{
     vm::Vm,
 };
 use jni::objects::{JByteArray, JObject, JValue};
+use log::error;
 
 // A primitive java type.
 // L - Object
@@ -46,7 +47,11 @@ impl Node for Vm {
         let mut env = env!(self);
 
         env.call_method(jvm_callback!(&self.jvm_callback), "getChainId", "()B", &[])
-            .map_err(|_| Error::Jvm(JvmError::MethodCall))?
+            .map_err(|error| {
+                let err = JvmError::MethodCall(format!("{:?}", error));
+                error!("{}", error);
+                Error::Jvm(err)
+            })?
             .b()
             .map_err(|_| Error::Jvm(JvmError::ReceiveByte))
     }
@@ -62,7 +67,11 @@ impl Node for Vm {
             "([B)V",
             &[JValue::Object(&message.into())],
         )
-        .map_err(|_| Error::Jvm(JvmError::MethodCall))?;
+        .map_err(|error| {
+            let err = JvmError::MethodCall(format!("{:?}", error));
+            error!("{}", error);
+            Error::Jvm(err)
+        })?;
 
         Ok(())
     }
@@ -79,7 +88,11 @@ impl Node for Vm {
                 "([B)[B",
                 &[JValue::Object(&contract_id.into())],
             )
-            .map_err(|_| Error::Jvm(JvmError::MethodCall))?
+            .map_err(|error| {
+                let err = JvmError::MethodCall(format!("{:?}", error));
+                error!("{}", error);
+                Error::Jvm(err)
+            })?
             .l()
             .map_err(|_| Error::Jvm(JvmError::ReceiveObject))?;
 
@@ -107,7 +120,11 @@ impl Node for Vm {
                 JValue::Object(&payments.into()),
             ],
         )
-        .map_err(|_| Error::Jvm(JvmError::MethodCall))?;
+        .map_err(|error| {
+            let err = JvmError::MethodCall(format!("{:?}", error));
+            error!("{}", error);
+            Error::Jvm(err)
+        })?;
 
         Ok(())
     }
@@ -128,7 +145,11 @@ impl Node for Vm {
                 JValue::Object(&address.into()),
             ],
         )
-        .map_err(|_| Error::Jvm(JvmError::MethodCall))?
+        .map_err(|error| {
+            let err = JvmError::MethodCall(format!("{:?}", error));
+            error!("{}", error);
+            Error::Jvm(err)
+        })?
         .j()
         .map_err(|_| Error::Jvm(JvmError::ReceiveLong))
     }
@@ -157,7 +178,11 @@ impl Node for Vm {
                 amount.into(),
             ],
         )
-        .map_err(|_| Error::Jvm(JvmError::MethodCall))?;
+        .map_err(|error| {
+            let err = JvmError::MethodCall(format!("{:?}", error));
+            error!("{}", error);
+            Error::Jvm(err)
+        })?;
 
         Ok(())
     }
@@ -191,7 +216,11 @@ impl Node for Vm {
                     is_reissuable.into(),
                 ],
             )
-            .map_err(|_| Error::Jvm(JvmError::MethodCall))?
+            .map_err(|error| {
+                let err = JvmError::MethodCall(format!("{:?}", error));
+                error!("{}", error);
+                Error::Jvm(err)
+            })?
             .l()
             .map_err(|_| Error::Jvm(JvmError::ReceiveObject))?;
 
@@ -218,7 +247,11 @@ impl Node for Vm {
                 amount.into(),
             ],
         )
-        .map_err(|_| Error::Jvm(JvmError::MethodCall))?;
+        .map_err(|error| {
+            let err = JvmError::MethodCall(format!("{:?}", error));
+            error!("{}", error);
+            Error::Jvm(err)
+        })?;
 
         Ok(())
     }
@@ -246,7 +279,11 @@ impl Node for Vm {
                 is_reissuable.into(),
             ],
         )
-        .map_err(|_| Error::Jvm(JvmError::MethodCall))?;
+        .map_err(|error| {
+            let err = JvmError::MethodCall(format!("{:?}", error));
+            error!("{}", error);
+            Error::Jvm(err)
+        })?;
 
         Ok(())
     }
@@ -264,7 +301,11 @@ impl Node for Vm {
                 "([B)[B",
                 &[JValue::Object(&field.into())],
             )
-            .map_err(|_| Error::Jvm(JvmError::MethodCall))?
+            .map_err(|error| {
+                let err = JvmError::MethodCall(format!("{:?}", error));
+                error!("{}", error);
+                Error::Jvm(err)
+            })?
             .l()
             .map_err(|_| Error::Jvm(JvmError::ReceiveObject))?;
 
@@ -288,7 +329,11 @@ impl Node for Vm {
                 "([B)[B",
                 &[JValue::Object(&bytes.into())],
             )
-            .map_err(|_| Error::Jvm(JvmError::MethodCall))?
+            .map_err(|error| {
+                let err = JvmError::MethodCall(format!("{:?}", error));
+                error!("{}", error);
+                Error::Jvm(err)
+            })?
             .l()
             .map_err(|_| Error::Jvm(JvmError::ReceiveObject))?;
 
@@ -311,7 +356,11 @@ impl Node for Vm {
                 "([B)[B",
                 &[JValue::Object(&bytes.into())],
             )
-            .map_err(|_| Error::Jvm(JvmError::MethodCall))?
+            .map_err(|error| {
+                let err = JvmError::MethodCall(format!("{:?}", error));
+                error!("{}", error);
+                Error::Jvm(err)
+            })?
             .l()
             .map_err(|_| Error::Jvm(JvmError::ReceiveObject))?;
 
@@ -339,7 +388,11 @@ impl Node for Vm {
                 JValue::Object(&public_key.into()),
             ],
         )
-        .map_err(|_| Error::Jvm(JvmError::MethodCall))?
+        .map_err(|error| {
+            let err = JvmError::MethodCall(format!("{:?}", error));
+            error!("{}", error);
+            Error::Jvm(err)
+        })?
         .z()
         .map_err(|_| Error::Jvm(JvmError::ReceiveBoolean))
     }
@@ -362,7 +415,11 @@ impl Node for Vm {
                     amount.into(),
                 ],
             )
-            .map_err(|_| Error::Jvm(JvmError::MethodCall))?
+            .map_err(|error| {
+                let err = JvmError::MethodCall(format!("{:?}", error));
+                error!("{}", error);
+                Error::Jvm(err)
+            })?
             .l()
             .map_err(|_| Error::Jvm(JvmError::ReceiveObject))?;
 
@@ -388,7 +445,11 @@ impl Node for Vm {
                 JValue::Object(&lease_id.into()),
             ],
         )
-        .map_err(|_| Error::Jvm(JvmError::MethodCall))?;
+        .map_err(|error| {
+            let err = JvmError::MethodCall(format!("{:?}", error));
+            error!("{}", error);
+            Error::Jvm(err)
+        })?;
 
         Ok(())
     }
@@ -406,7 +467,11 @@ impl Node for Vm {
             "([B[B)Z",
             &[JValue::Object(&address.into()), JValue::Object(&key.into())],
         )
-        .map_err(|_| Error::Jvm(JvmError::MethodCall))?
+        .map_err(|error| {
+            let err = JvmError::MethodCall(format!("{:?}", error));
+            error!("{}", error);
+            Error::Jvm(err)
+        })?
         .z()
         .map_err(|_| Error::Jvm(JvmError::ReceiveBoolean))
     }
@@ -424,7 +489,11 @@ impl Node for Vm {
                 "([B[B)[B",
                 &[JValue::Object(&address.into()), JValue::Object(&key.into())],
             )
-            .map_err(|_| Error::Jvm(JvmError::MethodCall))?
+            .map_err(|error| {
+                let err = JvmError::MethodCall(format!("{:?}", error));
+                error!("{}", error);
+                Error::Jvm(err)
+            })?
             .l()
             .map_err(|_| Error::Jvm(JvmError::ReceiveObject))?;
 
@@ -450,7 +519,11 @@ impl Node for Vm {
                 JValue::Object(&value.into()),
             ],
         )
-        .map_err(|_| Error::Jvm(JvmError::MethodCall))?;
+        .map_err(|error| {
+            let err = JvmError::MethodCall(format!("{:?}", error));
+            error!("{}", error);
+            Error::Jvm(err)
+        })?;
 
         Ok(())
     }
@@ -467,7 +540,11 @@ impl Node for Vm {
             "([B)J",
             &[JValue::Object(&payment_id.into())],
         )
-        .map_err(|_| Error::Jvm(JvmError::MethodCall))?
+        .map_err(|error| {
+            let err = JvmError::MethodCall(format!("{:?}", error));
+            error!("{}", error);
+            Error::Jvm(err)
+        })?
         .j()
         .map_err(|_| Error::Jvm(JvmError::ReceiveLong))
     }
@@ -484,7 +561,11 @@ impl Node for Vm {
                 "([BJ)[B",
                 &[JValue::Object(&payment_id.into()), number.into()],
             )
-            .map_err(|_| Error::Jvm(JvmError::MethodCall))?
+            .map_err(|error| {
+                let err = JvmError::MethodCall(format!("{:?}", error));
+                error!("{}", error);
+                Error::Jvm(err)
+            })?
             .l()
             .map_err(|_| Error::Jvm(JvmError::ReceiveObject))?;
 
@@ -506,7 +587,11 @@ impl Node for Vm {
             "([BJ)J",
             &[JValue::Object(&payment_id.into()), number.into()],
         )
-        .map_err(|_| Error::Jvm(JvmError::MethodCall))?
+        .map_err(|error| {
+            let err = JvmError::MethodCall(format!("{:?}", error));
+            error!("{}", error);
+            Error::Jvm(err)
+        })?
         .j()
         .map_err(|_| Error::Jvm(JvmError::ReceiveLong))
     }
@@ -523,7 +608,11 @@ impl Node for Vm {
                 "([B)[B",
                 &[JValue::Object(&field.into())],
             )
-            .map_err(|_| Error::Jvm(JvmError::MethodCall))?
+            .map_err(|error| {
+                let err = JvmError::MethodCall(format!("{:?}", error));
+                error!("{}", error);
+                Error::Jvm(err)
+            })?
             .l()
             .map_err(|_| Error::Jvm(JvmError::ReceiveObject))?;
 
