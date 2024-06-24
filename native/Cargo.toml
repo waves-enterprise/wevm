@@ -1,6 +1,6 @@
 [package]
 name = "wevm-core"
-version = "0.4.0"
+version = "0.4.1"
 edition = "2021"
 authors = ["DEADBLACKCLOVER <deadblackclover@protonmail.com>"]
 description = "Waves Enterprise Virtual Machine for WASM smart-contracts"
@@ -15,14 +15,14 @@ repository = "https://github.com/waves-enterprise/wevm"
 members = ["proc-macro"]
 
 [dependencies]
-base58 = "0.2.0"
-blake2 = "0.10"
-env_logger = "0.11.3"
-jni = "0.21.0"
-log = "0.4.21"
-sha2 = "0.10"
-sha3 = "0.10"
-wasmi = "0.31.2"
+base58 = { version = "0.2.0", optional = true }
+blake2 = { version = "0.10", optional = true }
+env_logger = { version = "0.11.3", optional = true }
+jni = { version = "0.21.0", optional = true }
+log = { version = "0.4.21", optional = true }
+sha2 = { version = "0.10", optional = true }
+sha3 = { version = "0.10", optional = true }
+wasmi = { version = "0.31.2", optional = true }
 wevm-proc-macro = { version = "0.1.0", path = "proc-macro" }
 
 [dev-dependencies]
@@ -35,5 +35,5 @@ crate_type = ["cdylib", "rlib"]
 
 [features]
 default = ["jvm"]
-jvm = []
+jvm = ["dep:base58", "dep:blake2", "dep:env_logger", "dep:jni", "dep:log", "dep:sha2", "dep:sha3", "dep:wasmi"]
 bindings = []
